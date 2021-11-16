@@ -33,7 +33,7 @@ public class RaccoonAIBeg extends Goal {
             if (this.closestPlayer == null) {
                 return false;
             } else {
-                boolean food =  EntityRaccoon.isFood(this.closestPlayer.getHeldItemMainhand()) || EntityRaccoon.isFood(this.closestPlayer.getHeldItemOffhand());
+                boolean food =  EntityRaccoon.isRaccoonFood(this.closestPlayer.getHeldItemMainhand()) || EntityRaccoon.isRaccoonFood(this.closestPlayer.getHeldItemOffhand());
                 return food;
             }
         }

@@ -16,7 +16,6 @@ import net.minecraft.entity.ai.goal.*;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.merchant.villager.AbstractVillagerEntity;
 import net.minecraft.entity.monster.MonsterEntity;
-import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.passive.IronGolemEntity;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -209,7 +208,7 @@ public class EntityRaccoon extends TameableEntity implements IAnimatedEntity, IF
             }
             this.setColor(null);
             return ActionResultType.SUCCESS;
-        }else if(isTamed() && isFood(itemstack) && !isBreedingItem(itemstack) && this.getHealth() < this.getMaxHealth()){
+        }else if(isTamed() && isRaccoonFood(itemstack) && !isBreedingItem(itemstack) && this.getHealth() < this.getMaxHealth()){
             if(this.getHeldItemMainhand().isEmpty()){
                 ItemStack copy = itemstack.copy();
                 copy.setCount(1);
@@ -295,7 +294,7 @@ public class EntityRaccoon extends TameableEntity implements IAnimatedEntity, IF
         return this.dataManager.get(SITTING).booleanValue();
     }
 
-    public static boolean isFood(ItemStack stack){
+    public static boolean isRaccoonFood(ItemStack stack){
         return stack.isFood() || ItemTags.getCollection().get(AMTagRegistry.RACCOON_FOODSTUFFS).contains(stack.getItem());
     }
 
@@ -526,7 +525,7 @@ public class EntityRaccoon extends TameableEntity implements IAnimatedEntity, IF
 
     @Override
     public boolean canTargetItem(ItemStack stack) {
-        return isFood(stack) && pickupItemCooldown == 0;
+        return isRaccoonFood(stack) && pickupItemCooldown == 0;
     }
 
     @Override
@@ -557,7 +556,7 @@ public class EntityRaccoon extends TameableEntity implements IAnimatedEntity, IF
 
     @Override
     public boolean shouldLootItem(ItemStack stack) {
-        return isFood(stack);
+        return isRaccoonFood(stack);
     }
 
     class StrollGoal extends MoveThroughVillageAtNightGoal {
