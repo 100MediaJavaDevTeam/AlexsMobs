@@ -19,33 +19,33 @@ public class LayerKangarooItem extends LayerRenderer<EntityKangaroo, ModelKangar
     }
 
     public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityKangaroo entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
-        ItemStack itemstack = entitylivingbaseIn.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
-        matrixStackIn.push();
+        ItemStack itemstack = entitylivingbaseIn.getItemBySlot(EquipmentSlotType.MAINHAND);
+        matrixStackIn.pushPose();
         boolean left = entitylivingbaseIn.isLeftHanded();
-        if(entitylivingbaseIn.isChild()){
+        if(entitylivingbaseIn.isBaby()){
             matrixStackIn.scale(0.5F, 0.5F, 0.5F);
             matrixStackIn.translate(0.0D, 1.5D, 0D);
         }
-        matrixStackIn.push();
+        matrixStackIn.pushPose();
         translateToHand(matrixStackIn, left);
         matrixStackIn.translate(0F, 0.75F, -0.125F);
 
-        matrixStackIn.rotate(Vector3f.XP.rotationDegrees(-110F));
-        matrixStackIn.rotate(Vector3f.YP.rotationDegrees(180F));
+        matrixStackIn.mulPose(Vector3f.XP.rotationDegrees(-110F));
+        matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(180F));
         matrixStackIn.scale(0.8F, 0.8F, 0.8F);
-        Minecraft.getInstance().getFirstPersonRenderer().renderItemSide(entitylivingbaseIn, itemstack, left ? ItemCameraTransforms.TransformType.THIRD_PERSON_LEFT_HAND : ItemCameraTransforms.TransformType.THIRD_PERSON_RIGHT_HAND, false, matrixStackIn, bufferIn, packedLightIn);
-        matrixStackIn.pop();
-        matrixStackIn.pop();
+        Minecraft.getInstance().getItemInHandRenderer().renderItem(entitylivingbaseIn, itemstack, left ? ItemCameraTransforms.TransformType.THIRD_PERSON_LEFT_HAND : ItemCameraTransforms.TransformType.THIRD_PERSON_RIGHT_HAND, false, matrixStackIn, bufferIn, packedLightIn);
+        matrixStackIn.popPose();
+        matrixStackIn.popPose();
     }
 
     protected void translateToHand(MatrixStack matrixStack, boolean left) {
-        this.getEntityModel().root.translateRotate(matrixStack);
-        this.getEntityModel().body.translateRotate(matrixStack);
-        this.getEntityModel().chest.translateRotate(matrixStack);
+        this.getParentModel().root.translateAndRotate(matrixStack);
+        this.getParentModel().body.translateAndRotate(matrixStack);
+        this.getParentModel().chest.translateAndRotate(matrixStack);
         if(left){
-            this.getEntityModel().arm_left.translateRotate(matrixStack);
+            this.getParentModel().arm_left.translateAndRotate(matrixStack);
         }else{
-            this.getEntityModel().arm_right.translateRotate(matrixStack);
+            this.getParentModel().arm_right.translateAndRotate(matrixStack);
         }
     }
 }

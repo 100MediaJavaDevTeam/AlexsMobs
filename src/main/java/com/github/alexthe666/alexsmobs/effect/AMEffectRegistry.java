@@ -35,7 +35,7 @@ public class AMEffectRegistry {
     public static final Potion STRONG_KNOCKBACK_RESISTANCE_POTION = new Potion(new EffectInstance(KNOCKBACK_RESISTANCE, 1800, 1)).setRegistryName("alexsmobs:strong_knockback_resistance");
     public static final Potion LAVA_VISION_POTION = new Potion(new EffectInstance(LAVA_VISION, 3600)).setRegistryName("alexsmobs:lava_vision");
     public static final Potion LONG_LAVA_VISION_POTION = new Potion(new EffectInstance(LAVA_VISION, 9600)).setRegistryName("alexsmobs:long_lava_vision");
-    public static final Potion SPEED_III_POTION = new Potion(new EffectInstance(Effects.SPEED, 2200, 2)).setRegistryName("alexsmobs:speed_iii");
+    public static final Potion SPEED_III_POTION = new Potion(new EffectInstance(Effects.MOVEMENT_SPEED, 2200, 2)).setRegistryName("alexsmobs:speed_iii");
     public static final Potion POISON_RESISTANCE_POTION = new Potion(new EffectInstance(POISON_RESISTANCE, 3600)).setRegistryName("alexsmobs:poison_resistance");
     public static final Potion LONG_POISON_RESISTANCE_POTION = new Potion(new EffectInstance(POISON_RESISTANCE, 9600)).setRegistryName("alexsmobs:long_poison_resistance");
     public static final Potion BUG_PHEROMONES_POTION = new Potion(new EffectInstance(BUG_PHEROMONES, 3600)).setRegistryName("alexsmobs:bug_pheromones");
@@ -76,27 +76,27 @@ public class AMEffectRegistry {
     }
 
     public static ItemStack createPotion(Potion potion){
-        return  PotionUtils.addPotionToItemStack(new ItemStack(Items.POTION), potion);
+        return  PotionUtils.setPotion(new ItemStack(Items.POTION), potion);
     }
 
     public static void onInitItems(){
-        BrewingRecipeRegistry.addRecipe(Ingredient.fromStacks(createPotion(Potions.STRENGTH)), Ingredient.fromItems(AMItemRegistry.BEAR_FUR), createPotion(KNOCKBACK_RESISTANCE_POTION));
-        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.fromStacks(createPotion(KNOCKBACK_RESISTANCE_POTION)), Ingredient.fromItems(Items.REDSTONE), createPotion(LONG_KNOCKBACK_RESISTANCE_POTION)));
-        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.fromStacks(createPotion(KNOCKBACK_RESISTANCE_POTION)), Ingredient.fromItems(Items.GLOWSTONE_DUST), createPotion(STRONG_KNOCKBACK_RESISTANCE_POTION)));
-        BrewingRecipeRegistry.addRecipe(Ingredient.fromItems(AMItemRegistry.LAVA_BOTTLE), Ingredient.fromItems(AMItemRegistry.BONE_SERPENT_TOOTH), createPotion(LAVA_VISION_POTION));
-        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.fromStacks(createPotion(LAVA_VISION_POTION)), Ingredient.fromItems(Items.REDSTONE), createPotion(LONG_LAVA_VISION_POTION)));
-        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.fromStacks(createPotion(Potions.POISON)), Ingredient.fromItems(AMItemRegistry.RATTLESNAKE_RATTLE), new ItemStack(AMItemRegistry.POISON_BOTTLE)));
-        BrewingRecipeRegistry.addRecipe(Ingredient.fromItems(AMItemRegistry.POISON_BOTTLE), Ingredient.fromItems(AMItemRegistry.CENTIPEDE_LEG), createPotion(POISON_RESISTANCE_POTION));
-        BrewingRecipeRegistry.addRecipe(Ingredient.fromItems(AMItemRegistry.KOMODO_SPIT_BOTTLE), Ingredient.fromItems(AMItemRegistry.CENTIPEDE_LEG), createPotion(POISON_RESISTANCE_POTION));
-        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.fromStacks(createPotion(POISON_RESISTANCE_POTION)), Ingredient.fromItems(AMItemRegistry.KOMODO_SPIT), createPotion(LONG_POISON_RESISTANCE_POTION)));
-        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.fromStacks(createPotion(Potions.STRONG_SWIFTNESS)), Ingredient.fromItems(AMItemRegistry.GAZELLE_HORN), createPotion(SPEED_III_POTION)));
-        BrewingRecipeRegistry.addRecipe(Ingredient.fromStacks(createPotion(Potions.AWKWARD)), Ingredient.fromItems(AMItemRegistry.COCKROACH_WING), createPotion(BUG_PHEROMONES_POTION));
-        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.fromStacks(createPotion(BUG_PHEROMONES_POTION)), Ingredient.fromItems(Items.REDSTONE), createPotion(LONG_BUG_PHEROMONES_POTION)));
-        BrewingRecipeRegistry.addRecipe(Ingredient.fromStacks(createPotion(Potions.AWKWARD)), Ingredient.fromItems(AMItemRegistry.SOUL_HEART), createPotion(SOULSTEAL_POTION));
-        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.fromStacks(createPotion(SOULSTEAL_POTION)), Ingredient.fromItems(Items.REDSTONE), createPotion(LONG_SOULSTEAL_POTION)));
-        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.fromStacks(createPotion(SOULSTEAL_POTION)), Ingredient.fromItems(Items.GLOWSTONE_DUST), createPotion(STRONG_SOULSTEAL_POTION)));
-        BrewingRecipeRegistry.addRecipe(Ingredient.fromStacks(createPotion(Potions.AWKWARD)), Ingredient.fromItems(AMItemRegistry.DROPBEAR_CLAW), createPotion(CLINGING_POTION));
-        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.fromStacks(createPotion(CLINGING_POTION)), Ingredient.fromItems(Items.REDSTONE), createPotion(LONG_CLINGING_POTION)));
+        BrewingRecipeRegistry.addRecipe(Ingredient.of(createPotion(Potions.STRENGTH)), Ingredient.of(AMItemRegistry.BEAR_FUR), createPotion(KNOCKBACK_RESISTANCE_POTION));
+        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.of(createPotion(KNOCKBACK_RESISTANCE_POTION)), Ingredient.of(Items.REDSTONE), createPotion(LONG_KNOCKBACK_RESISTANCE_POTION)));
+        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.of(createPotion(KNOCKBACK_RESISTANCE_POTION)), Ingredient.of(Items.GLOWSTONE_DUST), createPotion(STRONG_KNOCKBACK_RESISTANCE_POTION)));
+        BrewingRecipeRegistry.addRecipe(Ingredient.of(AMItemRegistry.LAVA_BOTTLE), Ingredient.of(AMItemRegistry.BONE_SERPENT_TOOTH), createPotion(LAVA_VISION_POTION));
+        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.of(createPotion(LAVA_VISION_POTION)), Ingredient.of(Items.REDSTONE), createPotion(LONG_LAVA_VISION_POTION)));
+        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.of(createPotion(Potions.POISON)), Ingredient.of(AMItemRegistry.RATTLESNAKE_RATTLE), new ItemStack(AMItemRegistry.POISON_BOTTLE)));
+        BrewingRecipeRegistry.addRecipe(Ingredient.of(AMItemRegistry.POISON_BOTTLE), Ingredient.of(AMItemRegistry.CENTIPEDE_LEG), createPotion(POISON_RESISTANCE_POTION));
+        BrewingRecipeRegistry.addRecipe(Ingredient.of(AMItemRegistry.KOMODO_SPIT_BOTTLE), Ingredient.of(AMItemRegistry.CENTIPEDE_LEG), createPotion(POISON_RESISTANCE_POTION));
+        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.of(createPotion(POISON_RESISTANCE_POTION)), Ingredient.of(AMItemRegistry.KOMODO_SPIT), createPotion(LONG_POISON_RESISTANCE_POTION)));
+        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.of(createPotion(Potions.STRONG_SWIFTNESS)), Ingredient.of(AMItemRegistry.GAZELLE_HORN), createPotion(SPEED_III_POTION)));
+        BrewingRecipeRegistry.addRecipe(Ingredient.of(createPotion(Potions.AWKWARD)), Ingredient.of(AMItemRegistry.COCKROACH_WING), createPotion(BUG_PHEROMONES_POTION));
+        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.of(createPotion(BUG_PHEROMONES_POTION)), Ingredient.of(Items.REDSTONE), createPotion(LONG_BUG_PHEROMONES_POTION)));
+        BrewingRecipeRegistry.addRecipe(Ingredient.of(createPotion(Potions.AWKWARD)), Ingredient.of(AMItemRegistry.SOUL_HEART), createPotion(SOULSTEAL_POTION));
+        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.of(createPotion(SOULSTEAL_POTION)), Ingredient.of(Items.REDSTONE), createPotion(LONG_SOULSTEAL_POTION)));
+        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.of(createPotion(SOULSTEAL_POTION)), Ingredient.of(Items.GLOWSTONE_DUST), createPotion(STRONG_SOULSTEAL_POTION)));
+        BrewingRecipeRegistry.addRecipe(Ingredient.of(createPotion(Potions.AWKWARD)), Ingredient.of(AMItemRegistry.DROPBEAR_CLAW), createPotion(CLINGING_POTION));
+        BrewingRecipeRegistry.addRecipe(new ProperBrewingRecipe(Ingredient.of(createPotion(CLINGING_POTION)), Ingredient.of(Items.REDSTONE), createPotion(LONG_CLINGING_POTION)));
 
 
     }

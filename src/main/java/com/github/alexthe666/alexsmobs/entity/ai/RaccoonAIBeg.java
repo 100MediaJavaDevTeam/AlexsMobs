@@ -7,8 +7,10 @@ import net.minecraft.entity.player.PlayerEntity;
 
 import java.util.EnumSet;
 
+import net.minecraft.entity.ai.goal.Goal.Flag;
+
 public class RaccoonAIBeg extends Goal {
-    private static final EntityPredicate ENTITY_PREDICATE = (new EntityPredicate()).setDistance(32D).allowInvulnerable().allowFriendlyFire().setSkipAttackChecks().setIgnoresLineOfSight();
+    private static final EntityPredicate ENTITY_PREDICATE = (new EntityPredicate()).range(32D).allowInvulnerable().allowSameTeam().allowNonAttackable().allowUnseeable();
     protected final EntityRaccoon raccoon;
     private final double speed;
     protected PlayerEntity closestPlayer;
@@ -18,51 +20,51 @@ public class RaccoonAIBeg extends Goal {
     public RaccoonAIBeg(EntityRaccoon raccoon, double speed) {
         this.raccoon = raccoon;
         this.speed = speed;
-        this.setMutexFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
+        this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
     }
 
-    public boolean shouldExecute() {
+    public boolean canUse() {
         if (this.delayTemptCounter > 0) {
             --this.delayTemptCounter;
             return false;
         } else {
-            if(!this.raccoon.getHeldItemMainhand().isEmpty()){
+            if(!this.raccoon.getMainHandItem().isEmpty()){
                 return false;
             }
-            this.closestPlayer = this.raccoon.world.getClosestPlayer(ENTITY_PREDICATE, this.raccoon);
+            this.closestPlayer = this.raccoon.level.getNearestPlayer(ENTITY_PREDICATE, this.raccoon);
             if (this.closestPlayer == null) {
                 return false;
             } else {
-                boolean food =  EntityRaccoon.isRaccoonFood(this.closestPlayer.getHeldItemMainhand()) || EntityRaccoon.isRaccoonFood(this.closestPlayer.getHeldItemOffhand());
+                boolean food =  EntityRaccoon.isRaccoonFood(this.closestPlayer.getMainHandItem()) || EntityRaccoon.isRaccoonFood(this.closestPlayer.getOffhandItem());
                 return food;
             }
         }
     }
 
 
-    public boolean shouldContinueExecuting() {
-        return this.raccoon.getHeldItemMainhand().isEmpty() && this.shouldExecute();
+    public boolean canContinueToUse() {
+        return this.raccoon.getMainHandItem().isEmpty() && this.canUse();
     }
 
-    public void startExecuting() {
+    public void start() {
         this.isRunning = true;
     }
 
-    public void resetTask() {
+    public void stop() {
         this.closestPlayer = null;
-        this.raccoon.getNavigator().clearPath();
+        this.raccoon.getNavigation().stop();
         this.delayTemptCounter = 100;
         this.raccoon.setBegging(false);
         this.isRunning = false;
     }
 
     public void tick() {
-        this.raccoon.getLookController().setLookPositionWithEntity(this.closestPlayer, (float)(this.raccoon.getHorizontalFaceSpeed() + 20), (float)this.raccoon.getVerticalFaceSpeed());
-        if (this.raccoon.getDistanceSq(this.closestPlayer) < 12D) {
-            this.raccoon.getNavigator().clearPath();
+        this.raccoon.getLookControl().setLookAt(this.closestPlayer, (float)(this.raccoon.getMaxHeadYRot() + 20), (float)this.raccoon.getMaxHeadXRot());
+        if (this.raccoon.distanceToSqr(this.closestPlayer) < 12D) {
+            this.raccoon.getNavigation().stop();
             this.raccoon.setBegging(true);
         } else {
-            this.raccoon.getNavigator().tryMoveToEntityLiving(this.closestPlayer, this.speed);
+            this.raccoon.getNavigation().moveTo(this.closestPlayer, this.speed);
         }
 
     }

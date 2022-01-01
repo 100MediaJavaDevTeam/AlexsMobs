@@ -38,16 +38,16 @@ public class BlockLeafcutterAntChamber extends Block {
     public static final IntegerProperty FUNGUS = IntegerProperty.create("fungus", 0, 5);
 
     public BlockLeafcutterAntChamber() {
-        super(AbstractBlock.Properties.create(Material.ORGANIC).sound(SoundType.GROUND).harvestTool(ToolType.SHOVEL).hardnessAndResistance(4F).tickRandomly());
+        super(AbstractBlock.Properties.of(Material.GRASS).sound(SoundType.GRAVEL).harvestTool(ToolType.SHOVEL).strength(4F).randomTicks());
         this.setRegistryName("alexsmobs:leafcutter_ant_chamber");
-        this.setDefaultState(this.stateContainer.getBaseState().with(FUNGUS, 0));
+        this.registerDefaultState(this.stateDefinition.any().setValue(FUNGUS, 0));
     }
 
-    public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
-        int fungalLevel = state.get(FUNGUS);
+    public ActionResultType use(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+        int fungalLevel = state.getValue(FUNGUS);
         if (fungalLevel == 5) {
             boolean shroomlight = false;
-            for (BlockPos blockpos : BlockPos.getAllInBoxMutable(pos.add(-1, -1, -1), pos.add(1, 1, 1))) {
+            for (BlockPos blockpos : BlockPos.betweenClosed(pos.offset(-1, -1, -1), pos.offset(1, 1, 1))) {
                 if(worldIn.getBlockState(blockpos).getBlock() == Blocks.SHROOMLIGHT){
                     shroomlight = true;
                 }
@@ -55,19 +55,19 @@ public class BlockLeafcutterAntChamber extends Block {
             if(!shroomlight){
                 this.angerNearbyAnts(worldIn, pos);
             }
-            worldIn.setBlockState(pos, state.with(FUNGUS, 0));
-            if(!worldIn.isRemote){
-                if(worldIn.rand.nextInt(2) == 0){
-                    Direction dir = Direction.getRandomDirection(worldIn.rand);
-                    if(worldIn.getBlockState(pos.up()).getBlock() == AMBlockRegistry.LEAFCUTTER_ANTHILL){
+            worldIn.setBlockAndUpdate(pos, state.setValue(FUNGUS, 0));
+            if(!worldIn.isClientSide){
+                if(worldIn.random.nextInt(2) == 0){
+                    Direction dir = Direction.getRandom(worldIn.random);
+                    if(worldIn.getBlockState(pos.above()).getBlock() == AMBlockRegistry.LEAFCUTTER_ANTHILL){
                         dir = Direction.DOWN;
                     }
-                    BlockPos offset = pos.offset(dir);
+                    BlockPos offset = pos.relative(dir);
                     if(Tags.Blocks.DIRT.contains(worldIn.getBlockState(offset).getBlock()) && !worldIn.canSeeSky(offset)){
-                        worldIn.setBlockState(offset, this.getDefaultState());
+                        worldIn.setBlockAndUpdate(offset, this.defaultBlockState());
                     }
                 }
-                spawnAsEntity(worldIn, pos, new ItemStack(AMItemRegistry.GONGYLIDIA));
+                popResource(worldIn, pos, new ItemStack(AMItemRegistry.GONGYLIDIA));
             }
             return ActionResultType.SUCCESS;
         }
@@ -77,37 +77,37 @@ public class BlockLeafcutterAntChamber extends Block {
     public void randomTick(BlockState state, ServerWorld worldIn, BlockPos pos, Random random) {
             if (!worldIn.isAreaLoaded(pos, 3))
                 return; // Forge: prevent loading unloaded chunks when checking neighbor's light and spreading
-        if(worldIn.canSeeSky(pos.up())){
-            worldIn.setBlockState(pos, Blocks.DIRT.getDefaultState());
+        if(worldIn.canSeeSky(pos.above())){
+            worldIn.setBlockAndUpdate(pos, Blocks.DIRT.defaultBlockState());
         }
     }
 
-    public void harvestBlock(World worldIn, PlayerEntity player, BlockPos pos, BlockState state, @Nullable TileEntity te, ItemStack stack) {
-        super.harvestBlock(worldIn, player, pos, state, te, stack);
+    public void playerDestroy(World worldIn, PlayerEntity player, BlockPos pos, BlockState state, @Nullable TileEntity te, ItemStack stack) {
+        super.playerDestroy(worldIn, player, pos, state, te, stack);
         this.angerNearbyAnts(worldIn, pos);
     }
 
     private void angerNearbyAnts(World world, BlockPos pos) {
-        List<EntityLeafcutterAnt> list = world.getEntitiesWithinAABB(EntityLeafcutterAnt.class, (new AxisAlignedBB(pos)).grow(20D, 6.0D, 20D));
+        List<EntityLeafcutterAnt> list = world.getEntitiesOfClass(EntityLeafcutterAnt.class, (new AxisAlignedBB(pos)).inflate(20D, 6.0D, 20D));
         PlayerEntity player = null;
-        List<PlayerEntity> list1 = world.getEntitiesWithinAABB(PlayerEntity.class, (new AxisAlignedBB(pos)).grow(20D, 6.0D, 20D));
+        List<PlayerEntity> list1 = world.getEntitiesOfClass(PlayerEntity.class, (new AxisAlignedBB(pos)).inflate(20D, 6.0D, 20D));
         if (list1.isEmpty()) return; //Forge: Prevent Error when no players are around.
         int i = list1.size();
-        player = list1.get(world.rand.nextInt(i));
+        player = list1.get(world.random.nextInt(i));
         if (!list.isEmpty()) {
             for (EntityLeafcutterAnt beeentity : list) {
-                if (beeentity.getAttackTarget() == null) {
-                    beeentity.setAttackTarget(player);
+                if (beeentity.getTarget() == null) {
+                    beeentity.setTarget(player);
                 }
             }
         }
-        if(!world.isRemote){
-            PointOfInterestManager pointofinterestmanager = ((ServerWorld) world).getPointOfInterestManager();
+        if(!world.isClientSide){
+            PointOfInterestManager pointofinterestmanager = ((ServerWorld) world).getPoiManager();
             Stream<BlockPos> stream = pointofinterestmanager.findAll(AMPointOfInterestRegistry.LEAFCUTTER_ANT_HILL.getPredicate(), Predicates.alwaysTrue(), pos, 50, PointOfInterestManager.Status.ANY);
             List<BlockPos> listOfHives = stream.collect(Collectors.toList());
             for (BlockPos pos2 : listOfHives) {
-                if(world.getTileEntity(pos2) instanceof TileEntityLeafcutterAnthill){
-                    TileEntityLeafcutterAnthill beehivetileentity = (TileEntityLeafcutterAnthill) world.getTileEntity(pos2);
+                if(world.getBlockEntity(pos2) instanceof TileEntityLeafcutterAnthill){
+                    TileEntityLeafcutterAnthill beehivetileentity = (TileEntityLeafcutterAnthill) world.getBlockEntity(pos2);
                     beehivetileentity.angerAnts(player, world.getBlockState(pos2), BeehiveTileEntity.State.EMERGENCY);
                 }
 
@@ -115,7 +115,7 @@ public class BlockLeafcutterAntChamber extends Block {
         }
     }
 
-    protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> builder) {
         builder.add(FUNGUS);
     }
 }

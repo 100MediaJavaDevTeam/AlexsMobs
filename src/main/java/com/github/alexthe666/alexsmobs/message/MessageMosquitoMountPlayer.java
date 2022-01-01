@@ -46,10 +46,10 @@ public class MessageMosquitoMountPlayer {
             }
 
             if (player != null) {
-                if (player.world != null) {
-                    Entity entity = player.world.getEntityByID(message.rider);
-                    Entity mountEntity = player.world.getEntityByID(message.mount);
-                    if ((entity instanceof EntityCrimsonMosquito || entity instanceof EntityEnderiophage || entity instanceof EntityBaldEagle) && mountEntity instanceof PlayerEntity && entity.getDistance(mountEntity) < 16D) {
+                if (player.level != null) {
+                    Entity entity = player.level.getEntity(message.rider);
+                    Entity mountEntity = player.level.getEntity(message.mount);
+                    if ((entity instanceof EntityCrimsonMosquito || entity instanceof EntityEnderiophage || entity instanceof EntityBaldEagle) && mountEntity instanceof PlayerEntity && entity.distanceTo(mountEntity) < 16D) {
                         entity.startRiding(mountEntity, true);
                     }
                 }

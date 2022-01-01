@@ -21,7 +21,7 @@ public class LayerCockroachRainbow extends LayerRenderer<EntityCockroach, ModelC
         if(entitylivingbaseIn.isRainbow()) {
            IVertexBuilder ivertexbuilder = bufferIn.getBuffer(AMRenderTypes.RAINBOW_GLINT);
 
-            this.getEntityModel().render(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getPackedOverlay(entitylivingbaseIn, 0), 1, 1, 1, 1.0F);
+            this.getParentModel().renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getOverlayCoords(entitylivingbaseIn, 0), 1, 1, 1, 1.0F);
 
         }
     }

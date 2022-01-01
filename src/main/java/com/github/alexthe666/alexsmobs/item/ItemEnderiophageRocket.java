@@ -19,34 +19,34 @@ public class ItemEnderiophageRocket extends Item {
         super(group);
     }
 
-    public ActionResultType onItemUse(ItemUseContext context) {
-        World world = context.getWorld();
-        if (!world.isRemote) {
-            ItemStack itemstack = context.getItem();
-            Vector3d vector3d = context.getHitVec();
-            Direction direction = context.getFace();
-            FireworkRocketEntity fireworkrocketentity = new EntityEnderiophageRocket(world, context.getPlayer(), vector3d.x + (double)direction.getXOffset() * 0.15D, vector3d.y + (double)direction.getYOffset() * 0.15D, vector3d.z + (double)direction.getZOffset() * 0.15D, itemstack);
-            world.addEntity(fireworkrocketentity);
+    public ActionResultType useOn(ItemUseContext context) {
+        World world = context.getLevel();
+        if (!world.isClientSide) {
+            ItemStack itemstack = context.getItemInHand();
+            Vector3d vector3d = context.getClickLocation();
+            Direction direction = context.getClickedFace();
+            FireworkRocketEntity fireworkrocketentity = new EntityEnderiophageRocket(world, context.getPlayer(), vector3d.x + (double)direction.getStepX() * 0.15D, vector3d.y + (double)direction.getStepY() * 0.15D, vector3d.z + (double)direction.getStepZ() * 0.15D, itemstack);
+            world.addFreshEntity(fireworkrocketentity);
             if(!context.getPlayer().isCreative()){
                 itemstack.shrink(1);
             }
         }
-        return ActionResultType.func_233537_a_(world.isRemote);
+        return ActionResultType.sidedSuccess(world.isClientSide);
     }
 
-    public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn) {
-        if (playerIn.isElytraFlying()) {
-            ItemStack itemstack = playerIn.getHeldItem(handIn);
-            if (!worldIn.isRemote) {
-                worldIn.addEntity(new EntityEnderiophageRocket(worldIn, itemstack, playerIn));
-                if (!playerIn.abilities.isCreativeMode) {
+    public ActionResult<ItemStack> use(World worldIn, PlayerEntity playerIn, Hand handIn) {
+        if (playerIn.isFallFlying()) {
+            ItemStack itemstack = playerIn.getItemInHand(handIn);
+            if (!worldIn.isClientSide) {
+                worldIn.addFreshEntity(new EntityEnderiophageRocket(worldIn, itemstack, playerIn));
+                if (!playerIn.abilities.instabuild) {
                     itemstack.shrink(1);
                 }
             }
 
-            return ActionResult.func_233538_a_(playerIn.getHeldItem(handIn), worldIn.isRemote());
+            return ActionResult.sidedSuccess(playerIn.getItemInHand(handIn), worldIn.isClientSide());
         } else {
-            return ActionResult.resultPass(playerIn.getHeldItem(handIn));
+            return ActionResult.pass(playerIn.getItemInHand(handIn));
         }
     }
 

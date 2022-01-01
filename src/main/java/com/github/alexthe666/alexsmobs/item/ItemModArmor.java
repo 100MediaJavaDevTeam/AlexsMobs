@@ -33,31 +33,31 @@ public class ItemModArmor extends ArmorItem {
     private Multimap<Attribute, AttributeModifier> attributeMapMoose;
 
     public ItemModArmor(CustomArmorMaterial armorMaterial, EquipmentSlotType slot) {
-        super(armorMaterial, slot, new Item.Properties().group(AlexsMobs.TAB));
+        super(armorMaterial, slot, new Item.Properties().tab(AlexsMobs.TAB));
 
     }
 
     @Override
-    public void addInformation(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn) {
+    public void appendHoverText(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn) {
         if (this.material == AMItemRegistry.CENTIPEDE_ARMOR_MATERIAL) {
-            tooltip.add(new TranslationTextComponent("item.alexsmobs.centipede_leggings.desc").mergeStyle(TextFormatting.GRAY));
+            tooltip.add(new TranslationTextComponent("item.alexsmobs.centipede_leggings.desc").withStyle(TextFormatting.GRAY));
         }
         if (this.material == AMItemRegistry.EMU_ARMOR_MATERIAL) {
-            tooltip.add(new TranslationTextComponent("item.alexsmobs.emu_leggings.desc").mergeStyle(TextFormatting.GRAY));
+            tooltip.add(new TranslationTextComponent("item.alexsmobs.emu_leggings.desc").withStyle(TextFormatting.GRAY));
         }
-        super.addInformation(stack, worldIn, tooltip, flagIn);
+        super.appendHoverText(stack, worldIn, tooltip, flagIn);
         if (this.material == AMItemRegistry.ROADRUNNER_ARMOR_MATERIAL) {
-            tooltip.add(new TranslationTextComponent("item.alexsmobs.roadrunner_boots.desc").mergeStyle(TextFormatting.BLUE));
+            tooltip.add(new TranslationTextComponent("item.alexsmobs.roadrunner_boots.desc").withStyle(TextFormatting.BLUE));
         }
         if (this.material == AMItemRegistry.RACCOON_ARMOR_MATERIAL) {
-            tooltip.add(new TranslationTextComponent("item.alexsmobs.frontier_cap.desc").mergeStyle(TextFormatting.BLUE));
+            tooltip.add(new TranslationTextComponent("item.alexsmobs.frontier_cap.desc").withStyle(TextFormatting.BLUE));
         }
     }
 
     private void buildCrocAttributes(CustomArmorMaterial materialIn) {
         ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
         UUID uuid = ARMOR_MODIFIERS[slot.getIndex()];
-        builder.put(Attributes.ARMOR, new AttributeModifier(uuid, "Armor modifier", materialIn.getDamageReductionAmount(slot), AttributeModifier.Operation.ADDITION));
+        builder.put(Attributes.ARMOR, new AttributeModifier(uuid, "Armor modifier", materialIn.getDefenseForSlot(slot), AttributeModifier.Operation.ADDITION));
         builder.put(Attributes.ARMOR_TOUGHNESS, new AttributeModifier(uuid, "Armor toughness", materialIn.getToughness(), AttributeModifier.Operation.ADDITION));
         builder.put(ForgeMod.SWIM_SPEED.get(), new AttributeModifier(uuid, "Swim speed", 1, AttributeModifier.Operation.ADDITION));
         if (this.knockbackResistance > 0) {
@@ -69,7 +69,7 @@ public class ItemModArmor extends ArmorItem {
     private void buildMooseAttributes(CustomArmorMaterial materialIn) {
         ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
         UUID uuid = ARMOR_MODIFIERS[slot.getIndex()];
-        builder.put(Attributes.ARMOR, new AttributeModifier(uuid, "Armor modifier", materialIn.getDamageReductionAmount(slot), AttributeModifier.Operation.ADDITION));
+        builder.put(Attributes.ARMOR, new AttributeModifier(uuid, "Armor modifier", materialIn.getDefenseForSlot(slot), AttributeModifier.Operation.ADDITION));
         builder.put(Attributes.ARMOR_TOUGHNESS, new AttributeModifier(uuid, "Armor toughness", materialIn.getToughness(), AttributeModifier.Operation.ADDITION));
         builder.put(Attributes.ATTACK_KNOCKBACK, new AttributeModifier(uuid, "Knockback", 2, AttributeModifier.Operation.ADDITION));
         if (this.knockbackResistance > 0) {
@@ -79,20 +79,20 @@ public class ItemModArmor extends ArmorItem {
     }
 
 
-    public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlotType equipmentSlot) {
-        if (getArmorMaterial() == AMItemRegistry.CROCODILE_ARMOR_MATERIAL && equipmentSlot == this.slot) {
+    public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlotType equipmentSlot) {
+        if (getMaterial() == AMItemRegistry.CROCODILE_ARMOR_MATERIAL && equipmentSlot == this.slot) {
             if (attributeMapCroc == null) {
                 buildCrocAttributes(AMItemRegistry.CROCODILE_ARMOR_MATERIAL);
             }
             return attributeMapCroc;
         }
-        if (getArmorMaterial() == AMItemRegistry.MOOSE_ARMOR_MATERIAL && equipmentSlot == this.slot) {
+        if (getMaterial() == AMItemRegistry.MOOSE_ARMOR_MATERIAL && equipmentSlot == this.slot) {
             if (attributeMapMoose == null) {
                 buildMooseAttributes(AMItemRegistry.MOOSE_ARMOR_MATERIAL);
             }
             return attributeMapMoose;
         }
-        return super.getAttributeModifiers(equipmentSlot);
+        return super.getDefaultAttributeModifiers(equipmentSlot);
     }
 
     @Nullable

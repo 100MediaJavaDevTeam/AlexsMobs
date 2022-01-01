@@ -35,14 +35,14 @@ public class MessageMungusBiomeChange  {
     }
 
     public static MessageMungusBiomeChange read(PacketBuffer buf) {
-        return new MessageMungusBiomeChange(buf.readInt(), buf.readInt(), buf.readInt(), buf.readString());
+        return new MessageMungusBiomeChange(buf.readInt(), buf.readInt(), buf.readInt(), buf.readUtf());
     }
 
     public static void write(MessageMungusBiomeChange message, PacketBuffer buf) {
         buf.writeInt(message.mungusID);
         buf.writeInt(message.posX);
         buf.writeInt(message.posZ);
-        buf.writeString(message.biomeOption);
+        buf.writeUtf(message.biomeOption);
     }
 
     public static class Handler {
@@ -57,13 +57,13 @@ public class MessageMungusBiomeChange  {
             }
 
             if (player != null) {
-                if (player.world != null) {
-                    Entity entity = player.world.getEntityByID(message.mungusID);
-                    Registry<Biome> registry = player.world.func_241828_r().getRegistry(Registry.BIOME_KEY);
-                    Biome biome =  registry.getOrDefault(new ResourceLocation(message.biomeOption));
+                if (player.level != null) {
+                    Entity entity = player.level.getEntity(message.mungusID);
+                    Registry<Biome> registry = player.level.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
+                    Biome biome =  registry.get(new ResourceLocation(message.biomeOption));
                     if(AMConfig.mungusBiomeTransformationType == 2) {
-                        if (entity instanceof EntityMungus && entity.getDistanceSq(message.posX, entity.getPosY(), message.posZ) < 1000 && biome != null) {
-                            Chunk chunk = player.world.getChunkAt(new BlockPos(message.posX, 0, message.posZ));
+                        if (entity instanceof EntityMungus && entity.distanceToSqr(message.posX, entity.getY(), message.posZ) < 1000 && biome != null) {
+                            Chunk chunk = player.level.getChunkAt(new BlockPos(message.posX, 0, message.posZ));
                             BiomeContainer container = chunk.getBiomes();
                             if (container != null) {
                                 for (int i = 0; i < container.biomes.length; i++) {

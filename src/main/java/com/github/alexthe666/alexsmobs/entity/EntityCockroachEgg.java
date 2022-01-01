@@ -38,36 +38,36 @@ public class EntityCockroachEgg extends ProjectileItemEntity {
     }
 
     @Override
-    public IPacket<?> createSpawnPacket() {
+    public IPacket<?> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void handleStatusUpdate(byte id) {
+    public void handleEntityEvent(byte id) {
         if (id == 3) {
             double d0 = 0.08D;
 
             for(int i = 0; i < 8; ++i) {
-                this.world.addParticle(new ItemParticleData(ParticleTypes.ITEM, this.getItem()), this.getPosX(), this.getPosY(), this.getPosZ(), ((double)this.rand.nextFloat() - 0.5D) * 0.08D, ((double)this.rand.nextFloat() - 0.5D) * 0.08D, ((double)this.rand.nextFloat() - 0.5D) * 0.08D);
+                this.level.addParticle(new ItemParticleData(ParticleTypes.ITEM, this.getItem()), this.getX(), this.getY(), this.getZ(), ((double)this.random.nextFloat() - 0.5D) * 0.08D, ((double)this.random.nextFloat() - 0.5D) * 0.08D, ((double)this.random.nextFloat() - 0.5D) * 0.08D);
             }
         }
 
     }
 
-    protected void onImpact(RayTraceResult result) {
-        super.onImpact(result);
-        if (!this.world.isRemote) {
-            this.world.setEntityState(this, (byte)3);
-            int i = rand.nextInt(3);
+    protected void onHit(RayTraceResult result) {
+        super.onHit(result);
+        if (!this.level.isClientSide) {
+            this.level.broadcastEntityEvent(this, (byte)3);
+            int i = random.nextInt(3);
             for(int j = 0; j < i; ++j) {
-                EntityCockroach croc = AMEntityRegistry.COCKROACH.create(this.world);
-                croc.setGrowingAge(-24000);
-                croc.setLocationAndAngles(this.getPosX(), this.getPosY(), this.getPosZ(), this.rotationYaw, 0.0F);
-                croc.onInitialSpawn((ServerWorld)world, world.getDifficultyForLocation(this.getPosition()), SpawnReason.TRIGGERED, (ILivingEntityData)null, (CompoundNBT)null);
-                croc.setHomePosAndDistance(this.getPosition(), 20);
-                this.world.addEntity(croc);
+                EntityCockroach croc = AMEntityRegistry.COCKROACH.create(this.level);
+                croc.setAge(-24000);
+                croc.moveTo(this.getX(), this.getY(), this.getZ(), this.yRot, 0.0F);
+                croc.finalizeSpawn((ServerWorld)level, level.getCurrentDifficultyAt(this.blockPosition()), SpawnReason.TRIGGERED, (ILivingEntityData)null, (CompoundNBT)null);
+                croc.restrictTo(this.blockPosition(), 20);
+                this.level.addFreshEntity(croc);
             }
-            this.world.setEntityState(this, (byte)3);
+            this.level.broadcastEntityEvent(this, (byte)3);
             this.remove();
         }
 

@@ -94,8 +94,8 @@ public class AlexsMobs {
     }
 
     public static <MSG> void sendNonLocal(MSG msg, ServerPlayerEntity player) {
-        if (player.server.isDedicatedServer() || !player.getName().equals(player.server.getServerOwner())) {
-            NETWORK_WRAPPER.sendTo(msg, player.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
+        if (player.server.isDedicatedServer() || !player.getName().equals(player.server.getSingleplayerName())) {
+            NETWORK_WRAPPER.sendTo(msg, player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
         }
     }
 

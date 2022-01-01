@@ -16,11 +16,11 @@ public class ItemMaraca extends Item {
         super(property);
     }
 
-    public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn) {
-        ItemStack itemstack = playerIn.getHeldItem(handIn);
-        worldIn.playSound((PlayerEntity)playerIn, playerIn.getPosX(), playerIn.getPosY(), playerIn.getPosZ(), AMSoundRegistry.MARACA, SoundCategory.PLAYERS, 0.5F, (random.nextFloat() * 0.4F + 0.8F));
-        playerIn.getCooldownTracker().setCooldown(this, 3);
-        playerIn.addStat(Stats.ITEM_USED.get(this));
-        return ActionResult.resultSuccess(itemstack);
+    public ActionResult<ItemStack> use(World worldIn, PlayerEntity playerIn, Hand handIn) {
+        ItemStack itemstack = playerIn.getItemInHand(handIn);
+        worldIn.playSound((PlayerEntity)playerIn, playerIn.getX(), playerIn.getY(), playerIn.getZ(), AMSoundRegistry.MARACA, SoundCategory.PLAYERS, 0.5F, (random.nextFloat() * 0.4F + 0.8F));
+        playerIn.getCooldowns().addCooldown(this, 3);
+        playerIn.awardStat(Stats.ITEM_USED.get(this));
+        return ActionResult.success(itemstack);
     }
 }

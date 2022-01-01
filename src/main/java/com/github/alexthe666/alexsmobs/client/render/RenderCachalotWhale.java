@@ -23,7 +23,7 @@ public class RenderCachalotWhale extends MobRenderer<EntityCachalotWhale, ModelC
         super(renderManagerIn, new ModelCachalotWhale(), 4.2F);
     }
 
-    protected void preRenderCallback(EntityCachalotWhale entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityCachalotWhale entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
     }
 
     public boolean shouldRender(EntityCachalotWhale livingEntityIn, ClippingHelper camera, double camX, double camY, double camZ) {
@@ -31,7 +31,7 @@ public class RenderCachalotWhale extends MobRenderer<EntityCachalotWhale, ModelC
             return true;
         } else {
             for(EntityCachalotPart part : livingEntityIn.whaleParts){
-                if(camera.isBoundingBoxInFrustum(part.getBoundingBox())){
+                if(camera.isVisible(part.getBoundingBox())){
                     return true;
                 }
             }
@@ -40,7 +40,7 @@ public class RenderCachalotWhale extends MobRenderer<EntityCachalotWhale, ModelC
     }
 
 
-    public ResourceLocation getEntityTexture(EntityCachalotWhale entity) {
+    public ResourceLocation getTextureLocation(EntityCachalotWhale entity) {
         if(entity.isAlbino()){
             return entity.isSleeping() || entity.isBeached() ? TEXTURE_ALBINO_SLEEPING : TEXTURE_ALBINO;
         }else {

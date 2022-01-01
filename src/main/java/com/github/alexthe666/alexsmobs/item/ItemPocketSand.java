@@ -14,6 +14,8 @@ import net.minecraft.world.World;
 
 import java.util.function.Predicate;
 
+import net.minecraft.item.Item.Properties;
+
 public class ItemPocketSand extends Item {
 
     public static final Predicate<ItemStack> IS_SAND = (stack) -> {
@@ -28,8 +30,8 @@ public class ItemPocketSand extends Item {
         if(entity.isCreative()){
             return ItemStack.EMPTY;
         }
-        for(int i = 0; i < entity.inventory.getSizeInventory(); ++i) {
-            ItemStack itemstack1 = entity.inventory.getStackInSlot(i);
+        for(int i = 0; i < entity.inventory.getContainerSize(); ++i) {
+            ItemStack itemstack1 = entity.inventory.getItem(i);
             if (IS_SAND.test(itemstack1)) {
                 return itemstack1;
             }
@@ -37,33 +39,33 @@ public class ItemPocketSand extends Item {
         return ItemStack.EMPTY;
     }
 
-    public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity livingEntityIn, Hand handIn) {
-        ItemStack itemstack = livingEntityIn.getHeldItem(handIn);
+    public ActionResult<ItemStack> use(World worldIn, PlayerEntity livingEntityIn, Hand handIn) {
+        ItemStack itemstack = livingEntityIn.getItemInHand(handIn);
         ItemStack ammo = findAmmo(livingEntityIn);
         if(livingEntityIn.isCreative()){
             ammo = new ItemStack(Items.SAND);
         }
-        if (!worldIn.isRemote && !ammo.isEmpty()) {
-            worldIn.playSound((PlayerEntity)null, livingEntityIn.getPosX(), livingEntityIn.getPosY(), livingEntityIn.getPosZ(), SoundEvents.BLOCK_SAND_BREAK, SoundCategory.PLAYERS, 0.5F, 0.4F + (random.nextFloat() * 0.4F + 0.8F));
+        if (!worldIn.isClientSide && !ammo.isEmpty()) {
+            worldIn.playSound((PlayerEntity)null, livingEntityIn.getX(), livingEntityIn.getY(), livingEntityIn.getZ(), SoundEvents.SAND_BREAK, SoundCategory.PLAYERS, 0.5F, 0.4F + (random.nextFloat() * 0.4F + 0.8F));
             boolean left = false;
-            if (livingEntityIn.getActiveHand() == Hand.OFF_HAND && livingEntityIn.getPrimaryHand() == HandSide.RIGHT || livingEntityIn.getActiveHand() == Hand.MAIN_HAND && livingEntityIn.getPrimaryHand() == HandSide.LEFT) {
+            if (livingEntityIn.getUsedItemHand() == Hand.OFF_HAND && livingEntityIn.getMainArm() == HandSide.RIGHT || livingEntityIn.getUsedItemHand() == Hand.MAIN_HAND && livingEntityIn.getMainArm() == HandSide.LEFT) {
                 left = true;
             }
             EntitySandShot blood = new EntitySandShot(worldIn, livingEntityIn, !left);
-            Vector3d vector3d = livingEntityIn.getLook(1.0F);
+            Vector3d vector3d = livingEntityIn.getViewVector(1.0F);
             Vector3f vector3f = new Vector3f(vector3d);
-            blood.shoot((double) vector3f.getX(), (double) vector3f.getY(), (double) vector3f.getZ(), 1.2F, 11);
-            if (!worldIn.isRemote) {
-                worldIn.addEntity(blood);
+            blood.shoot((double) vector3f.x(), (double) vector3f.y(), (double) vector3f.z(), 1.2F, 11);
+            if (!worldIn.isClientSide) {
+                worldIn.addFreshEntity(blood);
             }
-            livingEntityIn.getCooldownTracker().setCooldown(this, 2);
+            livingEntityIn.getCooldowns().addCooldown(this, 2);
             ammo.shrink(1);
-            itemstack.damageItem(1, livingEntityIn, (player) -> {
-                player.sendBreakAnimation(livingEntityIn.getActiveHand());
+            itemstack.hurtAndBreak(1, livingEntityIn, (player) -> {
+                player.broadcastBreakEvent(livingEntityIn.getUsedItemHand());
             });
         }
-        livingEntityIn.addStat(Stats.ITEM_USED.get(this));
-        return ActionResult.func_233538_a_(itemstack, worldIn.isRemote());
+        livingEntityIn.awardStat(Stats.ITEM_USED.get(this));
+        return ActionResult.sidedSuccess(itemstack, worldIn.isClientSide());
     }
 
 

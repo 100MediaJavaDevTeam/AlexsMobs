@@ -44,9 +44,9 @@ public class MessageCrowDismount {
             }
 
             if (player != null) {
-                if (player.world != null) {
-                    Entity entity = player.world.getEntityByID(message.rider);
-                    Entity mountEntity = player.world.getEntityByID(message.mount);
+                if (player.level != null) {
+                    Entity entity = player.level.getEntity(message.rider);
+                    Entity mountEntity = player.level.getEntity(message.mount);
                     if (entity instanceof EntityCrow && mountEntity != null) {
                         entity.stopRiding();
                     }

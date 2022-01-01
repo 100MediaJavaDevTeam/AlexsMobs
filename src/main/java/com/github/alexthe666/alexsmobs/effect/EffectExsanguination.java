@@ -17,19 +17,19 @@ public class EffectExsanguination extends Effect {
         this.setRegistryName(AlexsMobs.MODID, "exsanguination");
     }
 
-    public void performEffect(LivingEntity entity, int amplifier) {
-        entity.attackEntityFrom(DamageSource.MAGIC, Math.min(amplifier + 1, Math.round(lastDuration / 20F)));
+    public void applyEffectTick(LivingEntity entity, int amplifier) {
+        entity.hurt(DamageSource.MAGIC, Math.min(amplifier + 1, Math.round(lastDuration / 20F)));
         for(int i = 0; i < 3; i++){
-            entity.world.addParticle(ParticleTypes.DAMAGE_INDICATOR, entity.getPosXRandom(1.0), entity.getPosYRandom(), entity.getPosZRandom(1.0), 0, 0, 0);
+            entity.level.addParticle(ParticleTypes.DAMAGE_INDICATOR, entity.getRandomX(1.0), entity.getRandomY(), entity.getRandomZ(1.0), 0, 0, 0);
         }
     }
 
-    public boolean isReady(int duration, int amplifier) {
+    public boolean isDurationEffectTick(int duration, int amplifier) {
         lastDuration = duration;
         return duration > 0 && duration % 20 == 0;
     }
 
-    public String getName() {
+    public String getDescriptionId() {
         return "alexsmobs.potion.exsanguination";
     }
 

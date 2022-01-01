@@ -12,14 +12,14 @@ public class EffectBugPheromones extends Effect {
         this.setRegistryName(AlexsMobs.MODID, "bug_pheromones");
     }
 
-    public void performEffect(LivingEntity entity, int amplifier) {
+    public void applyEffectTick(LivingEntity entity, int amplifier) {
     }
 
-    public boolean isReady(int duration, int amplifier) {
+    public boolean isDurationEffectTick(int duration, int amplifier) {
         return duration > 0;
     }
 
-    public String getName() {
+    public String getDescriptionId() {
         return "alexsmobs.potion.bug_pheromones";
     }
 

@@ -19,37 +19,37 @@ public class LayerRaccoonItem extends LayerRenderer<EntityRaccoon, ModelRaccoon>
     }
 
     public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityRaccoon entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
-        ItemStack itemstack = entitylivingbaseIn.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
-        matrixStackIn.push();
+        ItemStack itemstack = entitylivingbaseIn.getItemBySlot(EquipmentSlotType.MAINHAND);
+        matrixStackIn.pushPose();
         boolean inHand = entitylivingbaseIn.begProgress > 0 || entitylivingbaseIn.standProgress > 0 || entitylivingbaseIn.washProgress > 0;
-        if(entitylivingbaseIn.isChild()){
+        if(entitylivingbaseIn.isBaby()){
             matrixStackIn.scale(0.5F, 0.5F, 0.5F);
             matrixStackIn.translate(0.0D, 1.5D, 0D);
         }
-        matrixStackIn.push();
+        matrixStackIn.pushPose();
         translateToHand(inHand, matrixStackIn);
         if(inHand){
             matrixStackIn.translate(0.2F, 0.4F, 0F);
-            matrixStackIn.rotate(Vector3f.XP.rotationDegrees(90F * entitylivingbaseIn.washProgress * 0.2F));
+            matrixStackIn.mulPose(Vector3f.XP.rotationDegrees(90F * entitylivingbaseIn.washProgress * 0.2F));
         }else {
             matrixStackIn.translate(0, 0.1F, -0.35F);
         }
-        matrixStackIn.rotate(Vector3f.YP.rotationDegrees(-2.5F));
-        matrixStackIn.rotate(Vector3f.XP.rotationDegrees(-90F));
-        Minecraft.getInstance().getFirstPersonRenderer().renderItemSide(entitylivingbaseIn, itemstack, ItemCameraTransforms.TransformType.GROUND, false, matrixStackIn, bufferIn, packedLightIn);
-        matrixStackIn.pop();
-        matrixStackIn.pop();
+        matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(-2.5F));
+        matrixStackIn.mulPose(Vector3f.XP.rotationDegrees(-90F));
+        Minecraft.getInstance().getItemInHandRenderer().renderItem(entitylivingbaseIn, itemstack, ItemCameraTransforms.TransformType.GROUND, false, matrixStackIn, bufferIn, packedLightIn);
+        matrixStackIn.popPose();
+        matrixStackIn.popPose();
     }
 
     protected void translateToHand(boolean inHand, MatrixStack matrixStack) {
         if(inHand){
-            this.getEntityModel().root.translateRotate(matrixStack);
-            this.getEntityModel().body.translateRotate(matrixStack);
-            this.getEntityModel().arm_right.translateRotate(matrixStack);
+            this.getParentModel().root.translateAndRotate(matrixStack);
+            this.getParentModel().body.translateAndRotate(matrixStack);
+            this.getParentModel().arm_right.translateAndRotate(matrixStack);
         }else{
-            this.getEntityModel().root.translateRotate(matrixStack);
-            this.getEntityModel().body.translateRotate(matrixStack);
-            this.getEntityModel().head.translateRotate(matrixStack);
+            this.getParentModel().root.translateAndRotate(matrixStack);
+            this.getParentModel().body.translateAndRotate(matrixStack);
+            this.getParentModel().head.translateAndRotate(matrixStack);
         }
     }
 }

@@ -21,12 +21,12 @@ public class RenderStraddler extends MobRenderer<EntityStraddler, ModelStraddler
         this.addLayer(new StradpoleLayer(this));
     }
 
-    protected void preRenderCallback(EntityStraddler entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityStraddler entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(1.2F, 1.2F, 1.2F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntityStraddler entity) {
+    public ResourceLocation getTextureLocation(EntityStraddler entity) {
         return TEXTURE;
     }
 
@@ -39,19 +39,19 @@ public class RenderStraddler extends MobRenderer<EntityStraddler, ModelStraddler
         public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityStraddler straddler, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
             int t = straddler.getAnimationTick();
             if(straddler.getAnimation() == EntityStraddler.ANIMATION_LAUNCH && t < 20 && t > 6){
-                matrixStackIn.push();
+                matrixStackIn.pushPose();
                 translateToModel(matrixStackIn);
                 float back = t <= 15 ? (t-6) * 0.05F : 0.25F;
                 matrixStackIn.translate(0F, -2.5F + back * 0.5F, 0.35F + back);
-                IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.getEntityTranslucent(RenderStradpole.TEXTURE));
-                STRADPOLE_MODEL.render(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getPackedOverlay(straddler, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
-                matrixStackIn.pop();
+                IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.entityTranslucent(RenderStradpole.TEXTURE));
+                STRADPOLE_MODEL.renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getOverlayCoords(straddler, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
+                matrixStackIn.popPose();
             }
         }
 
         protected void translateToModel(MatrixStack matrixStack) {
-            this.getEntityModel().root.translateRotate(matrixStack);
-            this.getEntityModel().body.translateRotate(matrixStack);
+            this.getParentModel().root.translateAndRotate(matrixStack);
+            this.getParentModel().body.translateAndRotate(matrixStack);
 
         }
     }

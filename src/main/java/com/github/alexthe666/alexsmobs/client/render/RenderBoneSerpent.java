@@ -14,12 +14,12 @@ public class RenderBoneSerpent extends MobRenderer<EntityBoneSerpent, ModelBoneS
         super(renderManagerIn, new ModelBoneSerpentHead(), 0.3F);
     }
 
-    protected void preRenderCallback(EntityBoneSerpent entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityBoneSerpent entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
       //  matrixStackIn.scale(1.2F, 1.2F, 1.2F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntityBoneSerpent entity) {
+    public ResourceLocation getTextureLocation(EntityBoneSerpent entity) {
         return TEXTURE;
     }
 }

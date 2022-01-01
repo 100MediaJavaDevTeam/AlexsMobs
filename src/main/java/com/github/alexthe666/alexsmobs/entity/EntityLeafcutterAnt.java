@@ -68,16 +68,16 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
     public static final Animation ANIMATION_BITE = Animation.create(13);
     protected static final EntitySize QUEEN_SIZE = EntitySize.fixed(1.25F, 0.98F);
     public static final ResourceLocation QUEEN_LOOT = new ResourceLocation("alexsmobs", "entities/leafcutter_ant_queen");
-    private static final DataParameter<Optional<BlockPos>> LEAF_HARVESTED_POS = EntityDataManager.createKey(EntityLeafcutterAnt.class, DataSerializers.OPTIONAL_BLOCK_POS);
-    private static final DataParameter<Optional<BlockState>> LEAF_HARVESTED_STATE = EntityDataManager.createKey(EntityLeafcutterAnt.class, DataSerializers.OPTIONAL_BLOCK_STATE);
-    private static final DataParameter<Boolean> HAS_LEAF = EntityDataManager.createKey(EntityLeafcutterAnt.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Float> ANT_SCALE = EntityDataManager.createKey(EntityLeafcutterAnt.class, DataSerializers.FLOAT);
-    private static final DataParameter<Direction> ATTACHED_FACE = EntityDataManager.createKey(EntityLeafcutterAnt.class, DataSerializers.DIRECTION);
-    private static final DataParameter<Byte> CLIMBING = EntityDataManager.createKey(EntityLeafcutterAnt.class, DataSerializers.BYTE);
-    private static final DataParameter<Boolean> QUEEN = EntityDataManager.createKey(EntityLeafcutterAnt.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Integer> ANGER_TIME = EntityDataManager.createKey(EntityLeafcutterAnt.class, DataSerializers.VARINT);
+    private static final DataParameter<Optional<BlockPos>> LEAF_HARVESTED_POS = EntityDataManager.defineId(EntityLeafcutterAnt.class, DataSerializers.OPTIONAL_BLOCK_POS);
+    private static final DataParameter<Optional<BlockState>> LEAF_HARVESTED_STATE = EntityDataManager.defineId(EntityLeafcutterAnt.class, DataSerializers.BLOCK_STATE);
+    private static final DataParameter<Boolean> HAS_LEAF = EntityDataManager.defineId(EntityLeafcutterAnt.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Float> ANT_SCALE = EntityDataManager.defineId(EntityLeafcutterAnt.class, DataSerializers.FLOAT);
+    private static final DataParameter<Direction> ATTACHED_FACE = EntityDataManager.defineId(EntityLeafcutterAnt.class, DataSerializers.DIRECTION);
+    private static final DataParameter<Byte> CLIMBING = EntityDataManager.defineId(EntityLeafcutterAnt.class, DataSerializers.BYTE);
+    private static final DataParameter<Boolean> QUEEN = EntityDataManager.defineId(EntityLeafcutterAnt.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Integer> ANGER_TIME = EntityDataManager.defineId(EntityLeafcutterAnt.class, DataSerializers.INT);
     private static final Direction[] HORIZONTALS = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
-    private static final RangedInteger ANGRY_TIMER = TickRangeConverter.convertRange(10, 20);
+    private static final RangedInteger ANGRY_TIMER = TickRangeConverter.rangeOfSeconds(10, 20);
     public float attachChangeProgress = 0F;
     public float prevAttachChangeProgress = 0F;
     private Direction prevAttachDir = Direction.DOWN;
@@ -92,49 +92,49 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
     private int animationTick;
     private Animation currentAnimation;
     private boolean isUpsideDownNavigator;
-    private static final Ingredient TEMPTATION_ITEMS = Ingredient.fromItems(AMItemRegistry.GONGYLIDIA);
+    private static final Ingredient TEMPTATION_ITEMS = Ingredient.of(AMItemRegistry.GONGYLIDIA);
     private int haveBabyCooldown = 0;
     public EntityLeafcutterAnt(EntityType type, World world) {
         super(type, world);
-        this.setPathPriority(PathNodeType.WATER, -1.0F);
+        this.setPathfindingMalus(PathNodeType.WATER, -1.0F);
         switchNavigator(true);
 
     }
 
-    public void setAttackTarget(@Nullable LivingEntity entitylivingbaseIn) {
+    public void setTarget(@Nullable LivingEntity entitylivingbaseIn) {
         if(entitylivingbaseIn instanceof PlayerEntity && ((PlayerEntity) entitylivingbaseIn).isCreative()){
             return;
         }
-        super.setAttackTarget(entitylivingbaseIn);
+        super.setTarget(entitylivingbaseIn);
     }
 
     @Nullable
-    protected ResourceLocation getLootTable() {
-        return this.isQueen() ? QUEEN_LOOT : super.getLootTable();
+    protected ResourceLocation getDefaultLootTable() {
+        return this.isQueen() ? QUEEN_LOOT : super.getDefaultLootTable();
     }
 
-    public CreatureAttribute getCreatureAttribute() {
+    public CreatureAttribute getMobType() {
         return CreatureAttribute.ARTHROPOD;
     }
 
     private void switchNavigator(boolean rightsideUp) {
         if (rightsideUp) {
-            this.moveController = new MovementController(this);
-            this.navigator = new ClimberPathNavigator(this, world);
+            this.moveControl = new MovementController(this);
+            this.navigation = new ClimberPathNavigator(this, level);
             this.isUpsideDownNavigator = false;
         } else {
-            this.moveController = new FlightMoveController(this, 0.6F, false);
-            this.navigator = new DirectPathNavigator(this, world);
+            this.moveControl = new FlightMoveController(this, 0.6F, false);
+            this.navigation = new DirectPathNavigator(this, level);
             this.isUpsideDownNavigator = true;
         }
     }
 
     public static AttributeModifierMap.MutableAttribute bakeAttributes() {
-        return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MAX_HEALTH, 6.0D).createMutableAttribute(Attributes.FOLLOW_RANGE, 32.0D).createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.25F).createMutableAttribute(Attributes.ATTACK_DAMAGE, 2F);
+        return MonsterEntity.createMonsterAttributes().add(Attributes.MAX_HEALTH, 6.0D).add(Attributes.FOLLOW_RANGE, 32.0D).add(Attributes.MOVEMENT_SPEED, 0.25F).add(Attributes.ATTACK_DAMAGE, 2F);
     }
 
     private static boolean isSideSolid(IBlockReader reader, BlockPos pos, Entity entityIn, Direction direction) {
-        return Block.doesSideFillSquare(reader.getBlockState(pos).getCollisionShape(reader, pos, ISelectionContext.forEntity(entityIn)), direction);
+        return Block.isFaceFull(reader.getBlockState(pos).getCollisionShape(reader, pos, ISelectionContext.of(entityIn)), direction);
     }
 
     protected void registerGoals() {
@@ -147,30 +147,30 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
         this.goalSelector.addGoal(6, new AnimalAIWanderRanged(this, 30, 1.0D, 25, 7));
         this.goalSelector.addGoal(7, new LookAtGoal(this, PlayerEntity.class, 6.0F));
         this.goalSelector.addGoal(8, new LookRandomlyGoal(this));
-        this.targetSelector.addGoal(1, (new AngerGoal(this)).setCallsForHelp(new Class[0]));
+        this.targetSelector.addGoal(1, (new AngerGoal(this)).setAlertOthers(new Class[0]));
         this.targetSelector.addGoal(2, new ResetAngerGoal<>(this, true));
     }
 
-    public EntitySize getSize(Pose poseIn) {
-        return isQueen() && !isChild() ? QUEEN_SIZE : super.getSize(poseIn);
+    public EntitySize getDimensions(Pose poseIn) {
+        return isQueen() && !isBaby() ? QUEEN_SIZE : super.getDimensions(poseIn);
     }
 
     public boolean canTrample(BlockState state, BlockPos pos, float fallDistance) {
         return false;
     }
 
-    public boolean onLivingFall(float distance, float damageMultiplier) {
+    public boolean causeFallDamage(float distance, float damageMultiplier) {
         return false;
     }
 
-    protected void updateFallState(double y, boolean onGroundIn, BlockState state, BlockPos pos) {
+    protected void checkFallDamage(double y, boolean onGroundIn, BlockState state, BlockPos pos) {
     }
 
     public Direction getAttachmentFacing() {
-        return this.dataManager.get(ATTACHED_FACE);
+        return this.entityData.get(ATTACHED_FACE);
     }
 
-    protected PathNavigator createNavigator(World worldIn) {
+    protected PathNavigator createNavigation(World worldIn) {
         return new ClimberPathNavigator(this, worldIn);
     }
 
@@ -187,41 +187,41 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
     }
 
     private void pacifyAllNearby(){
-        resetTargets();
-        List<EntityLeafcutterAnt> list = world.getEntitiesWithinAABB(EntityLeafcutterAnt.class, this.getBoundingBox().grow(20D, 6.0D, 20D));
+        stopBeingAngry();
+        List<EntityLeafcutterAnt> list = level.getEntitiesOfClass(EntityLeafcutterAnt.class, this.getBoundingBox().inflate(20D, 6.0D, 20D));
         for(EntityLeafcutterAnt ant : list){
-            ant.resetTargets();
+            ant.stopBeingAngry();
         }
     }
 
-    public ActionResultType getEntityInteractionResult(PlayerEntity player, Hand hand) {
-        ItemStack itemstack = player.getHeldItem(hand);
+    public ActionResultType mobInteract(PlayerEntity player, Hand hand) {
+        ItemStack itemstack = player.getItemInHand(hand);
         Item item = itemstack.getItem();
-        ActionResultType type = super.getEntityInteractionResult(player, hand);
+        ActionResultType type = super.mobInteract(player, hand);
         if(type != ActionResultType.SUCCESS && item == AMItemRegistry.GONGYLIDIA){
             if(isQueen() && haveBabyCooldown == 0){
-                int babies = 1 + rand.nextInt(1);
+                int babies = 1 + random.nextInt(1);
                 pacifyAllNearby();
                 for(int i = 0; i < babies; i++){
-                    EntityLeafcutterAnt leafcutterAnt = AMEntityRegistry.LEAFCUTTER_ANT.create(world);
-                    leafcutterAnt.copyLocationAndAnglesFrom(this);
-                    leafcutterAnt.setGrowingAge(-24000);
-                    if(!world.isRemote){
-                        world.setEntityState(this, (byte)18);
-                        world.addEntity(leafcutterAnt);
+                    EntityLeafcutterAnt leafcutterAnt = AMEntityRegistry.LEAFCUTTER_ANT.create(level);
+                    leafcutterAnt.copyPosition(this);
+                    leafcutterAnt.setAge(-24000);
+                    if(!level.isClientSide){
+                        level.broadcastEntityEvent(this, (byte)18);
+                        level.addFreshEntity(leafcutterAnt);
                     }
                 }
                 if(!player.isCreative()){
                     itemstack.shrink(1);
                 }
                 haveBabyCooldown = 24000;
-                this.setChild(false);
+                this.setBaby(false);
             }else{
                 pacifyAllNearby();
                 if(!player.isCreative()){
                     itemstack.shrink(1);
                 }
-                world.setEntityState(this, (byte)48);
+                level.broadcastEntityEvent(this, (byte)48);
                 this.heal(3);
             }
 
@@ -232,16 +232,16 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void handleStatusUpdate(byte id) {
+    public void handleEntityEvent(byte id) {
         if (id == 48) {
             for(int i = 0; i < 3; ++i) {
-                double d0 = this.rand.nextGaussian() * 0.02D;
-                double d1 = this.rand.nextGaussian() * 0.02D;
-                double d2 = this.rand.nextGaussian() * 0.02D;
-                this.world.addParticle(ParticleTypes.HAPPY_VILLAGER, this.getPosXRandom(1.0D), this.getPosYRandom() + 0.5D, this.getPosZRandom(1.0D), d0, d1, d2);
+                double d0 = this.random.nextGaussian() * 0.02D;
+                double d1 = this.random.nextGaussian() * 0.02D;
+                double d2 = this.random.nextGaussian() * 0.02D;
+                this.level.addParticle(ParticleTypes.HAPPY_VILLAGER, this.getRandomX(1.0D), this.getRandomY() + 0.5D, this.getRandomZ(1.0D), d0, d1, d2);
             }
         } else {
-            super.handleStatusUpdate(id);
+            super.handleEntityEvent(id);
         }
 
     }
@@ -249,67 +249,67 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
     public void tick() {
         this.prevAttachChangeProgress = this.attachChangeProgress;
         super.tick();
-        if (this.isQueen() && this.getWidth() < QUEEN_SIZE.width) {
-            this.recalculateSize();
+        if (this.isQueen() && this.getBbWidth() < QUEEN_SIZE.width) {
+            this.refreshDimensions();
         }
         if (attachChangeProgress > 0F) {
             attachChangeProgress -= 0.25F;
         }
-        this.stepHeight = isQueen() ? 1F : 0.5F;
-        Vector3d vector3d = this.getMotion();
-        if (!this.world.isRemote && !this.isQueen()) {
-            this.setBesideClimbableBlock(this.collidedHorizontally || this.collidedVertically && !this.isOnGround());
-            if (this.isOnGround() || this.isInWaterOrBubbleColumn() || this.isInLava()) {
-                this.dataManager.set(ATTACHED_FACE, Direction.DOWN);
-            } else  if (this.collidedVertically) {
-                this.dataManager.set(ATTACHED_FACE, Direction.UP);
+        this.maxUpStep = isQueen() ? 1F : 0.5F;
+        Vector3d vector3d = this.getDeltaMovement();
+        if (!this.level.isClientSide && !this.isQueen()) {
+            this.setBesideClimbableBlock(this.horizontalCollision || this.verticalCollision && !this.isOnGround());
+            if (this.isOnGround() || this.isInWaterOrBubble() || this.isInLava()) {
+                this.entityData.set(ATTACHED_FACE, Direction.DOWN);
+            } else  if (this.verticalCollision) {
+                this.entityData.set(ATTACHED_FACE, Direction.UP);
             }else {
                 boolean flag = false;
                 Direction closestDirection = Direction.DOWN;
                 double closestDistance = 100;
                 for (Direction dir : HORIZONTALS) {
-                    BlockPos antPos = new BlockPos(MathHelper.floor(this.getPosX()), MathHelper.floor(this.getPosY()), MathHelper.floor(this.getPosZ()));
-                    BlockPos offsetPos = antPos.offset(dir);
-                    Vector3d offset = Vector3d.copyCentered(offsetPos);
-                    if (closestDistance > this.getPositionVec().distanceTo(offset) && world.isDirectionSolid(offsetPos, this, dir.getOpposite())) {
-                        closestDistance = this.getPositionVec().distanceTo(offset);
+                    BlockPos antPos = new BlockPos(MathHelper.floor(this.getX()), MathHelper.floor(this.getY()), MathHelper.floor(this.getZ()));
+                    BlockPos offsetPos = antPos.relative(dir);
+                    Vector3d offset = Vector3d.atCenterOf(offsetPos);
+                    if (closestDistance > this.position().distanceTo(offset) && level.loadedAndEntityCanStandOnFace(offsetPos, this, dir.getOpposite())) {
+                        closestDistance = this.position().distanceTo(offset);
                         closestDirection = dir;
                     }
                 }
-                this.dataManager.set(ATTACHED_FACE, closestDirection);
+                this.entityData.set(ATTACHED_FACE, closestDirection);
             }
         }
         boolean flag = false;
         if (this.getAttachmentFacing() != Direction.DOWN) {
             if(this.getAttachmentFacing() == Direction.UP){
-                this.setMotion(this.getMotion().add(0, 1, 0));
+                this.setDeltaMovement(this.getDeltaMovement().add(0, 1, 0));
             }else{
-                if (!this.collidedHorizontally && this.getAttachmentFacing() != Direction.UP) {
-                    Vector3d vec = Vector3d.copy(this.getAttachmentFacing().getDirectionVec());
-                    this.setMotion(this.getMotion().add(vec.normalize().mul(0.1F, 0.1F, 0.1F)));
+                if (!this.horizontalCollision && this.getAttachmentFacing() != Direction.UP) {
+                    Vector3d vec = Vector3d.atLowerCornerOf(this.getAttachmentFacing().getNormal());
+                    this.setDeltaMovement(this.getDeltaMovement().add(vec.normalize().multiply(0.1F, 0.1F, 0.1F)));
                 }
                 if (!this.onGround && vector3d.y < 0.0D) {
-                    this.setMotion(this.getMotion().mul(1.0D, 0.5D, 1.0D));
+                    this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.5D, 1.0D));
                     flag = true;
                 }
             }
         }
         if(this.getAttachmentFacing() == Direction.UP) {
             this.setNoGravity(true);
-            this.setMotion(vector3d.mul(0.7D, 1D, 0.7D));
+            this.setDeltaMovement(vector3d.multiply(0.7D, 1D, 0.7D));
         }else{
             this.setNoGravity(false);
         }
         if (!flag) {
-            if (this.isOnLadder()) {
-                this.setMotion(vector3d.mul(1.0D, 0.4D, 1.0D));
+            if (this.onClimbable()) {
+                this.setDeltaMovement(vector3d.multiply(1.0D, 0.4D, 1.0D));
             }
         }
         if (prevAttachDir != this.getAttachmentFacing()) {
             attachChangeProgress = 1F;
         }
         this.prevAttachDir = this.getAttachmentFacing();
-        if (!this.world.isRemote) {
+        if (!this.level.isClientSide) {
             if (this.getAttachmentFacing() == Direction.UP && !this.isUpsideDownNavigator) {
                 switchNavigator(false);
             }
@@ -320,14 +320,14 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
                 --this.stayOutOfHiveCountdown;
             }
 
-            if (this.ticksExisted % 20 == 0 && !this.isHiveValid()) {
+            if (this.tickCount % 20 == 0 && !this.isHiveValid()) {
                 this.hivePos = null;
             }
-            LivingEntity attackTarget = this.getAttackTarget();
-            if (attackTarget != null && getDistance(attackTarget) < attackTarget.getWidth() + this.getWidth() + 1 && this.canEntityBeSeen(attackTarget)) {
+            LivingEntity attackTarget = this.getTarget();
+            if (attackTarget != null && distanceTo(attackTarget) < attackTarget.getBbWidth() + this.getBbWidth() + 1 && this.canSee(attackTarget)) {
                 if (this.getAnimation() == ANIMATION_BITE && this.getAnimationTick() == 6) {
                     float damage = (float) ((int) this.getAttributeValue(Attributes.ATTACK_DAMAGE));
-                    attackTarget.attackEntityFrom(DamageSource.causeMobDamage(this), damage);
+                    attackTarget.hurt(DamageSource.mobAttack(this), damage);
                 }
             }
         }
@@ -342,7 +342,7 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
         if (!this.hasHive()) {
             return false;
         } else {
-            TileEntity tileentity = this.world.getTileEntity(this.hivePos);
+            TileEntity tileentity = this.level.getBlockEntity(this.hivePos);
             return tileentity instanceof TileEntityLeafcutterAnthill;
         }
     }
@@ -351,105 +351,105 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
 
     }
 
-    public boolean isOnLadder() {
+    public boolean onClimbable() {
         return this.isBesideClimbableBlock();
     }
 
     public boolean isBesideClimbableBlock() {
-        return (this.dataManager.get(CLIMBING) & 1) != 0;
+        return (this.entityData.get(CLIMBING) & 1) != 0;
     }
 
     public void setBesideClimbableBlock(boolean climbing) {
-        byte b0 = this.dataManager.get(CLIMBING);
+        byte b0 = this.entityData.get(CLIMBING);
         if (climbing) {
             b0 = (byte) (b0 | 1);
         } else {
             b0 = (byte) (b0 & -2);
         }
 
-        this.dataManager.set(CLIMBING, b0);
+        this.entityData.set(CLIMBING, b0);
     }
 
-    public int getAngerTime() {
-        return this.dataManager.get(ANGER_TIME);
+    public int getRemainingPersistentAngerTime() {
+        return this.entityData.get(ANGER_TIME);
     }
 
-    public void setAngerTime(int time) {
-        this.dataManager.set(ANGER_TIME, time);
+    public void setRemainingPersistentAngerTime(int time) {
+        this.entityData.set(ANGER_TIME, time);
     }
 
-    public UUID getAngerTarget() {
+    public UUID getPersistentAngerTarget() {
         return this.lastHurtBy;
     }
 
-    public void setAngerTarget(@Nullable UUID target) {
+    public void setPersistentAngerTarget(@Nullable UUID target) {
         this.lastHurtBy = target;
     }
 
-    public void func_230258_H__() {
-        this.setAngerTime(ANGRY_TIMER.getRandomWithinRange(this.rand));
+    public void startPersistentAngerTimer() {
+        this.setRemainingPersistentAngerTime(ANGRY_TIMER.randomValue(this.random));
     }
 
-    protected void updateAITasks() {
-        if (!this.world.isRemote) {
-            this.func_241359_a_((ServerWorld)this.world, false);
+    protected void customServerAiStep() {
+        if (!this.level.isClientSide) {
+            this.updatePersistentAnger((ServerWorld)this.level, false);
         }
     }
 
     @Override
-    protected void registerData() {
-        super.registerData();
-        this.dataManager.register(CLIMBING, (byte) 0);
-        this.dataManager.register(LEAF_HARVESTED_POS, Optional.empty());
-        this.dataManager.register(LEAF_HARVESTED_STATE, Optional.empty());
-        this.dataManager.register(HAS_LEAF, false);
-        this.dataManager.register(QUEEN, false);
-        this.dataManager.register(ATTACHED_FACE, Direction.DOWN);
-        this.dataManager.register(ANT_SCALE, 1.0F);
-        this.dataManager.register(ANGER_TIME, 0);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(CLIMBING, (byte) 0);
+        this.entityData.define(LEAF_HARVESTED_POS, Optional.empty());
+        this.entityData.define(LEAF_HARVESTED_STATE, Optional.empty());
+        this.entityData.define(HAS_LEAF, false);
+        this.entityData.define(QUEEN, false);
+        this.entityData.define(ATTACHED_FACE, Direction.DOWN);
+        this.entityData.define(ANT_SCALE, 1.0F);
+        this.entityData.define(ANGER_TIME, 0);
     }
 
     @Nullable
-    public ILivingEntityData onInitialSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason reason, @Nullable ILivingEntityData spawnDataIn, @Nullable CompoundNBT dataTag) {
-        this.setAntScale(0.75F + rand.nextFloat() * 0.3F);
-        return super.onInitialSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
+    public ILivingEntityData finalizeSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason reason, @Nullable ILivingEntityData spawnDataIn, @Nullable CompoundNBT dataTag) {
+        this.setAntScale(0.75F + random.nextFloat() * 0.3F);
+        return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
     }
 
     public float getAntScale() {
-        return this.dataManager.get(ANT_SCALE);
+        return this.entityData.get(ANT_SCALE);
     }
 
     public void setAntScale(float scale) {
-        this.dataManager.set(ANT_SCALE, scale);
+        this.entityData.set(ANT_SCALE, scale);
     }
 
 
     public BlockPos getHarvestedPos() {
-        return this.dataManager.get(LEAF_HARVESTED_POS).orElse(null);
+        return this.entityData.get(LEAF_HARVESTED_POS).orElse(null);
     }
 
     public void setLeafHarvestedPos(BlockPos harvestedPos) {
-        this.dataManager.set(LEAF_HARVESTED_POS, Optional.ofNullable(harvestedPos));
+        this.entityData.set(LEAF_HARVESTED_POS, Optional.ofNullable(harvestedPos));
     }
 
     public BlockState getHarvestedState() {
-        return this.dataManager.get(LEAF_HARVESTED_STATE).orElse(null);
+        return this.entityData.get(LEAF_HARVESTED_STATE).orElse(null);
     }
 
     public void setLeafHarvestedState(BlockState state) {
-        this.dataManager.set(LEAF_HARVESTED_STATE, Optional.ofNullable(state));
+        this.entityData.set(LEAF_HARVESTED_STATE, Optional.ofNullable(state));
     }
 
     public boolean hasLeaf() {
-        return this.dataManager.get(HAS_LEAF).booleanValue();
+        return this.entityData.get(HAS_LEAF).booleanValue();
     }
 
     public void setLeaf(boolean leaf) {
-        this.dataManager.set(HAS_LEAF, Boolean.valueOf(leaf));
+        this.entityData.set(HAS_LEAF, Boolean.valueOf(leaf));
     }
 
     public boolean isQueen() {
-        return this.dataManager.get(QUEEN).booleanValue();
+        return this.entityData.get(QUEEN).booleanValue();
     }
 
     public void setQueen(boolean queen) {
@@ -462,12 +462,12 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
             this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(6.0D);
             this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(2.0D);
         }
-        this.dataManager.set(QUEEN, Boolean.valueOf(queen));
+        this.entityData.set(QUEEN, Boolean.valueOf(queen));
     }
 
-    public void readAdditional(CompoundNBT compound) {
-        super.readAdditional(compound);
-        this.dataManager.set(ATTACHED_FACE, Direction.byIndex(compound.getByte("AttachFace")));
+    public void readAdditionalSaveData(CompoundNBT compound) {
+        super.readAdditionalSaveData(compound);
+        this.entityData.set(ATTACHED_FACE, Direction.from3DDataValue(compound.getByte("AttachFace")));
         this.setLeaf(compound.getBoolean("Leaf"));
         this.setQueen(compound.getBoolean("Queen"));
         this.setAntScale(compound.getFloat("AntScale"));
@@ -489,15 +489,15 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
             int i = compound.getInt("HLPX");
             int j = compound.getInt("HLPY");
             int k = compound.getInt("HLPZ");
-            this.dataManager.set(LEAF_HARVESTED_POS, Optional.of(new BlockPos(i, j, k)));
+            this.entityData.set(LEAF_HARVESTED_POS, Optional.of(new BlockPos(i, j, k)));
         } else {
-            this.dataManager.set(LEAF_HARVESTED_POS, Optional.empty());
+            this.entityData.set(LEAF_HARVESTED_POS, Optional.empty());
         }
     }
 
-    public void writeAdditional(CompoundNBT compound) {
-        super.writeAdditional(compound);
-        compound.putByte("AttachFace", (byte) this.dataManager.get(ATTACHED_FACE).getIndex());
+    public void addAdditionalSaveData(CompoundNBT compound) {
+        super.addAdditionalSaveData(compound);
+        compound.putByte("AttachFace", (byte) this.entityData.get(ATTACHED_FACE).get3DDataValue());
         compound.putBoolean("Leaf", this.hasLeaf());
         compound.putBoolean("Queen", this.isQueen());
         compound.putFloat("AntScale", this.getAntScale());
@@ -527,13 +527,13 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
         if (this.hivePos == null) {
             return false;
         } else {
-            TileEntity tileentity = this.world.getTileEntity(this.hivePos);
+            TileEntity tileentity = this.level.getBlockEntity(this.hivePos);
             return tileentity instanceof TileEntityLeafcutterAnthill && ((TileEntityLeafcutterAnthill) tileentity).isNearFire();
         }
     }
 
     private boolean doesHiveHaveSpace(BlockPos pos) {
-        TileEntity tileentity = this.world.getTileEntity(pos);
+        TileEntity tileentity = this.level.getBlockEntity(pos);
         if (tileentity instanceof TileEntityLeafcutterAnthill) {
             return !((TileEntityLeafcutterAnthill) tileentity).isFullOfAnts();
         } else {
@@ -579,7 +579,7 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
 
     @Nullable
     @Override
-    public AgeableEntity createChild(ServerWorld serverWorld, AgeableEntity ageableEntity) {
+    public AgeableEntity getBreedOffspring(ServerWorld serverWorld, AgeableEntity ageableEntity) {
         return null;
     }
 
@@ -588,18 +588,18 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
     }
 
     @Override
-    public void func_233629_a_(LivingEntity p_233629_1_, boolean p_233629_2_) {
-        p_233629_1_.prevLimbSwingAmount = p_233629_1_.limbSwingAmount;
-        double d0 = p_233629_1_.getPosX() - p_233629_1_.prevPosX;
-        double d1 = (p_233629_1_.getPosY() - p_233629_1_.prevPosY) * 2.0F;
-        double d2 = p_233629_1_.getPosZ() - p_233629_1_.prevPosZ;
+    public void calculateEntityAnimation(LivingEntity p_233629_1_, boolean p_233629_2_) {
+        p_233629_1_.animationSpeedOld = p_233629_1_.animationSpeed;
+        double d0 = p_233629_1_.getX() - p_233629_1_.xo;
+        double d1 = (p_233629_1_.getY() - p_233629_1_.yo) * 2.0F;
+        double d2 = p_233629_1_.getZ() - p_233629_1_.zo;
         float f = MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2) * 4.0F;
         if (f > 1.0F) {
             f = 1.0F;
         }
 
-        p_233629_1_.limbSwingAmount += (f - p_233629_1_.limbSwingAmount) * 0.4F;
-        p_233629_1_.limbSwing += p_233629_1_.limbSwingAmount;
+        p_233629_1_.animationSpeed += (f - p_233629_1_.animationSpeed) * 0.4F;
+        p_233629_1_.animationPosition += p_233629_1_.animationSpeed;
     }
 
     @Override
@@ -627,7 +627,7 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
         animationTick = tick;
     }
 
-    public boolean attackEntityAsMob(Entity entityIn) {
+    public boolean doHurtTarget(Entity entityIn) {
         this.setAnimation(ANIMATION_BITE);
         return true;
     }
@@ -642,25 +642,25 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
         }
 
         @Override
-        public boolean shouldExecute() {
+        public boolean canUse() {
             if(EntityLeafcutterAnt.this.stayOutOfHiveCountdown > 0){
                 return false;
             }
             if (EntityLeafcutterAnt.this.hasLeaf() || EntityLeafcutterAnt.this.isQueen()) {
                 searchCooldown--;
                 BlockPos hive = EntityLeafcutterAnt.this.hivePos;
-                if (hive != null && EntityLeafcutterAnt.this.world.getTileEntity(hive) instanceof TileEntityLeafcutterAnthill) {
+                if (hive != null && EntityLeafcutterAnt.this.level.getBlockEntity(hive) instanceof TileEntityLeafcutterAnthill) {
                     hivePos = hive;
                     return true;
                 }
                 if (searchCooldown <= 0) {
                     searchCooldown = 400;
-                    PointOfInterestManager pointofinterestmanager = ((ServerWorld) world).getPointOfInterestManager();
-                    Stream<BlockPos> stream = pointofinterestmanager.findAll(AMPointOfInterestRegistry.LEAFCUTTER_ANT_HILL.getPredicate(), Predicates.alwaysTrue(), EntityLeafcutterAnt.this.getPosition(), 100, PointOfInterestManager.Status.ANY);
+                    PointOfInterestManager pointofinterestmanager = ((ServerWorld) level).getPoiManager();
+                    Stream<BlockPos> stream = pointofinterestmanager.findAll(AMPointOfInterestRegistry.LEAFCUTTER_ANT_HILL.getPredicate(), Predicates.alwaysTrue(), EntityLeafcutterAnt.this.blockPosition(), 100, PointOfInterestManager.Status.ANY);
                     List<BlockPos> listOfHives = stream.collect(Collectors.toList());
                     BlockPos ret = null;
                     for (BlockPos pos : listOfHives) {
-                        if (ret == null || pos.distanceSq(EntityLeafcutterAnt.this.getPosition()) < ret.distanceSq(EntityLeafcutterAnt.this.getPosition())) {
+                        if (ret == null || pos.distSqr(EntityLeafcutterAnt.this.blockPosition()) < ret.distSqr(EntityLeafcutterAnt.this.blockPosition())) {
                             ret = pos;
                         }
                     }
@@ -672,20 +672,20 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
             return false;
         }
 
-        public boolean shouldContinueExecuting() {
-            return hivePos != null && EntityLeafcutterAnt.this.getDistanceSq(Vector3d.copyCenteredWithVerticalOffset(hivePos, 1)) > 1F;
+        public boolean canContinueToUse() {
+            return hivePos != null && EntityLeafcutterAnt.this.distanceToSqr(Vector3d.upFromBottomCenterOf(hivePos, 1)) > 1F;
         }
 
-        public void resetTask() {
+        public void stop() {
             this.hivePos = null;
             this.searchCooldown = 20;
             this.approachTime = 0;
         }
 
         public void tick() {
-            double dist = EntityLeafcutterAnt.this.getDistanceSq(Vector3d.copyCenteredWithVerticalOffset(hivePos, 1));
-            if (dist < 1.2F && EntityLeafcutterAnt.this.getPositionUnderneath().equals(hivePos)) {
-                TileEntity tileentity = EntityLeafcutterAnt.this.world.getTileEntity(hivePos);
+            double dist = EntityLeafcutterAnt.this.distanceToSqr(Vector3d.upFromBottomCenterOf(hivePos, 1));
+            if (dist < 1.2F && EntityLeafcutterAnt.this.getBlockPosBelowThatAffectsMyMovement().equals(hivePos)) {
+                TileEntity tileentity = EntityLeafcutterAnt.this.level.getBlockEntity(hivePos);
                 if (tileentity instanceof TileEntityLeafcutterAnthill) {
                     TileEntityLeafcutterAnthill beehivetileentity = (TileEntityLeafcutterAnthill) tileentity;
                     beehivetileentity.tryEnterHive(EntityLeafcutterAnt.this, EntityLeafcutterAnt.this.hasLeaf());
@@ -693,23 +693,23 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
             }
             if (dist < 16) {
                 approachTime++;
-                if(dist < (approachTime < 200 ? 2 : 10) && EntityLeafcutterAnt.this.getPosY() >= hivePos.getY()){
+                if(dist < (approachTime < 200 ? 2 : 10) && EntityLeafcutterAnt.this.getY() >= hivePos.getY()){
                     if(EntityLeafcutterAnt.this.getAttachmentFacing() != Direction.DOWN){
-                        EntityLeafcutterAnt.this.setMotion(EntityLeafcutterAnt.this.getMotion().add(0, 0.1, 0));
+                        EntityLeafcutterAnt.this.setDeltaMovement(EntityLeafcutterAnt.this.getDeltaMovement().add(0, 0.1, 0));
                     }
-                   EntityLeafcutterAnt.this.getMoveHelper().setMoveTo((double) hivePos.getX() + 0.5F, (double) hivePos.getY() + 1.5F, (double) hivePos.getZ() + 0.5F, 1.0D);
+                   EntityLeafcutterAnt.this.getMoveControl().setWantedPosition((double) hivePos.getX() + 0.5F, (double) hivePos.getY() + 1.5F, (double) hivePos.getZ() + 0.5F, 1.0D);
                 }
-                EntityLeafcutterAnt.this.navigator.resetSearchDepthMultiplier();
-                EntityLeafcutterAnt.this.navigator.tryMoveToXYZ((double) hivePos.getX() + 0.5F, (double) hivePos.getY() + 1.6F, (double) hivePos.getZ() + 0.5F, 1.0D);
+                EntityLeafcutterAnt.this.navigation.resetMaxVisitedNodesMultiplier();
+                EntityLeafcutterAnt.this.navigation.moveTo((double) hivePos.getX() + 0.5F, (double) hivePos.getY() + 1.6F, (double) hivePos.getZ() + 0.5F, 1.0D);
             } else {
                 startMovingToFar(this.hivePos);
             }
         }
 
         private boolean startMovingToFar(BlockPos pos) {
-            EntityLeafcutterAnt.this.navigator.setSearchDepthMultiplier(10.0F);
-            EntityLeafcutterAnt.this.navigator.tryMoveToXYZ(pos.getX(), pos.getY(), pos.getZ(), 1.0D);
-            return EntityLeafcutterAnt.this.navigator.getPath() != null && EntityLeafcutterAnt.this.navigator.getPath().reachesTarget();
+            EntityLeafcutterAnt.this.navigation.setMaxVisitedNodesMultiplier(10.0F);
+            EntityLeafcutterAnt.this.navigation.moveTo(pos.getX(), pos.getY(), pos.getZ(), 1.0D);
+            return EntityLeafcutterAnt.this.navigation.getPath() != null && EntityLeafcutterAnt.this.navigation.getPath().canReach();
         }
 
     }
@@ -717,19 +717,19 @@ public class EntityLeafcutterAnt extends AnimalEntity implements IAngerable, IAn
     class AngerGoal extends HurtByTargetGoal {
         AngerGoal(EntityLeafcutterAnt beeIn) {
             super(beeIn);
-            this.setCallsForHelp(EntityLeafcutterAnt.class);
+            this.setAlertOthers(EntityLeafcutterAnt.class);
         }
 
         /**
          * Returns whether an in-progress EntityAIBase should continue executing
          */
-        public boolean shouldContinueExecuting() {
-            return EntityLeafcutterAnt.this.isAngry() && super.shouldContinueExecuting();
+        public boolean canContinueToUse() {
+            return EntityLeafcutterAnt.this.isAngry() && super.canContinueToUse();
         }
 
-        protected void setAttackTarget(MobEntity mobIn, LivingEntity targetIn) {
-            if (mobIn instanceof EntityLeafcutterAnt && this.goalOwner.canEntityBeSeen(targetIn)) {
-                mobIn.setAttackTarget(targetIn);
+        protected void alertOther(MobEntity mobIn, LivingEntity targetIn) {
+            if (mobIn instanceof EntityLeafcutterAnt && this.mob.canSee(targetIn)) {
+                mobIn.setTarget(targetIn);
             }
 
         }

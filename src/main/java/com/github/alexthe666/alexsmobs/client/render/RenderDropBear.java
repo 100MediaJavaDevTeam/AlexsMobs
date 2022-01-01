@@ -21,11 +21,11 @@ public class RenderDropBear extends MobRenderer<EntityDropBear, ModelDropBear> {
         this.addLayer(new EyeLayer(this));
     }
 
-    protected void preRenderCallback(EntityDropBear entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityDropBear entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
     }
 
 
-    public ResourceLocation getEntityTexture(EntityDropBear entity) {
+    public ResourceLocation getTextureLocation(EntityDropBear entity) {
         return TEXTURE;
     }
 
@@ -36,8 +36,8 @@ public class RenderDropBear extends MobRenderer<EntityDropBear, ModelDropBear> {
         }
 
         public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityDropBear entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
-            IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.getEyes(TEXTURE_EYES));
-            this.getEntityModel().render(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getPackedOverlay(entitylivingbaseIn, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
+            IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.eyes(TEXTURE_EYES));
+            this.getParentModel().renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getOverlayCoords(entitylivingbaseIn, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
 
         }
     }

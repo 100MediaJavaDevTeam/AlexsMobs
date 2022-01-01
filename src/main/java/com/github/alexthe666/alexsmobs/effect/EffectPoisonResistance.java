@@ -14,17 +14,17 @@ public class EffectPoisonResistance extends Effect {
 
     }
 
-    public void performEffect(LivingEntity LivingEntityIn, int amplifier) {
-        if(LivingEntityIn.isPotionActive(Effects.POISON)){
-            LivingEntityIn.removePotionEffect(Effects.POISON);
+    public void applyEffectTick(LivingEntity LivingEntityIn, int amplifier) {
+        if(LivingEntityIn.hasEffect(Effects.POISON)){
+            LivingEntityIn.removeEffect(Effects.POISON);
         }
     }
 
-    public boolean isReady(int duration, int amplifier) {
+    public boolean isDurationEffectTick(int duration, int amplifier) {
         return duration > 0;
     }
 
-    public String getName() {
+    public String getDescriptionId() {
         return "alexsmobs.potion.poison_resistance";
     }
 

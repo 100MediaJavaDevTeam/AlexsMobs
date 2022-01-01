@@ -18,12 +18,12 @@ public class SemiAquaticAIRandomSwimming extends RandomWalkingGoal {
         super(creature, speed, chance, false);
     }
 
-    public boolean shouldExecute() {
-        if (this.creature.isBeingRidden() || ((ISemiAquatic)creature).shouldStopMoving() || creature.getAttackTarget() != null || !this.creature.isInWater() && !this.creature.isInLava() && this.creature instanceof ISemiAquatic && !((ISemiAquatic) this.creature).shouldEnterWater()) {
+    public boolean canUse() {
+        if (this.mob.isVehicle() || ((ISemiAquatic)mob).shouldStopMoving() || mob.getTarget() != null || !this.mob.isInWater() && !this.mob.isInLava() && this.mob instanceof ISemiAquatic && !((ISemiAquatic) this.mob).shouldEnterWater()) {
             return false;
         } else {
-            if (!this.mustUpdate) {
-                if (this.creature.getRNG().nextInt(this.executionChance) != 0) {
+            if (!this.forceTrigger) {
+                if (this.mob.getRandom().nextInt(this.interval) != 0) {
                     return false;
                 }
             }
@@ -31,10 +31,10 @@ public class SemiAquaticAIRandomSwimming extends RandomWalkingGoal {
             if (vector3d == null) {
                 return false;
             } else {
-                this.x = vector3d.x;
-                this.y = vector3d.y;
-                this.z = vector3d.z;
-                this.mustUpdate = false;
+                this.wantedX = vector3d.x;
+                this.wantedY = vector3d.y;
+                this.wantedZ = vector3d.z;
+                this.forceTrigger = false;
                 return true;
             }
         }
@@ -42,38 +42,38 @@ public class SemiAquaticAIRandomSwimming extends RandomWalkingGoal {
 
     @Nullable
     protected Vector3d getPosition() {
-        if(this.creature.detachHome() && this.creature.getDistanceSq(Vector3d.copyCentered(this.creature.getHomePosition())) > this.creature.getMaximumHomeDistance() * this.creature.getMaximumHomeDistance()){
-            return RandomPositionGenerator.findRandomTargetBlockTowards(this.creature, 7, 3, Vector3d.copyCenteredHorizontally(this.creature.getHomePosition()));
+        if(this.mob.hasRestriction() && this.mob.distanceToSqr(Vector3d.atCenterOf(this.mob.getRestrictCenter())) > this.mob.getRestrictRadius() * this.mob.getRestrictRadius()){
+            return RandomPositionGenerator.getPosTowards(this.mob, 7, 3, Vector3d.atBottomCenterOf(this.mob.getRestrictCenter()));
         }
-        if(this.creature.getRNG().nextFloat() < 0.3F){
-            Vector3d vector3d = findSurfaceTarget(this.creature, 15, 7);
+        if(this.mob.getRandom().nextFloat() < 0.3F){
+            Vector3d vector3d = findSurfaceTarget(this.mob, 15, 7);
             if(vector3d != null){
                 return vector3d;
             }
         }
-        Vector3d vector3d = RandomPositionGenerator.findRandomTarget(this.creature, 7, 3);
+        Vector3d vector3d = RandomPositionGenerator.getPos(this.mob, 7, 3);
 
-        for(int i = 0; vector3d != null && !this.creature.world.getFluidState(new BlockPos(vector3d)).isTagged(FluidTags.LAVA) && !this.creature.world.getBlockState(new BlockPos(vector3d)).allowsMovement(this.creature.world, new BlockPos(vector3d), PathType.WATER) && i++ < 15; vector3d = RandomPositionGenerator.findRandomTarget(this.creature, 10, 7)) {
+        for(int i = 0; vector3d != null && !this.mob.level.getFluidState(new BlockPos(vector3d)).is(FluidTags.LAVA) && !this.mob.level.getBlockState(new BlockPos(vector3d)).isPathfindable(this.mob.level, new BlockPos(vector3d), PathType.WATER) && i++ < 15; vector3d = RandomPositionGenerator.getPos(this.mob, 10, 7)) {
         }
 
         return vector3d;
     }
 
     private boolean canJumpTo(BlockPos pos, int dx, int dz, int scale) {
-        BlockPos blockpos = pos.add(dx * scale, 0, dz * scale);
-        return this.creature.world.getFluidState(blockpos).isTagged(FluidTags.LAVA) || this.creature.world.getFluidState(blockpos).isTagged(FluidTags.WATER) && !this.creature.world.getBlockState(blockpos).getMaterial().blocksMovement();
+        BlockPos blockpos = pos.offset(dx * scale, 0, dz * scale);
+        return this.mob.level.getFluidState(blockpos).is(FluidTags.LAVA) || this.mob.level.getFluidState(blockpos).is(FluidTags.WATER) && !this.mob.level.getBlockState(blockpos).getMaterial().blocksMotion();
     }
 
     private boolean isAirAbove(BlockPos pos, int dx, int dz, int scale) {
-        return this.creature.world.getBlockState(pos.add(dx * scale, 1, dz * scale)).isAir() && this.creature.world.getBlockState(pos.add(dx * scale, 2, dz * scale)).isAir();
+        return this.mob.level.getBlockState(pos.offset(dx * scale, 1, dz * scale)).isAir() && this.mob.level.getBlockState(pos.offset(dx * scale, 2, dz * scale)).isAir();
     }
 
     protected Vector3d findSurfaceTarget(CreatureEntity creature, int i, int i1) {
-        BlockPos upPos = creature.getPosition();
-        while(creature.world.getFluidState(upPos).isTagged(FluidTags.WATER) || creature.world.getFluidState(upPos).isTagged(FluidTags.LAVA)){
-            upPos = upPos.up();
+        BlockPos upPos = creature.blockPosition();
+        while(creature.level.getFluidState(upPos).is(FluidTags.WATER) || creature.level.getFluidState(upPos).is(FluidTags.LAVA)){
+            upPos = upPos.above();
         }
-        if(isAirAbove(upPos.down(), 0, 0, 0) && canJumpTo(upPos.down(), 0, 0, 0)){
+        if(isAirAbove(upPos.below(), 0, 0, 0) && canJumpTo(upPos.below(), 0, 0, 0)){
             return new Vector3d(upPos.getX() + 0.5F, upPos.getY() - 1F, upPos.getZ() + 0.5F);
         }
         return null;

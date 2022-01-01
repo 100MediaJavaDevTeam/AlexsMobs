@@ -13,7 +13,7 @@ public class RenderCentipedeBody extends MobRenderer<EntityCentipedeBody, ModelC
         super(renderManagerIn, new ModelCentipedeBody(), 0.5F);
     }
 
-    public ResourceLocation getEntityTexture(EntityCentipedeBody entity) {
+    public ResourceLocation getTextureLocation(EntityCentipedeBody entity) {
         return TEXTURE;
     }
 }

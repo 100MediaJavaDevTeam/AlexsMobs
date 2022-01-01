@@ -10,7 +10,7 @@ public class EntityCentipedeTail extends EntityCentipedeBody {
         super(type, worldIn);
     }
 
-    public CreatureAttribute getCreatureAttribute() {
+    public CreatureAttribute getMobType() {
         return CreatureAttribute.ARTHROPOD;
     }
 

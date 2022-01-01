@@ -15,7 +15,7 @@ public class RenderCentipedeHead extends MobRenderer<EntityCentipedeHead, ModelC
         this.addLayer(new LayerCentipedeHeadEyes(this));
     }
 
-    public ResourceLocation getEntityTexture(EntityCentipedeHead entity) {
+    public ResourceLocation getTextureLocation(EntityCentipedeHead entity) {
         return TEXTURE;
     }
 }

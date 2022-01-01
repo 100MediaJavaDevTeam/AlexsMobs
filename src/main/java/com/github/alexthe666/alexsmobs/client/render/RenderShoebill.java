@@ -14,10 +14,10 @@ public class RenderShoebill extends MobRenderer<EntityShoebill, ModelShoebill> {
         super(renderManagerIn, new ModelShoebill(), 0.3F);
     }
 
-    protected void preRenderCallback(EntityShoebill entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityShoebill entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
     }
 
-    public ResourceLocation getEntityTexture(EntityShoebill entity) {
+    public ResourceLocation getTextureLocation(EntityShoebill entity) {
         return TEXTURE;
     }
 }

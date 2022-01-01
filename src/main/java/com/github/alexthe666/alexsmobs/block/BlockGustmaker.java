@@ -26,15 +26,15 @@ public class BlockGustmaker extends Block {
     public static final BooleanProperty TRIGGERED = BlockStateProperties.TRIGGERED;
 
     public BlockGustmaker() {
-        super(AbstractBlock.Properties.create(Material.ROCK).setRequiresTool().hardnessAndResistance(4.5F));
-        this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH).with(TRIGGERED, Boolean.valueOf(false)));
+        super(AbstractBlock.Properties.of(Material.STONE).requiresCorrectToolForDrops().strength(4.5F));
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(TRIGGERED, Boolean.valueOf(false)));
         this.setRegistryName("alexsmobs:gustmaker");
     }
 
     public static Vector3d getDispensePosition(BlockPos coords, Direction dir) {
-        double d0 = coords.getX() + 0.5D + 0.7D * (double) dir.getXOffset();
-        double d1 = coords.getY() + 0.15D + 0.7D * (double) dir.getYOffset();
-        double d2 = coords.getZ() + 0.5D + 0.7D * (double) dir.getZOffset();
+        double d0 = coords.getX() + 0.5D + 0.7D * (double) dir.getStepX();
+        double d1 = coords.getY() + 0.15D + 0.7D * (double) dir.getStepY();
+        double d2 = coords.getZ() + 0.5D + 0.7D * (double) dir.getStepZ();
         return new Vector3d(d0, d1, d2);
     }
 
@@ -47,43 +47,43 @@ public class BlockGustmaker extends Block {
     }
 
     public void tickGustmaker(BlockState state, World worldIn, BlockPos pos, boolean tickOff) {
-        boolean flag = worldIn.isBlockPowered(pos) || worldIn.isBlockPowered(pos.down()) || worldIn.isBlockPowered(pos.up());
-        boolean flag1 = state.get(TRIGGERED);
+        boolean flag = worldIn.hasNeighborSignal(pos) || worldIn.hasNeighborSignal(pos.below()) || worldIn.hasNeighborSignal(pos.above());
+        boolean flag1 = state.getValue(TRIGGERED);
         if (flag && !flag1) {
-            Vector3d dispensePosition = getDispensePosition(pos, state.get(FACING));
-            Vector3d gustDir = Vector3d.copy(state.get(FACING).getDirectionVec()).mul(0.1, 0.1, 0.1);
+            Vector3d dispensePosition = getDispensePosition(pos, state.getValue(FACING));
+            Vector3d gustDir = Vector3d.atLowerCornerOf(state.getValue(FACING).getNormal()).multiply(0.1, 0.1, 0.1);
             EntityGust gust = new EntityGust(worldIn);
             gust.setGustDir((float) gustDir.x, (float) gustDir.y, (float) gustDir.z);
-            gust.setPosition(dispensePosition.x, dispensePosition.y, dispensePosition.z);
-            if(state.get(FACING).getAxis() == Direction.Axis.Y){
+            gust.setPos(dispensePosition.x, dispensePosition.y, dispensePosition.z);
+            if(state.getValue(FACING).getAxis() == Direction.Axis.Y){
                 gust.setVertical(true);
             }
-            if (!worldIn.isRemote) {
-                worldIn.addEntity(gust);
+            if (!worldIn.isClientSide) {
+                worldIn.addFreshEntity(gust);
             }
-            worldIn.setBlockState(pos, state.with(TRIGGERED, Boolean.valueOf(true)), 2);
-            worldIn.getPendingBlockTicks().scheduleTick(pos, this, 20);
+            worldIn.setBlock(pos, state.setValue(TRIGGERED, Boolean.valueOf(true)), 2);
+            worldIn.getBlockTicks().scheduleTick(pos, this, 20);
         } else if (flag1) {
             if (tickOff) {
-                worldIn.getPendingBlockTicks().scheduleTick(pos, this, 20);
-                worldIn.setBlockState(pos, state.with(TRIGGERED, Boolean.valueOf(false)), 2);
+                worldIn.getBlockTicks().scheduleTick(pos, this, 20);
+                worldIn.setBlock(pos, state.setValue(TRIGGERED, Boolean.valueOf(false)), 2);
             }
         }
     }
 
     public BlockState getStateForPlacement(BlockItemUseContext context) {
-        return this.getDefaultState().with(FACING, context.getNearestLookingDirection().getOpposite());
+        return this.defaultBlockState().setValue(FACING, context.getNearestLookingDirection().getOpposite());
     }
 
     public BlockState rotate(BlockState state, Rotation rot) {
-        return state.with(FACING, rot.rotate(state.get(FACING)));
+        return state.setValue(FACING, rot.rotate(state.getValue(FACING)));
     }
 
     public BlockState mirror(BlockState state, Mirror mirrorIn) {
-        return state.rotate(mirrorIn.toRotation(state.get(FACING)));
+        return state.rotate(mirrorIn.getRotation(state.getValue(FACING)));
     }
 
-    protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> builder) {
         builder.add(FACING, TRIGGERED);
     }
 }

@@ -22,7 +22,7 @@ public class RenderVoidWormHead extends MobRenderer<EntityVoidWorm, ModelVoidWor
         return worm.getPortalTicks() <= 0 && super.shouldRender(worm, camera, camX, camY, camZ);
     }
 
-    public ResourceLocation getEntityTexture(EntityVoidWorm entity) {
+    public ResourceLocation getTextureLocation(EntityVoidWorm entity) {
         return TEXTURE;
     }
 }

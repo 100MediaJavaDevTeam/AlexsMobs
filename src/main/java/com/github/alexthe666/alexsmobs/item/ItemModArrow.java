@@ -17,7 +17,7 @@ public class ItemModArrow extends ArrowItem {
     public AbstractArrowEntity createArrow(World worldIn, ItemStack stack, LivingEntity shooter) {
         if(this == AMItemRegistry.SHARK_TOOTH_ARROW){
             ArrowEntity arrowentity = new EntitySharkToothArrow(worldIn, shooter);
-            arrowentity.setPotionEffect(stack);
+            arrowentity.setEffectsFromItem(stack);
             return arrowentity;
         }else {
             return super.createArrow(worldIn, stack, shooter);

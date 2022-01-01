@@ -20,19 +20,19 @@ public class AnimalAIFollowParentRanged  extends Goal {
         this.minDist = minDist;
     }
 
-    public boolean shouldExecute() {
-        if (this.childAnimal.getGrowingAge() >= 0) {
+    public boolean canUse() {
+        if (this.childAnimal.getAge() >= 0) {
             return false;
         } else {
-            List<AnimalEntity> lvt_1_1_ = this.childAnimal.world.getEntitiesWithinAABB(this.childAnimal.getClass(), this.childAnimal.getBoundingBox().grow(range, range * 0.5D, range));
+            List<AnimalEntity> lvt_1_1_ = this.childAnimal.level.getEntitiesOfClass(this.childAnimal.getClass(), this.childAnimal.getBoundingBox().inflate(range, range * 0.5D, range));
             AnimalEntity lvt_2_1_ = null;
             double lvt_3_1_ = 1.7976931348623157E308D;
             Iterator var5 = lvt_1_1_.iterator();
 
             while(var5.hasNext()) {
                 AnimalEntity lvt_6_1_ = (AnimalEntity)var5.next();
-                if (lvt_6_1_.getGrowingAge() >= 0) {
-                    double lvt_7_1_ = this.childAnimal.getDistanceSq(lvt_6_1_);
+                if (lvt_6_1_.getAge() >= 0) {
+                    double lvt_7_1_ = this.childAnimal.distanceToSqr(lvt_6_1_);
                     if (lvt_7_1_ <= lvt_3_1_) {
                         lvt_3_1_ = lvt_7_1_;
                         lvt_2_1_ = lvt_6_1_;
@@ -51,29 +51,29 @@ public class AnimalAIFollowParentRanged  extends Goal {
         }
     }
 
-    public boolean shouldContinueExecuting() {
-        if (this.childAnimal.getGrowingAge() >= 0) {
+    public boolean canContinueToUse() {
+        if (this.childAnimal.getAge() >= 0) {
             return false;
         } else if (!this.parentAnimal.isAlive()) {
             return false;
         } else {
-            double lvt_1_1_ = this.childAnimal.getDistanceSq(this.parentAnimal);
+            double lvt_1_1_ = this.childAnimal.distanceToSqr(this.parentAnimal);
             return lvt_1_1_ >= minDist * minDist && lvt_1_1_ <= range * range;
         }
     }
 
-    public void startExecuting() {
+    public void start() {
         this.delayCounter = 0;
     }
 
-    public void resetTask() {
+    public void stop() {
         this.parentAnimal = null;
     }
 
     public void tick() {
         if (--this.delayCounter <= 0) {
             this.delayCounter = 10;
-            this.childAnimal.getNavigator().tryMoveToEntityLiving(this.parentAnimal, this.moveSpeed);
+            this.childAnimal.getNavigation().moveTo(this.parentAnimal, this.moveSpeed);
         }
     }
 }

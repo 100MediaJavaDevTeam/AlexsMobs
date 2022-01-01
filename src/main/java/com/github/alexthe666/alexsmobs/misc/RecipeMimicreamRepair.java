@@ -30,10 +30,10 @@ public class RecipeMimicreamRepair extends SpecialRecipe {
         ItemStack damageableStack = ItemStack.EMPTY;
         int mimicreamCount = 0;
 
-        for (int j = 0; j < inv.getSizeInventory(); ++j) {
-            ItemStack itemstack1 = inv.getStackInSlot(j);
+        for (int j = 0; j < inv.getContainerSize(); ++j) {
+            ItemStack itemstack1 = inv.getItem(j);
             if (!itemstack1.isEmpty()) {
-                if (itemstack1.isDamageable() && !isBlacklisted(itemstack1)) {
+                if (itemstack1.isDamageableItem() && !isBlacklisted(itemstack1)) {
                     damageableStack = itemstack1;
                 } else {
                     if (itemstack1.getItem() == AMItemRegistry.MIMICREAM) {
@@ -54,14 +54,14 @@ public class RecipeMimicreamRepair extends SpecialRecipe {
     /**
      * Returns an Item that is the result of this recipe
      */
-    public ItemStack getCraftingResult(CraftingInventory inv) {
+    public ItemStack assemble(CraftingInventory inv) {
         ItemStack damageableStack = ItemStack.EMPTY;
         int mimicreamCount = 0;
 
-        for (int j = 0; j < inv.getSizeInventory(); ++j) {
-            ItemStack itemstack1 = inv.getStackInSlot(j);
+        for (int j = 0; j < inv.getContainerSize(); ++j) {
+            ItemStack itemstack1 = inv.getItem(j);
             if (!itemstack1.isEmpty()) {
-                if (itemstack1.isDamageable() && !isBlacklisted(itemstack1)) {
+                if (itemstack1.isDamageableItem() && !isBlacklisted(itemstack1)) {
                     damageableStack = itemstack1;
                 } else {
                     if (itemstack1.getItem() == AMItemRegistry.MIMICREAM) {
@@ -79,14 +79,14 @@ public class RecipeMimicreamRepair extends SpecialRecipe {
             ResourceLocation mendingName = Registry.ENCHANTMENT.getKey(Enchantments.MENDING);
             for (int i = 0; i < oldNBTList.size(); ++i) {
                 CompoundNBT compoundnbt2 = oldNBTList.getCompound(i);
-                ResourceLocation resourcelocation1 = ResourceLocation.tryCreate(compoundnbt2.getString("id"));
+                ResourceLocation resourcelocation1 = ResourceLocation.tryParse(compoundnbt2.getString("id"));
                 if (resourcelocation1 == null || !resourcelocation1.equals(mendingName)) {
                     newNBTList.add(compoundnbt2);
                 }
             }
             compoundnbt.put("Enchantments", newNBTList);
             itemstack2.setTag(compoundnbt);
-            itemstack2.setDamage(itemstack2.getMaxDamage());
+            itemstack2.setDamageValue(itemstack2.getMaxDamage());
             return itemstack2;
         } else {
             return ItemStack.EMPTY;
@@ -94,13 +94,13 @@ public class RecipeMimicreamRepair extends SpecialRecipe {
     }
 
     public NonNullList<ItemStack> getRemainingItems(CraftingInventory inv) {
-        NonNullList<ItemStack> nonnulllist = NonNullList.withSize(inv.getSizeInventory(), ItemStack.EMPTY);
+        NonNullList<ItemStack> nonnulllist = NonNullList.withSize(inv.getContainerSize(), ItemStack.EMPTY);
 
         for (int i = 0; i < nonnulllist.size(); ++i) {
-            ItemStack itemstack = inv.getStackInSlot(i);
+            ItemStack itemstack = inv.getItem(i);
             if (itemstack.hasContainerItem()) {
                 nonnulllist.set(i, itemstack.getContainerItem());
-            } else if (itemstack.getItem().isDamageable()) {
+            } else if (itemstack.getItem().canBeDepleted()) {
                 ItemStack itemstack1 = itemstack.copy();
                 itemstack1.setCount(1);
                 nonnulllist.set(i, itemstack1);
@@ -118,7 +118,7 @@ public class RecipeMimicreamRepair extends SpecialRecipe {
     /**
      * Used to determine if this recipe can fit in a grid of the given width/height
      */
-    public boolean canFit(int width, int height) {
+    public boolean canCraftInDimensions(int width, int height) {
         return width >= 3 && height >= 3;
     }
 }

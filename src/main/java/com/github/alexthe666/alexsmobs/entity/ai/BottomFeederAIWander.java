@@ -29,32 +29,32 @@ public class BottomFeederAIWander extends RandomWalkingGoal {
         this.range = range;
     }
 
-    public boolean shouldExecute(){
-        if(creature instanceof ISemiAquatic && ((ISemiAquatic) creature).shouldStopMoving()){
+    public boolean canUse(){
+        if(mob instanceof ISemiAquatic && ((ISemiAquatic) mob).shouldStopMoving()){
             return false;
         }
-        executionChance = creature.isInWater() ? waterChance : landChance;
-        return super.shouldExecute();
+        interval = mob.isInWater() ? waterChance : landChance;
+        return super.canUse();
     }
 
-    public boolean shouldContinueExecuting() {
-        if(creature instanceof ISemiAquatic && ((ISemiAquatic) creature).shouldStopMoving()){
+    public boolean canContinueToUse() {
+        if(mob instanceof ISemiAquatic && ((ISemiAquatic) mob).shouldStopMoving()){
             return false;
         }
-        return super.shouldContinueExecuting();
+        return super.canContinueToUse();
     }
 
     @Nullable
     protected Vector3d getPosition() {
-        if(this.creature.isInWater()) {
+        if(this.mob.isInWater()) {
             BlockPos blockpos = null;
             Random random = new Random();
             for (int i = 0; i < 15; i++) {
-                BlockPos blockpos1 = this.creature.getPosition().add(random.nextInt(range) - range / 2, 3, random.nextInt(range) - range / 2);
-                while ((this.creature.world.isAirBlock(blockpos1) || this.creature.world.getFluidState(blockpos1).isTagged(FluidTags.WATER)) && blockpos1.getY() > 1) {
-                    blockpos1 = blockpos1.down();
+                BlockPos blockpos1 = this.mob.blockPosition().offset(random.nextInt(range) - range / 2, 3, random.nextInt(range) - range / 2);
+                while ((this.mob.level.isEmptyBlock(blockpos1) || this.mob.level.getFluidState(blockpos1).is(FluidTags.WATER)) && blockpos1.getY() > 1) {
+                    blockpos1 = blockpos1.below();
                 }
-                if (isBottomOfSeafloor(this.creature.world, blockpos1.up())) {
+                if (isBottomOfSeafloor(this.mob.level, blockpos1.above())) {
                     blockpos = blockpos1;
                 }
             }
@@ -67,6 +67,6 @@ public class BottomFeederAIWander extends RandomWalkingGoal {
     }
 
     private boolean isBottomOfSeafloor(IWorld world, BlockPos pos){
-        return world.getFluidState(pos).isTagged(FluidTags.WATER) && world.getFluidState(pos.down()).isEmpty() && world.getBlockState(pos.down()).isSolid();
+        return world.getFluidState(pos).is(FluidTags.WATER) && world.getFluidState(pos.below()).isEmpty() && world.getBlockState(pos.below()).canOcclude();
     }
 }

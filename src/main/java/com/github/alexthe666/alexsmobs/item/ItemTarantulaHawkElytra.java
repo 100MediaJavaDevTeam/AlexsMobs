@@ -27,36 +27,36 @@ public class ItemTarantulaHawkElytra extends ArmorItem {
     }
 
     public static boolean isUsable(ItemStack stack) {
-        return stack.getDamage() < stack.getMaxDamage() - 1;
+        return stack.getDamageValue() < stack.getMaxDamage() - 1;
     }
 
-    public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn) {
-        ItemStack itemstack = playerIn.getHeldItem(handIn);
-        EquipmentSlotType equipmentslottype = MobEntity.getSlotForItemStack(itemstack);
-        ItemStack itemstack1 = playerIn.getItemStackFromSlot(equipmentslottype);
+    public ActionResult<ItemStack> use(World worldIn, PlayerEntity playerIn, Hand handIn) {
+        ItemStack itemstack = playerIn.getItemInHand(handIn);
+        EquipmentSlotType equipmentslottype = MobEntity.getEquipmentSlotForItem(itemstack);
+        ItemStack itemstack1 = playerIn.getItemBySlot(equipmentslottype);
         if (itemstack1.isEmpty()) {
-            playerIn.setItemStackToSlot(equipmentslottype, itemstack.copy());
+            playerIn.setItemSlot(equipmentslottype, itemstack.copy());
             itemstack.setCount(0);
-            return ActionResult.func_233538_a_(itemstack, worldIn.isRemote());
+            return ActionResult.sidedSuccess(itemstack, worldIn.isClientSide());
         } else {
-            return ActionResult.resultFail(itemstack);
+            return ActionResult.fail(itemstack);
         }
     }
 
     @Override
     public boolean canElytraFly(ItemStack stack, net.minecraft.entity.LivingEntity entity) {
-        return ElytraItem.isUsable(stack);
+        return ElytraItem.isFlyEnabled(stack);
     }
 
     @Override
     public boolean elytraFlightTick(ItemStack stack, net.minecraft.entity.LivingEntity entity, int flightTicks) {
-        if (!entity.world.isRemote && (flightTicks + 1) % 20 == 0) {
-            stack.damageItem(1, entity, e -> e.sendBreakAnimation(net.minecraft.inventory.EquipmentSlotType.CHEST));
+        if (!entity.level.isClientSide && (flightTicks + 1) % 20 == 0) {
+            stack.hurtAndBreak(1, entity, e -> e.broadcastBreakEvent(net.minecraft.inventory.EquipmentSlotType.CHEST));
         }
         return true;
     }
 
-    public boolean getIsRepairable(ItemStack toRepair, ItemStack repair) {
+    public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair) {
         return repair.getItem() == AMItemRegistry.TARANTULA_HAWK_WING_FRAGMENT;
     }
 

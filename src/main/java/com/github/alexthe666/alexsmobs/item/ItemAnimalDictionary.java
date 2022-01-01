@@ -22,6 +22,8 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
+import net.minecraft.item.Item.Properties;
+
 public class ItemAnimalDictionary extends Item {
     public ItemAnimalDictionary(Properties properties) {
         super(properties);
@@ -30,16 +32,16 @@ public class ItemAnimalDictionary extends Item {
     private boolean usedOnEntity = false;
 
     @Override
-    public ActionResultType itemInteractionForEntity(ItemStack stack, PlayerEntity playerIn, LivingEntity target, Hand hand) {
-        ItemStack itemStackIn = playerIn.getHeldItem(hand);
+    public ActionResultType interactLivingEntity(ItemStack stack, PlayerEntity playerIn, LivingEntity target, Hand hand) {
+        ItemStack itemStackIn = playerIn.getItemInHand(hand);
         if (playerIn instanceof ServerPlayerEntity) {
             ServerPlayerEntity serverplayerentity = (ServerPlayerEntity)playerIn;
             CriteriaTriggers.CONSUME_ITEM.trigger(serverplayerentity, itemStackIn);
-            serverplayerentity.addStat(Stats.ITEM_USED.get(this));
+            serverplayerentity.awardStat(Stats.ITEM_USED.get(this));
         }
-        if (playerIn.world.isRemote && Objects.requireNonNull(target.getEntityString()).contains(AlexsMobs.MODID + ":")) {
+        if (playerIn.level.isClientSide && Objects.requireNonNull(target.getEncodeId()).contains(AlexsMobs.MODID + ":")) {
             usedOnEntity = true;
-            String id = target.getEntityString().replace(AlexsMobs.MODID + ":", "");
+            String id = target.getEncodeId().replace(AlexsMobs.MODID + ":", "");
             if(target instanceof EntityBoneSerpent || target instanceof EntityBoneSerpentPart){
                 id = "bone_serpent";
             }
@@ -54,15 +56,15 @@ public class ItemAnimalDictionary extends Item {
         return ActionResultType.PASS;
     }
 
-    public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn) {
-        ItemStack itemStackIn = playerIn.getHeldItem(handIn);
+    public ActionResult<ItemStack> use(World worldIn, PlayerEntity playerIn, Hand handIn) {
+        ItemStack itemStackIn = playerIn.getItemInHand(handIn);
         if (!usedOnEntity) {
             if (playerIn instanceof ServerPlayerEntity) {
                 ServerPlayerEntity serverplayerentity = (ServerPlayerEntity) playerIn;
                 CriteriaTriggers.CONSUME_ITEM.trigger(serverplayerentity, itemStackIn);
-                serverplayerentity.addStat(Stats.ITEM_USED.get(this));
+                serverplayerentity.awardStat(Stats.ITEM_USED.get(this));
             }
-            if (worldIn.isRemote) {
+            if (worldIn.isClientSide) {
                 AlexsMobs.PROXY.openBookGUI(itemStackIn);
             }
         }
@@ -72,7 +74,7 @@ public class ItemAnimalDictionary extends Item {
     }
 
     @Override
-    public void addInformation(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn) {
-        tooltip.add(new TranslationTextComponent("item.alexsmobs.animal_dictionary.desc").mergeStyle(TextFormatting.GRAY));
+    public void appendHoverText(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn) {
+        tooltip.add(new TranslationTextComponent("item.alexsmobs.animal_dictionary.desc").withStyle(TextFormatting.GRAY));
     }
 }

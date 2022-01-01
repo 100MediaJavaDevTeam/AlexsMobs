@@ -27,8 +27,8 @@ public class LayerElephantOverlays extends LayerRenderer<EntityElephant, ModelEl
 
     public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityElephant elephant, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
         if(elephant.isChested()){
-            IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.getEntityCutout(TEXTURE_CHEST));
-            this.getEntityModel().render(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getPackedOverlay(elephant, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
+            IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.entityCutout(TEXTURE_CHEST));
+            this.getParentModel().renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getOverlayCoords(elephant, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
         }
         DyeColor lvt_11_1_ = elephant.getColor();
         if(lvt_11_1_ != null || elephant.isTrader()) {
@@ -39,10 +39,10 @@ public class LayerElephantOverlays extends LayerRenderer<EntityElephant, ModelEl
                 lvt_12_3_ = TRADER_TEXTURE;
             }
 
-            ((ModelElephant) this.getEntityModel()).copyModelAttributesTo(this.model);
-            this.model.setRotationAngles(elephant, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
-            IVertexBuilder lvt_13_1_ = bufferIn.getBuffer(RenderType.getEntityCutoutNoCull(lvt_12_3_));
-            this.model.render(matrixStackIn, lvt_13_1_, packedLightIn, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
+            ((ModelElephant) this.getParentModel()).copyPropertiesTo(this.model);
+            this.model.setupAnim(elephant, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+            IVertexBuilder lvt_13_1_ = bufferIn.getBuffer(RenderType.entityCutoutNoCull(lvt_12_3_));
+            this.model.renderToBuffer(matrixStackIn, lvt_13_1_, packedLightIn, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
         }
     }
 }

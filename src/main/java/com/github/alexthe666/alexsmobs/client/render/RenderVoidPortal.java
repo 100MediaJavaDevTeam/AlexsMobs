@@ -28,45 +28,45 @@ public class RenderVoidPortal extends EntityRenderer<EntityVoidPortal> {
     }
 
     public void render(EntityVoidPortal entityIn, float entityYaw, float partialTicks, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn) {
-        matrixStackIn.push();
-        matrixStackIn.rotate(entityIn.getAttachmentFacing().getOpposite().getRotation());
+        matrixStackIn.pushPose();
+        matrixStackIn.mulPose(entityIn.getAttachmentFacing().getOpposite().getRotation());
         matrixStackIn.translate(0.5D, 0, 0.5D);
         ResourceLocation tex;
         if(entityIn.getLifespan() < 20){
             tex = getGrowingTexture((int) ((entityIn.getLifespan() * 0.5F) % 10));
-        }else if(entityIn.ticksExisted < 20){
-            tex = getGrowingTexture((int) ((entityIn.ticksExisted * 0.5F) % 10));
+        }else if(entityIn.tickCount < 20){
+            tex = getGrowingTexture((int) ((entityIn.tickCount * 0.5F) % 10));
         }else{
-            tex = getIdleTexture(entityIn.ticksExisted % 9);
+            tex = getIdleTexture(entityIn.tickCount % 9);
         }
         matrixStackIn.scale(2, 2, 2);
         renderArc(matrixStackIn, bufferIn, tex);
-        matrixStackIn.pop();
+        matrixStackIn.popPose();
         super.render(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
     }
 
     private void renderArc(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, ResourceLocation res) {
-        matrixStackIn.push();
+        matrixStackIn.pushPose();
 
         IVertexBuilder ivertexbuilder = bufferIn.getBuffer(AMRenderTypes.getGhost(res));
-        MatrixStack.Entry lvt_19_1_ = matrixStackIn.getLast();
-        Matrix4f lvt_20_1_ = lvt_19_1_.getMatrix();
-        Matrix3f lvt_21_1_ = lvt_19_1_.getNormal();
+        MatrixStack.Entry lvt_19_1_ = matrixStackIn.last();
+        Matrix4f lvt_20_1_ = lvt_19_1_.pose();
+        Matrix3f lvt_21_1_ = lvt_19_1_.normal();
         this.drawVertex(lvt_20_1_, lvt_21_1_, ivertexbuilder, -1, 0, -1, 0, 0, 1, 0, 1, 240);
         this.drawVertex(lvt_20_1_, lvt_21_1_, ivertexbuilder, -1, 0, 1, 0, 1, 1, 0, 1, 240);
         this.drawVertex(lvt_20_1_, lvt_21_1_, ivertexbuilder, 1, 0, 1, 1, 1, 1, 0, 1, 240);
         this.drawVertex(lvt_20_1_, lvt_21_1_, ivertexbuilder, 1, 0, -1, 1, 0, 1, 0, 1, 240);
-        matrixStackIn.pop();
+        matrixStackIn.popPose();
     }
 
     @Override
-    public ResourceLocation getEntityTexture(EntityVoidPortal entity) {
+    public ResourceLocation getTextureLocation(EntityVoidPortal entity) {
         return TEXTURE_0;
     }
 
 
     public void drawVertex(Matrix4f p_229039_1_, Matrix3f p_229039_2_, IVertexBuilder p_229039_3_, int p_229039_4_, int p_229039_5_, int p_229039_6_, float p_229039_7_, float p_229039_8_, int p_229039_9_, int p_229039_10_, int p_229039_11_, int p_229039_12_) {
-        p_229039_3_.pos(p_229039_1_, (float) p_229039_4_, (float) p_229039_5_, (float) p_229039_6_).color(255, 255, 255, 255).tex(p_229039_7_, p_229039_8_).overlay(OverlayTexture.NO_OVERLAY).lightmap(p_229039_12_).normal(p_229039_2_, (float) p_229039_9_, (float) p_229039_11_, (float) p_229039_10_).endVertex();
+        p_229039_3_.vertex(p_229039_1_, (float) p_229039_4_, (float) p_229039_5_, (float) p_229039_6_).color(255, 255, 255, 255).uv(p_229039_7_, p_229039_8_).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(p_229039_12_).normal(p_229039_2_, (float) p_229039_9_, (float) p_229039_11_, (float) p_229039_10_).endVertex();
     }
 
 

@@ -13,7 +13,7 @@ public class RenderCentipedeTail extends MobRenderer<EntityCentipedeTail, ModelC
         super(renderManagerIn, new ModelCentipedeTail(), 0.5F);
     }
 
-    public ResourceLocation getEntityTexture(EntityCentipedeTail entity) {
+    public ResourceLocation getTextureLocation(EntityCentipedeTail entity) {
         return TEXTURE;
     }
 }

@@ -17,11 +17,11 @@ public class RenderSeal extends MobRenderer<EntitySeal, ModelSeal> {
         this.addLayer(new LayerSealItem(this));
     }
 
-    protected void preRenderCallback(EntitySeal entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntitySeal entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(1.3F, 1.3F, 1.3F);
     }
 
-    public ResourceLocation getEntityTexture(EntitySeal entity) {
+    public ResourceLocation getTextureLocation(EntitySeal entity) {
         return entity.isArctic() ? TEXTURE_1 : TEXTURE_0;
     }
 }

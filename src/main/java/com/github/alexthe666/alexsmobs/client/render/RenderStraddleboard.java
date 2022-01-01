@@ -25,35 +25,35 @@ public class RenderStraddleboard extends EntityRenderer<EntityStraddleboard> {
     }
 
     @Override
-    public ResourceLocation getEntityTexture(EntityStraddleboard entity) {
+    public ResourceLocation getTextureLocation(EntityStraddleboard entity) {
         return TEXTURE;
     }
 
     @Override
     public void render(EntityStraddleboard entityIn, float entityYaw, float partialTicks, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn) {
-        matrixStackIn.push();
-        matrixStackIn.rotate(new Quaternion(Vector3f.XP, 180F, true));
-        matrixStackIn.rotate(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.prevRotationYaw, entityIn.rotationYaw)));
-        matrixStackIn.rotate(Vector3f.XP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.prevRotationPitch, entityIn.rotationPitch)));
-        matrixStackIn.push();
-        boolean lava = entityIn.isInLava() || entityIn.isBeingRidden();
+        matrixStackIn.pushPose();
+        matrixStackIn.mulPose(new Quaternion(Vector3f.XP, 180F, true));
+        matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.yRotO, entityIn.yRot)));
+        matrixStackIn.mulPose(Vector3f.XP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.xRotO, entityIn.xRot)));
+        matrixStackIn.pushPose();
+        boolean lava = entityIn.isInLava() || entityIn.isVehicle();
         float f2 = entityIn.getRockingAngle(partialTicks);
-        if (!MathHelper.epsilonEquals(f2, 0.0F)) {
-            matrixStackIn.rotate(Vector3f.ZP.rotationDegrees(entityIn.getRockingAngle(partialTicks)));
+        if (!MathHelper.equal(f2, 0.0F)) {
+            matrixStackIn.mulPose(Vector3f.ZP.rotationDegrees(entityIn.getRockingAngle(partialTicks)));
         }
         int k = entityIn.getColor();
         float r = (float)(k >> 16 & 255) / 255.0F;
         float g = (float)(k >> 8 & 255) / 255.0F;
         float b = (float)(k & 255) / 255.0F;
-        matrixStackIn.rotate(Vector3f.ZP.rotationDegrees(entityIn.prevBoardRot + partialTicks * (entityIn.boardRot - entityIn.prevBoardRot)));
+        matrixStackIn.mulPose(Vector3f.ZP.rotationDegrees(entityIn.prevBoardRot + partialTicks * (entityIn.boardRot - entityIn.prevBoardRot)));
         matrixStackIn.translate(0, -1.5F - Math.abs(entityIn.boardRot * 0.007F) - (lava ? 0.25F : 0), 0);
-        BOARD_MODEL.animateBoard(entityIn, entityIn.ticksExisted + partialTicks);
-        IVertexBuilder ivertexbuilder2 = bufferIn.getBuffer(RenderType.getEntityCutoutNoCull(TEXTURE_OVERLAY));
-        BOARD_MODEL.render(matrixStackIn, ivertexbuilder2, packedLightIn, NO_OVERLAY, r, g, b, 1.0F);
-        IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.getEntityCutoutNoCull(TEXTURE));
-        BOARD_MODEL.render(matrixStackIn, ivertexbuilder, packedLightIn, NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
-        matrixStackIn.pop();
-        matrixStackIn.pop();
+        BOARD_MODEL.animateBoard(entityIn, entityIn.tickCount + partialTicks);
+        IVertexBuilder ivertexbuilder2 = bufferIn.getBuffer(RenderType.entityCutoutNoCull(TEXTURE_OVERLAY));
+        BOARD_MODEL.renderToBuffer(matrixStackIn, ivertexbuilder2, packedLightIn, NO_OVERLAY, r, g, b, 1.0F);
+        IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
+        BOARD_MODEL.renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
+        matrixStackIn.popPose();
+        matrixStackIn.popPose();
 
 
     }

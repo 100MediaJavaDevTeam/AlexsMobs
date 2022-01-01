@@ -14,12 +14,12 @@ public class RenderGazelle extends MobRenderer<EntityGazelle, ModelGazelle> {
         super(renderManagerIn, new ModelGazelle(), 0.4F);
     }
 
-    protected void preRenderCallback(EntityGazelle entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityGazelle entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(0.8F, 0.8F, 0.8F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntityGazelle entity) {
+    public ResourceLocation getTextureLocation(EntityGazelle entity) {
         return TEXTURE;
     }
 }

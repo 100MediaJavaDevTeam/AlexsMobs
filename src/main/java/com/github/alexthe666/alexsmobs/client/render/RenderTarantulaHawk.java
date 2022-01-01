@@ -27,35 +27,35 @@ public class RenderTarantulaHawk extends MobRenderer<EntityTarantulaHawk, Entity
         super(renderManagerIn, MODEL, 0.5F);
     }
 
-    protected void preRenderCallback(EntityTarantulaHawk entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
-        if(entitylivingbaseIn.isChild()){
-            this.entityModel = MODEL_BABY;
+    protected void scale(EntityTarantulaHawk entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+        if(entitylivingbaseIn.isBaby()){
+            this.model = MODEL_BABY;
         }else{
-            this.entityModel = MODEL;
+            this.model = MODEL;
             matrixStackIn.scale(0.9F, 0.9F, 0.9F);
             float f = entitylivingbaseIn.prevDragProgress + (entitylivingbaseIn.dragProgress - entitylivingbaseIn.prevDragProgress) * partialTickTime;
-            matrixStackIn.rotate(Vector3f.YP.rotationDegrees(f * 180 * 0.2F));
+            matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(f * 180 * 0.2F));
         }
     }
 
-    protected boolean func_230495_a_(EntityTarantulaHawk hawk) {
+    protected boolean isShaking(EntityTarantulaHawk hawk) {
         return hawk.isScared();
     }
 
     @Nullable
     @Override
-    protected RenderType func_230496_a_(EntityTarantulaHawk hawk, boolean b0, boolean b1, boolean b2) {
-        ResourceLocation resourcelocation = this.getEntityTexture(hawk);
+    protected RenderType getRenderType(EntityTarantulaHawk hawk, boolean b0, boolean b1, boolean b2) {
+        ResourceLocation resourcelocation = this.getTextureLocation(hawk);
         if (b1) {
-            return RenderType.getItemEntityTranslucentCull(resourcelocation);
+            return RenderType.itemEntityTranslucentCull(resourcelocation);
         } else if (b0) {
-            return RenderType.getEntityTranslucent(resourcelocation);
+            return RenderType.entityTranslucent(resourcelocation);
         } else {
-            return b2 ? RenderType.getOutline(resourcelocation) : null;
+            return b2 ? RenderType.outline(resourcelocation) : null;
         }
     }
 
-    public ResourceLocation getEntityTexture(EntityTarantulaHawk entity) {
-        return entity.isChild() ? TEXTURE_BABY : entity.isNether() ? entity.isAngry() ? TEXTURE_NETHER_ANGRY : TEXTURE_NETHER : entity.isAngry() ? TEXTURE_ANGRY : TEXTURE;
+    public ResourceLocation getTextureLocation(EntityTarantulaHawk entity) {
+        return entity.isBaby() ? TEXTURE_BABY : entity.isNether() ? entity.isAngry() ? TEXTURE_NETHER_ANGRY : TEXTURE_NETHER : entity.isAngry() ? TEXTURE_ANGRY : TEXTURE;
     }
 }

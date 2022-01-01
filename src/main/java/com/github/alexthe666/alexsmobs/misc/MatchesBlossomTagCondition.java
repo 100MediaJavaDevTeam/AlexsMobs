@@ -19,22 +19,22 @@ public class MatchesBlossomTagCondition implements ILootCondition {
     private ITag<Block> match;
 
     private MatchesBlossomTagCondition() {
-        match = BlockTags.getCollection().get(AMTagRegistry.DROPS_ACACIA_BLOSSOMS);
+        match = BlockTags.getAllTags().getTag(AMTagRegistry.DROPS_ACACIA_BLOSSOMS);
     }
 
-    public LootConditionType getConditionType() {
+    public LootConditionType getType() {
         return CommonProxy.MATCHES_BLOSSOM_CONDTN;
     }
 
-    public Set<LootParameter<?>> getRequiredParameters() {
+    public Set<LootParameter<?>> getReferencedContextParams() {
         return ImmutableSet.of();
     }
 
     public boolean test(LootContext p_test_1_) {
         if(match == null){
-            match = BlockTags.getCollection().get(AMTagRegistry.DROPS_ACACIA_BLOSSOMS);
+            match = BlockTags.getAllTags().getTag(AMTagRegistry.DROPS_ACACIA_BLOSSOMS);
         }
-        BlockState block = p_test_1_.get(LootParameters.BLOCK_STATE);
+        BlockState block = p_test_1_.getParamOrNull(LootParameters.BLOCK_STATE);
         return block != null && match != null && match.contains(block.getBlock());
     }
 

@@ -73,15 +73,15 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
     public static final Animation ANIMATION_KICK = Animation.create(15);
     public static final Animation ANIMATION_PUNCH_R = Animation.create(13);
     public static final Animation ANIMATION_PUNCH_L = Animation.create(13);
-    private static final DataParameter<Boolean> STANDING = EntityDataManager.createKey(EntityKangaroo.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Boolean> SITTING = EntityDataManager.createKey(EntityKangaroo.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Integer> COMMAND = EntityDataManager.createKey(EntityKangaroo.class, DataSerializers.VARINT);
-    private static final DataParameter<Integer> VISUAL_FLAG = EntityDataManager.createKey(EntityKangaroo.class, DataSerializers.VARINT);
-    private static final DataParameter<Integer> POUCH_TICK = EntityDataManager.createKey(EntityKangaroo.class, DataSerializers.VARINT);
-    private static final DataParameter<Integer> HELMET_INDEX = EntityDataManager.createKey(EntityKangaroo.class, DataSerializers.VARINT);
-    private static final DataParameter<Integer> SWORD_INDEX = EntityDataManager.createKey(EntityKangaroo.class, DataSerializers.VARINT);
-    private static final DataParameter<Integer> CHEST_INDEX = EntityDataManager.createKey(EntityKangaroo.class, DataSerializers.VARINT);
-    private static final DataParameter<Boolean> FORCED_SIT = EntityDataManager.createKey(EntityKangaroo.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> STANDING = EntityDataManager.defineId(EntityKangaroo.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> SITTING = EntityDataManager.defineId(EntityKangaroo.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Integer> COMMAND = EntityDataManager.defineId(EntityKangaroo.class, DataSerializers.INT);
+    private static final DataParameter<Integer> VISUAL_FLAG = EntityDataManager.defineId(EntityKangaroo.class, DataSerializers.INT);
+    private static final DataParameter<Integer> POUCH_TICK = EntityDataManager.defineId(EntityKangaroo.class, DataSerializers.INT);
+    private static final DataParameter<Integer> HELMET_INDEX = EntityDataManager.defineId(EntityKangaroo.class, DataSerializers.INT);
+    private static final DataParameter<Integer> SWORD_INDEX = EntityDataManager.defineId(EntityKangaroo.class, DataSerializers.INT);
+    private static final DataParameter<Integer> CHEST_INDEX = EntityDataManager.defineId(EntityKangaroo.class, DataSerializers.INT);
+    private static final DataParameter<Boolean> FORCED_SIT = EntityDataManager.defineId(EntityKangaroo.class, DataSerializers.BOOLEAN);
     public float prevPouchProgress;
     public float pouchProgress;
     public float sitProgress;
@@ -108,29 +108,29 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
     protected EntityKangaroo(EntityType type, World world) {
         super(type, world);
         initKangarooInventory();
-        this.jumpController = new EntityKangaroo.JumpHelperController(this);
-        this.moveController = new EntityKangaroo.MoveHelperController(this);
+        this.jumpControl = new EntityKangaroo.JumpHelperController(this);
+        this.moveControl = new EntityKangaroo.MoveHelperController(this);
 
     }
 
     public static <T extends MobEntity> boolean canKangarooSpawn(EntityType<? extends AnimalEntity> animal, IWorld worldIn, SpawnReason reason, BlockPos pos, Random random) {
-        boolean spawnBlock = BlockTags.getCollection().get(AMTagRegistry.KANGAROO_SPAWNS).contains(worldIn.getBlockState(pos.down()).getBlock());
-        return spawnBlock && worldIn.getLightSubtracted(pos, 0) > 8;
+        boolean spawnBlock = BlockTags.getAllTags().getTag(AMTagRegistry.KANGAROO_SPAWNS).contains(worldIn.getBlockState(pos.below()).getBlock());
+        return spawnBlock && worldIn.getRawBrightness(pos, 0) > 8;
     }
 
     public static AttributeModifierMap.MutableAttribute bakeAttributes() {
-        return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MAX_HEALTH, 22.0D).createMutableAttribute(Attributes.FOLLOW_RANGE, 32.0D).createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.5F).createMutableAttribute(Attributes.ATTACK_DAMAGE, 4F);
+        return MonsterEntity.createMonsterAttributes().add(Attributes.MAX_HEALTH, 22.0D).add(Attributes.FOLLOW_RANGE, 32.0D).add(Attributes.MOVEMENT_SPEED, 0.5F).add(Attributes.ATTACK_DAMAGE, 4F);
     }
 
-    protected void updateLeashedState() {
-        super.updateLeashedState();
+    protected void tickLeash() {
+        super.tickLeash();
         Entity lvt_1_1_ = this.getLeashHolder();
-        if (lvt_1_1_ != null && lvt_1_1_.world == this.world) {
-            this.setHomePosAndDistance(lvt_1_1_.getPosition(), 5);
-            float lvt_2_1_ = this.getDistance(lvt_1_1_);
+        if (lvt_1_1_ != null && lvt_1_1_.level == this.level) {
+            this.restrictTo(lvt_1_1_.blockPosition(), 5);
+            float lvt_2_1_ = this.distanceTo(lvt_1_1_);
             if (this.isSitting()) {
                 if (lvt_2_1_ > 10.0F) {
-                    this.clearLeashed(true, true);
+                    this.dropLeash(true, true);
                 }
 
                 return;
@@ -138,19 +138,19 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
 
             this.onLeashDistance(lvt_2_1_);
             if (lvt_2_1_ > 10.0F) {
-                this.clearLeashed(true, true);
-                this.goalSelector.disableFlag(Goal.Flag.MOVE);
+                this.dropLeash(true, true);
+                this.goalSelector.disableControlFlag(Goal.Flag.MOVE);
             } else if (lvt_2_1_ > 6.0F) {
-                double lvt_3_1_ = (lvt_1_1_.getPosX() - this.getPosX()) / (double) lvt_2_1_;
-                double lvt_5_1_ = (lvt_1_1_.getPosY() - this.getPosY()) / (double) lvt_2_1_;
-                double lvt_7_1_ = (lvt_1_1_.getPosZ() - this.getPosZ()) / (double) lvt_2_1_;
-                this.setMotion(this.getMotion().add(Math.copySign(lvt_3_1_ * lvt_3_1_ * 0.4D, lvt_3_1_), Math.copySign(lvt_5_1_ * lvt_5_1_ * 0.4D, lvt_5_1_), Math.copySign(lvt_7_1_ * lvt_7_1_ * 0.4D, lvt_7_1_)));
+                double lvt_3_1_ = (lvt_1_1_.getX() - this.getX()) / (double) lvt_2_1_;
+                double lvt_5_1_ = (lvt_1_1_.getY() - this.getY()) / (double) lvt_2_1_;
+                double lvt_7_1_ = (lvt_1_1_.getZ() - this.getZ()) / (double) lvt_2_1_;
+                this.setDeltaMovement(this.getDeltaMovement().add(Math.copySign(lvt_3_1_ * lvt_3_1_ * 0.4D, lvt_3_1_), Math.copySign(lvt_5_1_ * lvt_5_1_ * 0.4D, lvt_5_1_), Math.copySign(lvt_7_1_ * lvt_7_1_ * 0.4D, lvt_7_1_)));
             } else {
-                this.goalSelector.enableFlag(Goal.Flag.MOVE);
+                this.goalSelector.enableControlFlag(Goal.Flag.MOVE);
                 float lvt_3_2_ = 2.0F;
                 try {
-                    Vector3d lvt_4_1_ = (new Vector3d(lvt_1_1_.getPosX() - this.getPosX(), lvt_1_1_.getPosY() - this.getPosY(), lvt_1_1_.getPosZ() - this.getPosZ())).normalize().scale(Math.max(lvt_2_1_ - 2.0F, 0.0F));
-                    this.getNavigator().tryMoveToXYZ(this.getPosX() + lvt_4_1_.x, this.getPosY() + lvt_4_1_.y, this.getPosZ() + lvt_4_1_.z, this.followLeashSpeed());
+                    Vector3d lvt_4_1_ = (new Vector3d(lvt_1_1_.getX() - this.getX(), lvt_1_1_.getY() - this.getY(), lvt_1_1_.getZ() - this.getZ())).normalize().scale(Math.max(lvt_2_1_ - 2.0F, 0.0F));
+                    this.getNavigation().moveTo(this.getX() + lvt_4_1_.x, this.getY() + lvt_4_1_.y, this.getZ() + lvt_4_1_.z, this.followLeashSpeed());
                 } catch (Exception e) {
 
                 }
@@ -160,16 +160,16 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
     }
 
     public boolean forcedSit() {
-        return dataManager.get(FORCED_SIT);
+        return entityData.get(FORCED_SIT);
     }
 
     public boolean isRoger() {
-        String s = TextFormatting.getTextWithoutFormattingCodes(this.getName().getString());
+        String s = TextFormatting.stripFormatting(this.getName().getString());
         return s != null && s.toLowerCase().equals("roger");
     }
 
-    public boolean canSpawn(IWorld worldIn, SpawnReason spawnReasonIn) {
-        return AMEntityRegistry.rollSpawn(AMConfig.emuSpawnRolls, this.getRNG(), spawnReasonIn);
+    public boolean checkSpawnRules(IWorld worldIn, SpawnReason spawnReasonIn) {
+        return AMEntityRegistry.rollSpawn(AMConfig.emuSpawnRolls, this.getRandom(), spawnReasonIn);
     }
 
     protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
@@ -183,18 +183,18 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
     private void initKangarooInventory() {
         Inventory animalchest = this.kangarooInventory;
         this.kangarooInventory = new Inventory(9) {
-            public void closeInventory(PlayerEntity player) {
-                EntityKangaroo.this.dataManager.set(POUCH_TICK, 10);
+            public void stopOpen(PlayerEntity player) {
+                EntityKangaroo.this.entityData.set(POUCH_TICK, 10);
                 EntityKangaroo.this.resetKangarooSlots();
             }
         };
         kangarooInventory.addListener(this);
         if (animalchest != null) {
-            int i = Math.min(animalchest.getSizeInventory(), this.kangarooInventory.getSizeInventory());
+            int i = Math.min(animalchest.getContainerSize(), this.kangarooInventory.getContainerSize());
             for (int j = 0; j < i; ++j) {
-                ItemStack itemstack = animalchest.getStackInSlot(j);
+                ItemStack itemstack = animalchest.getItem(j);
                 if (!itemstack.isEmpty()) {
-                    this.kangarooInventory.setInventorySlotContents(j, itemstack.copy());
+                    this.kangarooInventory.setItem(j, itemstack.copy());
                 }
             }
             resetKangarooSlots();
@@ -203,57 +203,57 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
     }
 
 
-    protected void dropInventory() {
-        super.dropInventory();
-        for (int i = 0; i < kangarooInventory.getSizeInventory(); i++) {
-            this.entityDropItem(kangarooInventory.getStackInSlot(i));
+    protected void dropEquipment() {
+        super.dropEquipment();
+        for (int i = 0; i < kangarooInventory.getContainerSize(); i++) {
+            this.spawnAtLocation(kangarooInventory.getItem(i));
         }
-        kangarooInventory.clear();
+        kangarooInventory.clearContent();
     }
 
-    public ActionResultType getEntityInteractionResult(PlayerEntity player, Hand hand) {
-        ItemStack itemstack = player.getHeldItem(hand);
+    public ActionResultType mobInteract(PlayerEntity player, Hand hand) {
+        ItemStack itemstack = player.getItemInHand(hand);
         Item item = itemstack.getItem();
-        ActionResultType type = super.getEntityInteractionResult(player, hand);
-        if (!isTamed() && item == Items.CARROT) {
-            this.consumeItemFromStack(player, itemstack);
-            this.playSound(SoundEvents.ENTITY_HORSE_EAT, this.getSoundVolume(), this.getSoundPitch());
+        ActionResultType type = super.mobInteract(player, hand);
+        if (!isTame() && item == Items.CARROT) {
+            this.usePlayerItem(player, itemstack);
+            this.playSound(SoundEvents.HORSE_EAT, this.getSoundVolume(), this.getVoicePitch());
             carrotFeedings++;
-            if (carrotFeedings > 10 && getRNG().nextInt(2) == 0 || carrotFeedings > 15) {
-                this.setTamedBy(player);
-                this.world.setEntityState(this, (byte) 7);
+            if (carrotFeedings > 10 && getRandom().nextInt(2) == 0 || carrotFeedings > 15) {
+                this.tame(player);
+                this.level.broadcastEntityEvent(this, (byte) 7);
             } else {
-                this.world.setEntityState(this, (byte) 6);
+                this.level.broadcastEntityEvent(this, (byte) 6);
             }
             return ActionResultType.SUCCESS;
         }
-        if (isTamed() && this.getHealth() < this.getMaxHealth() && item.isFood() && item.getFood() != null && !item.getFood().isMeat()) {
-            this.consumeItemFromStack(player, itemstack);
-            this.playSound(SoundEvents.ENTITY_HORSE_EAT, this.getSoundVolume(), this.getSoundPitch());
-            this.heal(item.getFood().getHealing());
+        if (isTame() && this.getHealth() < this.getMaxHealth() && item.isEdible() && item.getFoodProperties() != null && !item.getFoodProperties().isMeat()) {
+            this.usePlayerItem(player, itemstack);
+            this.playSound(SoundEvents.HORSE_EAT, this.getSoundVolume(), this.getVoicePitch());
+            this.heal(item.getFoodProperties().getNutrition());
             return ActionResultType.SUCCESS;
         }
-        if (type != ActionResultType.SUCCESS && isTamed() && isOwner(player) && !isBreedingItem(itemstack)) {
-            if (player.isSneaking()) {
+        if (type != ActionResultType.SUCCESS && isTame() && isOwnedBy(player) && !isFood(itemstack)) {
+            if (player.isShiftKeyDown()) {
                 this.openGUI(player);
-                this.removePassengers();
-                this.dataManager.set(POUCH_TICK, -1);
+                this.ejectPassengers();
+                this.entityData.set(POUCH_TICK, -1);
                 return ActionResultType.SUCCESS;
             } else {
                 this.setCommand(this.getCommand() + 1);
                 if (this.getCommand() == 3) {
                     this.setCommand(0);
                 }
-                player.sendStatusMessage(new TranslationTextComponent("entity.alexsmobs.all.command_" + this.getCommand(), this.getName()), true);
+                player.displayClientMessage(new TranslationTextComponent("entity.alexsmobs.all.command_" + this.getCommand(), this.getName()), true);
                 boolean sit = this.getCommand() == 2;
                 if (sit) {
-                    this.dataManager.set(FORCED_SIT, true);
-                    this.setSitting(true);
+                    this.entityData.set(FORCED_SIT, true);
+                    this.setOrderedToSit(true);
                     return ActionResultType.SUCCESS;
                 } else {
-                    this.dataManager.set(FORCED_SIT, false);
+                    this.entityData.set(FORCED_SIT, false);
                     maxSitTime = 0;
-                    this.setSitting(false);
+                    this.setOrderedToSit(false);
                     return ActionResultType.SUCCESS;
                 }
             }
@@ -262,23 +262,23 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
         return type;
     }
 
-    public void writeAdditional(CompoundNBT compound) {
-        super.writeAdditional(compound);
+    public void addAdditionalSaveData(CompoundNBT compound) {
+        super.addAdditionalSaveData(compound);
         compound.putBoolean("KangarooSitting", this.isSitting());
         compound.putBoolean("KangarooSittingForced", this.forcedSit());
         compound.putBoolean("Standing", this.isStanding());
         compound.putInt("Command", this.getCommand());
-        compound.putInt("HelmetInvIndex", this.dataManager.get(HELMET_INDEX));
-        compound.putInt("SwordInvIndex", this.dataManager.get(SWORD_INDEX));
-        compound.putInt("ChestInvIndex", this.dataManager.get(CHEST_INDEX));
+        compound.putInt("HelmetInvIndex", this.entityData.get(HELMET_INDEX));
+        compound.putInt("SwordInvIndex", this.entityData.get(SWORD_INDEX));
+        compound.putInt("ChestInvIndex", this.entityData.get(CHEST_INDEX));
         if (kangarooInventory != null) {
             ListNBT nbttaglist = new ListNBT();
-            for (int i = 0; i < this.kangarooInventory.getSizeInventory(); ++i) {
-                ItemStack itemstack = this.kangarooInventory.getStackInSlot(i);
+            for (int i = 0; i < this.kangarooInventory.getContainerSize(); ++i) {
+                ItemStack itemstack = this.kangarooInventory.getItem(i);
                 if (!itemstack.isEmpty()) {
                     CompoundNBT CompoundNBT = new CompoundNBT();
                     CompoundNBT.putByte("Slot", (byte) i);
-                    itemstack.write(CompoundNBT);
+                    itemstack.save(CompoundNBT);
                     nbttaglist.add(CompoundNBT);
                 }
             }
@@ -286,22 +286,22 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
         }
     }
 
-    public void readAdditional(CompoundNBT compound) {
-        super.readAdditional(compound);
-        this.setSitting(compound.getBoolean("KangarooSitting"));
-        this.dataManager.set(FORCED_SIT, compound.getBoolean("KangarooSittingForced"));
+    public void readAdditionalSaveData(CompoundNBT compound) {
+        super.readAdditionalSaveData(compound);
+        this.setOrderedToSit(compound.getBoolean("KangarooSitting"));
+        this.entityData.set(FORCED_SIT, compound.getBoolean("KangarooSittingForced"));
         this.setStanding(compound.getBoolean("Standing"));
         this.setCommand(compound.getInt("Command"));
-        this.dataManager.set(HELMET_INDEX, compound.getInt("HelmetInvIndex"));
-        this.dataManager.set(SWORD_INDEX, compound.getInt("SwordInvIndex"));
-        this.dataManager.set(CHEST_INDEX, compound.getInt("ChestInvIndex"));
+        this.entityData.set(HELMET_INDEX, compound.getInt("HelmetInvIndex"));
+        this.entityData.set(SWORD_INDEX, compound.getInt("SwordInvIndex"));
+        this.entityData.set(CHEST_INDEX, compound.getInt("ChestInvIndex"));
         if (kangarooInventory != null) {
             ListNBT nbttaglist = compound.getList("Items", 10);
             this.initKangarooInventory();
             for (int i = 0; i < nbttaglist.size(); ++i) {
                 CompoundNBT CompoundNBT = nbttaglist.getCompound(i);
                 int j = CompoundNBT.getByte("Slot") & 255;
-                this.kangarooInventory.setInventorySlotContents(j, ItemStack.read(CompoundNBT));
+                this.kangarooInventory.setItem(j, ItemStack.of(CompoundNBT));
             }
         } else {
             ListNBT nbttaglist = compound.getList("Items", 10);
@@ -310,14 +310,14 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
                 CompoundNBT CompoundNBT = nbttaglist.getCompound(i);
                 int j = CompoundNBT.getByte("Slot") & 255;
                 this.initKangarooInventory();
-                this.kangarooInventory.setInventorySlotContents(j, ItemStack.read(CompoundNBT));
+                this.kangarooInventory.setItem(j, ItemStack.of(CompoundNBT));
             }
         }
         resetKangarooSlots();
     }
 
     public void openGUI(PlayerEntity playerEntity) {
-        if (!this.world.isRemote && (!this.isPassenger(playerEntity))) {
+        if (!this.level.isClientSide && (!this.hasPassenger(playerEntity))) {
             NetworkHooks.openGui((ServerPlayerEntity) playerEntity, new INamedContainerProvider() {
                 @Override
                 public Container createMenu(int p_createMenu_1_, PlayerInventory p_createMenu_2_, PlayerEntity p_createMenu_3_) {
@@ -333,54 +333,54 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
     }
 
     public boolean isSitting() {
-        return this.dataManager.get(SITTING).booleanValue();
+        return this.entityData.get(SITTING).booleanValue();
     }
 
-    public void setSitting(boolean sit) {
-        this.dataManager.set(SITTING, Boolean.valueOf(sit));
+    public void setOrderedToSit(boolean sit) {
+        this.entityData.set(SITTING, Boolean.valueOf(sit));
     }
 
     public boolean isStanding() {
-        return this.dataManager.get(STANDING).booleanValue();
+        return this.entityData.get(STANDING).booleanValue();
     }
 
     public void setStanding(boolean standing) {
-        this.dataManager.set(STANDING, Boolean.valueOf(standing));
+        this.entityData.set(STANDING, Boolean.valueOf(standing));
     }
 
     public int getCommand() {
-        return this.dataManager.get(COMMAND).intValue();
+        return this.entityData.get(COMMAND).intValue();
     }
 
     public void setCommand(int command) {
-        this.dataManager.set(COMMAND, Integer.valueOf(command));
+        this.entityData.set(COMMAND, Integer.valueOf(command));
     }
 
     public int getVisualFlag() {
-        return this.dataManager.get(VISUAL_FLAG).intValue();
+        return this.entityData.get(VISUAL_FLAG).intValue();
     }
 
     public void setVisualFlag(int visualFlag) {
-        this.dataManager.set(VISUAL_FLAG, Integer.valueOf(visualFlag));
+        this.entityData.set(VISUAL_FLAG, Integer.valueOf(visualFlag));
     }
 
 
     @Override
-    protected void registerData() {
-        super.registerData();
-        this.dataManager.register(STANDING, Boolean.valueOf(false));
-        this.dataManager.register(SITTING, Boolean.valueOf(false));
-        this.dataManager.register(FORCED_SIT, Boolean.valueOf(false));
-        this.dataManager.register(COMMAND, Integer.valueOf(0));
-        this.dataManager.register(VISUAL_FLAG, Integer.valueOf(0));
-        this.dataManager.register(POUCH_TICK, Integer.valueOf(0));
-        this.dataManager.register(CHEST_INDEX, Integer.valueOf(-1));
-        this.dataManager.register(HELMET_INDEX, Integer.valueOf(-1));
-        this.dataManager.register(SWORD_INDEX, Integer.valueOf(-1));
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(STANDING, Boolean.valueOf(false));
+        this.entityData.define(SITTING, Boolean.valueOf(false));
+        this.entityData.define(FORCED_SIT, Boolean.valueOf(false));
+        this.entityData.define(COMMAND, Integer.valueOf(0));
+        this.entityData.define(VISUAL_FLAG, Integer.valueOf(0));
+        this.entityData.define(POUCH_TICK, Integer.valueOf(0));
+        this.entityData.define(CHEST_INDEX, Integer.valueOf(-1));
+        this.entityData.define(HELMET_INDEX, Integer.valueOf(-1));
+        this.entityData.define(SWORD_INDEX, Integer.valueOf(-1));
     }
 
     @Override
-    protected PathNavigator createNavigator(World worldIn) {
+    protected PathNavigator createNavigation(World worldIn) {
         return new GroundPathNavigatorWide(this, worldIn, 2F);
     }
 
@@ -391,7 +391,7 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
         this.goalSelector.addGoal(2, new TameableAIFollowOwner(this, 1.2D, 5.0F, 2.0F, false));
         this.goalSelector.addGoal(3, new BreedGoal(this, 1D));
         this.goalSelector.addGoal(4, new AnimalAIRideParent(this, 1.25D));
-        this.goalSelector.addGoal(4, new TemptGoal(this, 1.2D, Ingredient.fromItems(Items.CARROT), false));
+        this.goalSelector.addGoal(4, new TemptGoal(this, 1.2D, Ingredient.of(Items.CARROT), false));
         this.goalSelector.addGoal(5, new AnimalAIWanderRanged(this, 110, 1.2D, 10, 7));
         this.goalSelector.addGoal(6, new LookAtGoal(this, PlayerEntity.class, 10.0F));
         this.goalSelector.addGoal(7, new LookRandomlyGoal(this));
@@ -400,13 +400,13 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
         this.targetSelector.addGoal(3, (new AnimalAIHurtByTargetNotBaby(this)));
     }
 
-    protected boolean canFitPassenger(Entity passenger) {
-        return super.canFitPassenger(passenger) && this.dataManager.get(POUCH_TICK) == 0;
+    protected boolean canAddPassenger(Entity passenger) {
+        return super.canAddPassenger(passenger) && this.entityData.get(POUCH_TICK) == 0;
     }
 
 
-    public double getMountedYOffset() {
-        return (double) this.getHeight() * 0.35F;
+    public double getPassengersRidingOffset() {
+        return (double) this.getBbHeight() * 0.35F;
     }
 
     @Override
@@ -417,8 +417,8 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
 
     public void tick() {
         super.tick();
-        boolean moving = this.getMotion().lengthSquared() > 0.03D;
-        int pouchTick = this.dataManager.get(POUCH_TICK);
+        boolean moving = this.getDeltaMovement().lengthSqr() > 0.03D;
+        int pouchTick = this.entityData.get(POUCH_TICK);
         this.prevTotalMovingProgress = totalMovingProgress;
         this.prevPouchProgress = pouchProgress;
         this.prevSitProgress = sitProgress;
@@ -451,62 +451,62 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
             pouchProgress -= 1;
         }
         if (pouchTick > 0) {
-            this.dataManager.set(POUCH_TICK, pouchTick - 1);
+            this.entityData.set(POUCH_TICK, pouchTick - 1);
         }
         if (isStanding() && ++standingTime > maxStandTime) {
             this.setStanding(false);
             standingTime = 0;
-            maxStandTime = 75 + rand.nextInt(50);
+            maxStandTime = 75 + random.nextInt(50);
         }
         if (isSitting() && !forcedSit() && ++sittingTime > maxSitTime) {
-            this.setSitting(false);
+            this.setOrderedToSit(false);
             sittingTime = 0;
-            maxSitTime = 75 + rand.nextInt(50);
+            maxSitTime = 75 + random.nextInt(50);
         }
-        if (!world.isRemote && this.getAnimation() == NO_ANIMATION && this.getCommand() != 1 && !this.isStanding() && !this.isSitting() && rand.nextInt(1500) == 0) {
-            maxSitTime = 500 + rand.nextInt(350);
-            this.setSitting(true);
+        if (!level.isClientSide && this.getAnimation() == NO_ANIMATION && this.getCommand() != 1 && !this.isStanding() && !this.isSitting() && random.nextInt(1500) == 0) {
+            maxSitTime = 500 + random.nextInt(350);
+            this.setOrderedToSit(true);
         }
-        if (!forcedSit() && this.isSitting() && (this.getAttackTarget() != null || this.isStanding())) {
-            this.setSitting(false);
+        if (!forcedSit() && this.isSitting() && (this.getTarget() != null || this.isStanding())) {
+            this.setOrderedToSit(false);
         }
-        if (this.getAnimation() == NO_ANIMATION && !this.isStanding() && !this.isSitting() && rand.nextInt(1500) == 0) {
-            maxStandTime = 75 + rand.nextInt(50);
+        if (this.getAnimation() == NO_ANIMATION && !this.isStanding() && !this.isSitting() && random.nextInt(1500) == 0) {
+            maxStandTime = 75 + random.nextInt(50);
             this.setStanding(true);
         }
-        if (this.forcedSit() && !this.isBeingRidden() && this.isTamed()) {
-            this.setSitting(true);
+        if (this.forcedSit() && !this.isVehicle() && this.isTame()) {
+            this.setOrderedToSit(true);
         }
-        if (!world.isRemote) {
-            if (ticksExisted == 1) {
+        if (!level.isClientSide) {
+            if (tickCount == 1) {
                 updateClientInventory();
             }
 
             if (!moving && this.getAnimation() == NO_ANIMATION && !this.isSitting() && !this.isStanding()) {
-                if ((getRNG().nextInt(180) == 0 || this.getHealth() < this.getMaxHealth() && getRNG().nextInt(40) == 0) && world.getBlockState(this.getPosition().down()).matchesBlock(Blocks.GRASS_BLOCK)) {
+                if ((getRandom().nextInt(180) == 0 || this.getHealth() < this.getMaxHealth() && getRandom().nextInt(40) == 0) && level.getBlockState(this.blockPosition().below()).is(Blocks.GRASS_BLOCK)) {
                     this.setAnimation(ANIMATION_EAT_GRASS);
                 }
             }
-            if (this.getAnimation() == ANIMATION_EAT_GRASS && this.getAnimationTick() == 20 && this.getHealth() < this.getMaxHealth() && world.getBlockState(this.getPosition().down()).matchesBlock(Blocks.GRASS_BLOCK)) {
+            if (this.getAnimation() == ANIMATION_EAT_GRASS && this.getAnimationTick() == 20 && this.getHealth() < this.getMaxHealth() && level.getBlockState(this.blockPosition().below()).is(Blocks.GRASS_BLOCK)) {
                 this.heal(6);
-                this.world.playEvent(2001, getPosition().down(), Block.getStateId(Blocks.GRASS_BLOCK.getDefaultState()));
-                this.world.setBlockState(getPosition().down(), Blocks.DIRT.getDefaultState(), 2);
+                this.level.levelEvent(2001, blockPosition().below(), Block.getId(Blocks.GRASS_BLOCK.defaultBlockState()));
+                this.level.setBlock(blockPosition().below(), Blocks.DIRT.defaultBlockState(), 2);
             }
-            if (this.getHealth() < this.getMaxHealth() && this.isTamed() && eatCooldown == 0) {
-                eatCooldown = 20 + rand.nextInt(40);
+            if (this.getHealth() < this.getMaxHealth() && this.isTame() && eatCooldown == 0) {
+                eatCooldown = 20 + random.nextInt(40);
                 if (!this.kangarooInventory.isEmpty()) {
                     ItemStack foodStack = ItemStack.EMPTY;
-                    for (int i = 0; i < this.kangarooInventory.getSizeInventory(); i++) {
-                        ItemStack stack = this.kangarooInventory.getStackInSlot(i);
-                        if (stack.getItem().isFood() && stack.getItem().getFood() != null && !stack.getItem().getFood().isMeat()) {
+                    for (int i = 0; i < this.kangarooInventory.getContainerSize(); i++) {
+                        ItemStack stack = this.kangarooInventory.getItem(i);
+                        if (stack.getItem().isEdible() && stack.getItem().getFoodProperties() != null && !stack.getItem().getFoodProperties().isMeat()) {
                             foodStack = stack;
                         }
                     }
-                    if (!foodStack.isEmpty() && foodStack.getItem().getFood() != null) {
-                        AlexsMobs.sendMSGToAll(new MessageKangarooEat(this.getEntityId(), foodStack));
-                        this.heal(foodStack.getItem().getFood().getHealing() * 2);
+                    if (!foodStack.isEmpty() && foodStack.getItem().getFoodProperties() != null) {
+                        AlexsMobs.sendMSGToAll(new MessageKangarooEat(this.getId(), foodStack));
+                        this.heal(foodStack.getItem().getFoodProperties().getNutrition() * 2);
                         foodStack.shrink(1);
-                        this.playSound(SoundEvents.ENTITY_GENERIC_EAT, this.getSoundVolume(), this.getSoundPitch());
+                        this.playSound(SoundEvents.GENERIC_EAT, this.getSoundVolume(), this.getVoicePitch());
                     }
                 }
             }
@@ -518,71 +518,71 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
             this.jumpDuration = 0;
             this.setJumping(false);
         }
-        LivingEntity attackTarget = this.getAttackTarget();
-        if (attackTarget != null && this.canEntityBeSeen(attackTarget)) {
-            if (getDistance(attackTarget) < attackTarget.getWidth() + this.getWidth() + 1) {
+        LivingEntity attackTarget = this.getTarget();
+        if (attackTarget != null && this.canSee(attackTarget)) {
+            if (distanceTo(attackTarget) < attackTarget.getBbWidth() + this.getBbWidth() + 1) {
                 if (this.getAnimation() == ANIMATION_KICK && this.getAnimationTick() == 8) {
-                    attackTarget.applyKnockback(1.3F, MathHelper.sin(this.rotationYaw * ((float) Math.PI / 180F)), -MathHelper.cos(this.rotationYaw * ((float) Math.PI / 180F)));
-                    this.attackEntityAsMob(this.getAttackTarget());
+                    attackTarget.knockback(1.3F, MathHelper.sin(this.yRot * ((float) Math.PI / 180F)), -MathHelper.cos(this.yRot * ((float) Math.PI / 180F)));
+                    this.doHurtTarget(this.getTarget());
                 }
                 if ((this.getAnimation() == ANIMATION_PUNCH_L) && this.getAnimationTick() == 6) {
-                    float rot = rotationYaw + 90;
-                    attackTarget.applyKnockback(0.85F, MathHelper.sin(rot * ((float) Math.PI / 180F)), -MathHelper.cos(rot * ((float) Math.PI / 180F)));
-                    this.attackEntityAsMob(this.getAttackTarget());
+                    float rot = yRot + 90;
+                    attackTarget.knockback(0.85F, MathHelper.sin(rot * ((float) Math.PI / 180F)), -MathHelper.cos(rot * ((float) Math.PI / 180F)));
+                    this.doHurtTarget(this.getTarget());
                 }
                 if ((this.getAnimation() == ANIMATION_PUNCH_R) && this.getAnimationTick() == 6) {
-                    float rot = rotationYaw - 90;
-                    attackTarget.applyKnockback(0.85F, MathHelper.sin(rot * ((float) Math.PI / 180F)), -MathHelper.cos(rot * ((float) Math.PI / 180F)));
-                    this.attackEntityAsMob(this.getAttackTarget());
+                    float rot = yRot - 90;
+                    attackTarget.knockback(0.85F, MathHelper.sin(rot * ((float) Math.PI / 180F)), -MathHelper.cos(rot * ((float) Math.PI / 180F)));
+                    this.doHurtTarget(this.getTarget());
                 }
             }
-            this.faceEntity(attackTarget, 360, 360);
+            this.lookAt(attackTarget, 360, 360);
         }
-        if (this.isChild() && attackTarget != null) {
-            this.setAttackTarget(null);
+        if (this.isBaby() && attackTarget != null) {
+            this.setTarget(null);
         }
-        if (this.isBeingRidden()) {
-            this.dataManager.set(POUCH_TICK, 10);
+        if (this.isVehicle()) {
+            this.entityData.set(POUCH_TICK, 10);
             this.setStanding(true);
             maxStandTime = 25;
         }
-        if (this.isChild() && this.isPassenger() && this.getRidingEntity() instanceof EntityKangaroo) {
-            EntityKangaroo mount = (EntityKangaroo) this.getRidingEntity();
-            this.rotationYaw = mount.renderYawOffset;
-            this.rotationYawHead = mount.renderYawOffset;
-            this.renderYawOffset = mount.renderYawOffset;
+        if (this.isBaby() && this.isPassenger() && this.getVehicle() instanceof EntityKangaroo) {
+            EntityKangaroo mount = (EntityKangaroo) this.getVehicle();
+            this.yRot = mount.yBodyRot;
+            this.yHeadRot = mount.yBodyRot;
+            this.yBodyRot = mount.yBodyRot;
         }
-        if (this.isPassenger() && this.getRidingEntity() instanceof EntityKangaroo && !this.isChild()) {
-            this.dismount();
+        if (this.isPassenger() && this.getVehicle() instanceof EntityKangaroo && !this.isBaby()) {
+            this.removeVehicle();
         }
         if (clientArmorCooldown > 0) {
             clientArmorCooldown--;
         }
-        if (ticksExisted > 5 && !world.isRemote && clientArmorCooldown == 0 && this.isTamed()) {
+        if (tickCount > 5 && !level.isClientSide && clientArmorCooldown == 0 && this.isTame()) {
             this.updateClientInventory();
             clientArmorCooldown = 20;
         }
         AnimationHandler.INSTANCE.updateAnimations(this);
     }
 
-    public boolean attackEntityAsMob(Entity entityIn) {
-        boolean prev = super.attackEntityAsMob(entityIn);
+    public boolean doHurtTarget(Entity entityIn) {
+        boolean prev = super.doHurtTarget(entityIn);
         if (prev) {
-            if (!this.getHeldItemMainhand().isEmpty()) {
-                damageItem(this.getHeldItemMainhand());
+            if (!this.getMainHandItem().isEmpty()) {
+                damageItem(this.getMainHandItem());
             }
         }
         return prev;
     }
 
-    public boolean attackEntityFrom(DamageSource src, float amount) {
-        boolean prev = super.attackEntityFrom(src, amount);
+    public boolean hurt(DamageSource src, float amount) {
+        boolean prev = super.hurt(src, amount);
         if (prev) {
-            if (!this.getItemStackFromSlot(EquipmentSlotType.HEAD).isEmpty()) {
-                damageItem(this.getItemStackFromSlot(EquipmentSlotType.HEAD));
+            if (!this.getItemBySlot(EquipmentSlotType.HEAD).isEmpty()) {
+                damageItem(this.getItemBySlot(EquipmentSlotType.HEAD));
             }
-            if (!this.getItemStackFromSlot(EquipmentSlotType.CHEST).isEmpty()) {
-                damageItem(this.getItemStackFromSlot(EquipmentSlotType.CHEST));
+            if (!this.getItemBySlot(EquipmentSlotType.CHEST).isEmpty()) {
+                damageItem(this.getItemBySlot(EquipmentSlotType.CHEST));
             }
         }
         return prev;
@@ -590,8 +590,8 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
 
     private void damageItem(ItemStack stack) {
         if (stack != null) {
-            stack.attemptDamageItem(1, this.getRNG(), null);
-            if (stack.getDamage() < 0) {
+            stack.hurt(1, this.getRandom(), null);
+            if (stack.getDamageValue() < 0) {
                 stack.shrink(1);
             }
         }
@@ -601,35 +601,35 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
         return super.isInvulnerableTo(source) || source == DamageSource.IN_WALL;
     }
 
-    public boolean isOnSameTeam(Entity entityIn) {
-        if (this.isTamed()) {
+    public boolean isAlliedTo(Entity entityIn) {
+        if (this.isTame()) {
             LivingEntity livingentity = this.getOwner();
             if (entityIn == livingentity) {
                 return true;
             }
             if (entityIn instanceof TameableEntity) {
-                return ((TameableEntity) entityIn).isOwner(livingentity);
+                return ((TameableEntity) entityIn).isOwnedBy(livingentity);
             }
             if (livingentity != null) {
-                return livingentity.isOnSameTeam(entityIn);
+                return livingentity.isAlliedTo(entityIn);
             }
         }
 
-        return super.isOnSameTeam(entityIn);
+        return super.isAlliedTo(entityIn);
     }
 
-    public MovementController getMoveHelper() {
-        return this.moveController;
+    public MovementController getMoveControl() {
+        return this.moveControl;
     }
 
-    public boolean canPassengerSteer() {
+    public boolean isControlledByLocalInstance() {
         return false;
     }
 
     public void travel(Vector3d vec3d) {
         if (this.isSitting() || this.getAnimation() == ANIMATION_EAT_GRASS) {
-            if (this.getNavigator().getPath() != null) {
-                this.getNavigator().clearPath();
+            if (this.getNavigation().getPath() != null) {
+                this.getNavigation().stop();
             }
             vec3d = Vector3d.ZERO;
         }
@@ -642,24 +642,24 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
         this.disableJumpControl();
     }
 
-    public PathNavigator getNavigator() {
-        return this.navigator;
+    public PathNavigator getNavigation() {
+        return this.navigation;
     }
 
     private void enableJumpControl() {
-        if (jumpController instanceof EntityKangaroo.JumpHelperController) {
-            ((EntityKangaroo.JumpHelperController) this.jumpController).setCanJump(true);
+        if (jumpControl instanceof EntityKangaroo.JumpHelperController) {
+            ((EntityKangaroo.JumpHelperController) this.jumpControl).setCanJump(true);
         }
     }
 
     private void disableJumpControl() {
-        if (jumpController instanceof EntityKangaroo.JumpHelperController) {
-            ((EntityKangaroo.JumpHelperController) this.jumpController).setCanJump(false);
+        if (jumpControl instanceof EntityKangaroo.JumpHelperController) {
+            ((EntityKangaroo.JumpHelperController) this.jumpControl).setCanJump(false);
         }
     }
 
     private void updateMoveTypeDuration() {
-        if (this.moveController.getSpeed() < 2D) {
+        if (this.moveControl.getSpeedModifier() < 2D) {
             this.currentMoveTypeDuration = 2;
         } else {
             this.currentMoveTypeDuration = 1;
@@ -668,15 +668,15 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
     }
 
     private void calculateRotationYaw(double x, double z) {
-        this.rotationYaw = (float) (MathHelper.atan2(z - this.getPosZ(), x - this.getPosX()) * (double) (180F / (float) Math.PI)) - 90.0F;
+        this.yRot = (float) (MathHelper.atan2(z - this.getZ(), x - this.getX()) * (double) (180F / (float) Math.PI)) - 90.0F;
     }
 
-    public boolean shouldSpawnRunningEffects() {
+    public boolean canSpawnSprintParticle() {
         return false;
     }
 
-    public void updateAITasks() {
-        super.updateAITasks();
+    public void customServerAiStep() {
+        super.customServerAiStep();
 
         if (this.currentMoveTypeDuration > 0) {
             --this.currentMoveTypeDuration;
@@ -689,22 +689,22 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
             }
 
             if (this.currentMoveTypeDuration == 0) {
-                LivingEntity livingentity = this.getAttackTarget();
-                if (livingentity != null && this.getDistanceSq(livingentity) < 16.0D) {
-                    this.calculateRotationYaw(livingentity.getPosX(), livingentity.getPosZ());
-                    this.moveController.setMoveTo(livingentity.getPosX(), livingentity.getPosY(), livingentity.getPosZ(), this.moveController.getSpeed());
+                LivingEntity livingentity = this.getTarget();
+                if (livingentity != null && this.distanceToSqr(livingentity) < 16.0D) {
+                    this.calculateRotationYaw(livingentity.getX(), livingentity.getZ());
+                    this.moveControl.setWantedPosition(livingentity.getX(), livingentity.getY(), livingentity.getZ(), this.moveControl.getSpeedModifier());
                     this.startJumping();
                     this.wasOnGround = true;
                 }
             }
-            if (this.jumpController instanceof EntityKangaroo.JumpHelperController) {
-                EntityKangaroo.JumpHelperController rabbitController = (EntityKangaroo.JumpHelperController) this.jumpController;
+            if (this.jumpControl instanceof EntityKangaroo.JumpHelperController) {
+                EntityKangaroo.JumpHelperController rabbitController = (EntityKangaroo.JumpHelperController) this.jumpControl;
                 if (!rabbitController.getIsJumping()) {
-                    if (this.moveController.isUpdating() && this.currentMoveTypeDuration == 0) {
-                        Path path = this.navigator.getPath();
-                        Vector3d vector3d = new Vector3d(this.moveController.getX(), this.moveController.getY(), this.moveController.getZ());
-                        if (path != null && !path.isFinished()) {
-                            vector3d = path.getPosition(this);
+                    if (this.moveControl.hasWanted() && this.currentMoveTypeDuration == 0) {
+                        Path path = this.navigation.getPath();
+                        Vector3d vector3d = new Vector3d(this.moveControl.getWantedX(), this.moveControl.getWantedY(), this.moveControl.getWantedZ());
+                        if (path != null && !path.isDone()) {
+                            vector3d = path.getNextEntityPos(this);
                         }
                         this.startJumping();
                     }
@@ -759,60 +759,60 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
 
     @Nullable
     @Override
-    public AgeableEntity createChild(ServerWorld serverWorld, AgeableEntity ageableEntity) {
+    public AgeableEntity getBreedOffspring(ServerWorld serverWorld, AgeableEntity ageableEntity) {
         return AMEntityRegistry.KANGAROO.create(serverWorld);
     }
 
     public void setMovementSpeed(double newSpeed) {
-        this.getNavigator().setSpeed(newSpeed);
-        this.moveController.setMoveTo(this.moveController.getX(), this.moveController.getY(), this.moveController.getZ(), newSpeed);
+        this.getNavigation().setSpeedModifier(newSpeed);
+        this.moveControl.setWantedPosition(this.moveControl.getWantedX(), this.moveControl.getWantedY(), this.moveControl.getWantedZ(), newSpeed);
     }
 
-    protected float getJumpUpwardsMotion() {
+    protected float getJumpPower() {
         return 0.5F;
     }
 
-    public boolean onLivingFall(float distance, float damageMultiplier) {
+    public boolean causeFallDamage(float distance, float damageMultiplier) {
         return false;
     }
 
-    protected void updateFallState(double y, boolean onGroundIn, BlockState state, BlockPos pos) {
+    protected void checkFallDamage(double y, boolean onGroundIn, BlockState state, BlockPos pos) {
     }
 
-    public boolean isBreedingItem(ItemStack stack) {
+    public boolean isFood(ItemStack stack) {
         Item item = stack.getItem();
         return item == Items.DEAD_BUSH || item == Items.GRASS;
     }
 
     public void resetKangarooSlots() {
-        if (!world.isRemote) {
+        if (!level.isClientSide) {
             int swordIndex = -1;
             double swordDamage = 0;
             int helmetIndex = -1;
             double helmetArmor = 0;
             int chestplateIndex = -1;
             double chestplateArmor = 0;
-            for (int i = 0; i < this.kangarooInventory.getSizeInventory(); ++i) {
-                ItemStack stack = this.kangarooInventory.getStackInSlot(i);
+            for (int i = 0; i < this.kangarooInventory.getContainerSize(); ++i) {
+                ItemStack stack = this.kangarooInventory.getItem(i);
                 if (!stack.isEmpty()) {
                     double dmg = getDamageForItem(stack);
                     if (dmg > 0 && dmg > swordDamage) {
                         swordDamage = dmg;
                         swordIndex = i;
                     }
-                    if (stack.getItem().canEquip(stack, EquipmentSlotType.HEAD, this)  && !this.isChild() && helmetIndex == -1) {
+                    if (stack.getItem().canEquip(stack, EquipmentSlotType.HEAD, this)  && !this.isBaby() && helmetIndex == -1) {
                         helmetIndex = i;
                     }
-                    if (stack.getItem() instanceof ArmorItem && !this.isChild()) {
+                    if (stack.getItem() instanceof ArmorItem && !this.isBaby()) {
                         ArmorItem armorItem = (ArmorItem) stack.getItem();
-                        if (armorItem.getEquipmentSlot() == EquipmentSlotType.HEAD) {
+                        if (armorItem.getSlot() == EquipmentSlotType.HEAD) {
                             double prot = getProtectionForItem(stack, EquipmentSlotType.HEAD);
                             if (prot > 0 && prot > helmetArmor) {
                                 helmetArmor = prot;
                                 helmetIndex = i;
                             }
                         }
-                        if (armorItem.getEquipmentSlot() == EquipmentSlotType.CHEST) {
+                        if (armorItem.getSlot() == EquipmentSlotType.CHEST) {
                             double prot = getProtectionForItem(stack, EquipmentSlotType.CHEST);
                             if (prot > 0 && prot > chestplateArmor) {
                                 chestplateArmor = prot;
@@ -822,28 +822,28 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
                     }
                 }
             }
-            this.dataManager.set(SWORD_INDEX, swordIndex);
-            this.dataManager.set(CHEST_INDEX, chestplateIndex);
-            this.dataManager.set(HELMET_INDEX, helmetIndex);
+            this.entityData.set(SWORD_INDEX, swordIndex);
+            this.entityData.set(CHEST_INDEX, chestplateIndex);
+            this.entityData.set(HELMET_INDEX, helmetIndex);
             updateClientInventory();
         }
     }
 
     private void updateClientInventory() {
-        if (!world.isRemote) {
+        if (!level.isClientSide) {
             for (int i = 0; i < 9; i++) {
-                AlexsMobs.sendMSGToAll(new MessageKangarooInventorySync(this.getEntityId(), i, kangarooInventory.getStackInSlot(i)));
+                AlexsMobs.sendMSGToAll(new MessageKangarooInventorySync(this.getId(), i, kangarooInventory.getItem(i)));
             }
         }
     }
 
     @Nullable
-    private Map<EquipmentSlotType, ItemStack> func_241354_r_() {
+    private Map<EquipmentSlotType, ItemStack> collectEquipmentChanges() {
         Map<EquipmentSlotType, ItemStack> map = null;
 
         for (EquipmentSlotType equipmentslottype : EquipmentSlotType.values()) {
             ItemStack itemstack;
-            switch (equipmentslottype.getSlotType()) {
+            switch (equipmentslottype.getType()) {
                 case HAND:
                     itemstack = this.getItemInHand(equipmentslottype);
                     break;
@@ -854,8 +854,8 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
                     continue;
             }
 
-            ItemStack itemstack1 = this.getItemStackFromSlot(equipmentslottype);
-            if (!ItemStack.areItemStacksEqual(itemstack1, itemstack)) {
+            ItemStack itemstack1 = this.getItemBySlot(equipmentslottype);
+            if (!ItemStack.matches(itemstack1, itemstack)) {
                 net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent(this, equipmentslottype, itemstack, itemstack1));
                 if (map == null) {
                     map = Maps.newEnumMap(EquipmentSlotType.class);
@@ -863,11 +863,11 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
 
                 map.put(equipmentslottype, itemstack1);
                 if (!itemstack.isEmpty()) {
-                    this.getAttributeManager().removeModifiers(itemstack.getAttributeModifiers(equipmentslottype));
+                    this.getAttributes().removeAttributeModifiers(itemstack.getAttributeModifiers(equipmentslottype));
                 }
 
                 if (!itemstack1.isEmpty()) {
-                    this.getAttributeManager().reapplyModifiers(itemstack1.getAttributeModifiers(equipmentslottype));
+                    this.getAttributes().addTransientAttributeModifiers(itemstack1.getAttributeModifiers(equipmentslottype));
                 }
             }
         }
@@ -875,8 +875,8 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
         return map;
     }
 
-    public ItemStack getItemStackFromSlot(EquipmentSlotType slotIn) {
-        switch (slotIn.getSlotType()) {
+    public ItemStack getItemBySlot(EquipmentSlotType slotIn) {
+        switch (slotIn.getType()) {
             case HAND:
                 return getItemInHand(slotIn);
             case ARMOR:
@@ -887,14 +887,14 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
     }
 
     private ItemStack getArmorInSlot(EquipmentSlotType slot) {
-        int helmIndex = dataManager.get(HELMET_INDEX);
-        int chestIndex = dataManager.get(CHEST_INDEX);
-        return slot == EquipmentSlotType.HEAD && helmIndex >= 0 ? kangarooInventory.getStackInSlot(helmIndex) : slot == EquipmentSlotType.CHEST && chestIndex >= 0 ? kangarooInventory.getStackInSlot(chestIndex) : ItemStack.EMPTY;
+        int helmIndex = entityData.get(HELMET_INDEX);
+        int chestIndex = entityData.get(CHEST_INDEX);
+        return slot == EquipmentSlotType.HEAD && helmIndex >= 0 ? kangarooInventory.getItem(helmIndex) : slot == EquipmentSlotType.CHEST && chestIndex >= 0 ? kangarooInventory.getItem(chestIndex) : ItemStack.EMPTY;
     }
 
     private ItemStack getItemInHand(EquipmentSlotType slot) {
-        int index = dataManager.get(SWORD_INDEX);
-        return slot == EquipmentSlotType.MAINHAND && index >= 0 ? kangarooInventory.getStackInSlot(index) : ItemStack.EMPTY;
+        int index = entityData.get(SWORD_INDEX);
+        return slot == EquipmentSlotType.MAINHAND && index >= 0 ? kangarooInventory.getItem(index) : ItemStack.EMPTY;
     }
 
     public double getDamageForItem(ItemStack itemStack) {
@@ -922,23 +922,23 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
         return 0;
     }
 
-    protected void jump() {
-        super.jump();
-        double d0 = this.moveController.getSpeed();
+    protected void jumpFromGround() {
+        super.jumpFromGround();
+        double d0 = this.moveControl.getSpeedModifier();
         if (d0 > 0.0D) {
-            double d1 = horizontalMag(this.getMotion());
+            double d1 = getHorizontalDistanceSqr(this.getDeltaMovement());
             if (d1 < 0.01D) {
             }
         }
 
-        if (!this.world.isRemote) {
-            this.world.setEntityState(this, (byte) 1);
+        if (!this.level.isClientSide) {
+            this.level.broadcastEntityEvent(this, (byte) 1);
         }
 
     }
 
     public boolean hasJumper() {
-        return jumpController instanceof JumpHelperController;
+        return jumpControl instanceof JumpHelperController;
     }
 
     public void startJumping() {
@@ -951,13 +951,13 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void handleStatusUpdate(byte id) {
+    public void handleEntityEvent(byte id) {
         if (id == 1) {
-            this.handleRunningEffect();
+            this.spawnSprintParticle();
             this.jumpDuration = 16;
             this.jumpTicks = 0;
         } else {
-            super.handleStatusUpdate(id);
+            super.handleEntityEvent(id);
         }
     }
 
@@ -967,7 +967,7 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
     }
 
     @Override
-    public void onInventoryChanged(IInventory iInventory) {
+    public void containerChanged(IInventory iInventory) {
         this.resetKangarooSlots();
     }
 
@@ -981,9 +981,9 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
         }
 
         public void tick() {
-            if (this.kangaroo.hasJumper() && this.kangaroo.onGround && !this.kangaroo.isJumping && !((EntityKangaroo.JumpHelperController) this.kangaroo.jumpController).getIsJumping()) {
+            if (this.kangaroo.hasJumper() && this.kangaroo.onGround && !this.kangaroo.jumping && !((EntityKangaroo.JumpHelperController) this.kangaroo.jumpControl).getIsJumping()) {
                 this.kangaroo.setMovementSpeed(0.0D);
-            } else if (this.isUpdating()) {
+            } else if (this.hasWanted()) {
                 this.kangaroo.setMovementSpeed(this.nextJumpSpeed);
             }
 
@@ -993,12 +993,12 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
         /**
          * Sets the speed and location to move to
          */
-        public void setMoveTo(double x, double y, double z, double speedIn) {
+        public void setWantedPosition(double x, double y, double z, double speedIn) {
             if (this.kangaroo.isInWater()) {
                 speedIn = 1.5D;
             }
 
-            super.setMoveTo(x, y, z, speedIn);
+            super.setWantedPosition(x, y, z, speedIn);
             if (speedIn > 0.0D) {
                 this.nextJumpSpeed = speedIn;
             }
@@ -1016,7 +1016,7 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
         }
 
         public boolean getIsJumping() {
-            return this.isJumping;
+            return this.jump;
         }
 
         public boolean canJump() {
@@ -1028,9 +1028,9 @@ public class EntityKangaroo extends TameableEntity implements IInventoryChangedL
         }
 
         public void tick() {
-            if (this.isJumping) {
+            if (this.jump) {
                 this.kangaroo.startJumping();
-                this.isJumping = false;
+                this.jump = false;
             }
 
         }

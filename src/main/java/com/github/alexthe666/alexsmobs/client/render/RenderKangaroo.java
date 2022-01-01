@@ -25,16 +25,16 @@ public class RenderKangaroo extends MobRenderer<EntityKangaroo, ModelKangaroo> {
     }
 
     public boolean shouldRender(EntityKangaroo kangaroo, ClippingHelper p_225626_2_, double p_225626_3_, double p_225626_5_, double p_225626_7_) {
-        if(kangaroo.isChild() && kangaroo.isPassenger() && kangaroo.getRidingEntity() instanceof EntityKangaroo){
+        if(kangaroo.isBaby() && kangaroo.isPassenger() && kangaroo.getVehicle() instanceof EntityKangaroo){
             return false;
         }
         return super.shouldRender(kangaroo, p_225626_2_, p_225626_3_, p_225626_5_, p_225626_7_);
     }
 
-    protected void preRenderCallback(EntityKangaroo entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityKangaroo entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
     }
 
-    public ResourceLocation getEntityTexture(EntityKangaroo entity) {
+    public ResourceLocation getTextureLocation(EntityKangaroo entity) {
         return TEXTURE;
     }
 }

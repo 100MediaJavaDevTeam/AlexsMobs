@@ -24,7 +24,7 @@ public class LayerBasicGlow<T extends LivingEntity> extends LayerRenderer<T, Ent
     public LayerBasicGlow(IEntityRenderer<T, EntityModel<T>> renderer, ResourceLocation texture) {
         super(renderer);
         this.texture = texture;
-        this.renderType = RenderType.getEyes(texture);
+        this.renderType = RenderType.eyes(texture);
     }
 
     public boolean shouldCombineTextures() {
@@ -34,7 +34,7 @@ public class LayerBasicGlow<T extends LivingEntity> extends LayerRenderer<T, Ent
     @Override
     public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, T entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
         IVertexBuilder ivertexbuilder = bufferIn.getBuffer(renderType);
-        this.getEntityModel().render(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
+        this.getParentModel().renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
 
     }
 

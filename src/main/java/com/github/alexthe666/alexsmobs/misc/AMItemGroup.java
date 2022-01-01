@@ -22,13 +22,13 @@ public class AMItemGroup extends ItemGroup {
     }
 
     @Override
-    public ItemStack createIcon() {
+    public ItemStack makeIcon() {
         return new ItemStack(AMItemRegistry.TAB_ICON);
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void fill(NonNullList<ItemStack> items) {
-        super.fill(items);
+    public void fillItemList(NonNullList<ItemStack> items) {
+        super.fillItemList(items);
         try {
             for (Field f : AMEffectRegistry.class.getDeclaredFields()) {
                 Object obj = f.get(null);
@@ -46,7 +46,7 @@ public class AMItemGroup extends ItemGroup {
                 if (obj instanceof Enchantment ) {
                     Enchantment enchant = (Enchantment)obj;
                     if(enchant.isAllowedOnBooks()){
-                        items.add(EnchantedBookItem.getEnchantedItemStack(new EnchantmentData(enchant, enchant.getMaxLevel())));
+                        items.add(EnchantedBookItem.createForEnchantment(new EnchantmentData(enchant, enchant.getMaxLevel())));
                     }
                 }
             }

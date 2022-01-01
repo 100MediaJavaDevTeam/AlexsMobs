@@ -35,7 +35,7 @@ public class RenderVoidWormBody extends LivingRenderer<EntityVoidWormPart, Entit
         return worm.getPortalTicks() <= 0 && super.shouldRender(worm, camera, camX, camY, camZ);
     }
 
-    public ResourceLocation getEntityTexture(EntityVoidWormPart entity) {
+    public ResourceLocation getTextureLocation(EntityVoidWormPart entity) {
         if (entity.isHurt()) {
             return entity.isTail() ? TEXTURE_TAIL_HURT : TEXTURE_BODY_HURT;
         } else {
@@ -43,10 +43,10 @@ public class RenderVoidWormBody extends LivingRenderer<EntityVoidWormPart, Entit
         }
     }
 
-    protected void applyRotations(EntityVoidWormPart entityLiving, MatrixStack matrixStackIn, float ageInTicks, float rotationYaw, float partialTicks) {
+    protected void setupRotations(EntityVoidWormPart entityLiving, MatrixStack matrixStackIn, float ageInTicks, float rotationYaw, float partialTicks) {
         Pose pose = entityLiving.getPose();
         if (pose != Pose.SLEEPING) {
-            matrixStackIn.rotate(Vector3f.YP.rotationDegrees(180.0F - entityLiving.getWormYaw(partialTicks)));
+            matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(180.0F - entityLiving.getWormYaw(partialTicks)));
         }
         if (entityLiving.deathTime > 0) {
             float f = ((float) entityLiving.deathTime + partialTicks - 1.0F) / 20.0F * 1.6F;
@@ -54,18 +54,18 @@ public class RenderVoidWormBody extends LivingRenderer<EntityVoidWormPart, Entit
             if (f > 1.0F) {
                 f = 1.0F;
             }
-            matrixStackIn.rotate(Vector3f.ZP.rotationDegrees(f * this.getDeathMaxRotation(entityLiving)));
+            matrixStackIn.mulPose(Vector3f.ZP.rotationDegrees(f * this.getFlipDegrees(entityLiving)));
         }
 
     }
 
-    protected void preRenderCallback(EntityVoidWormPart entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
-        this.entityModel = entitylivingbaseIn.isTail() ? tailModel : bodyModel;
+    protected void scale(EntityVoidWormPart entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+        this.model = entitylivingbaseIn.isTail() ? tailModel : bodyModel;
         matrixStackIn.scale(entitylivingbaseIn.getWormScale(), entitylivingbaseIn.getWormScale(), entitylivingbaseIn.getWormScale());
     }
 
-    protected boolean canRenderName(EntityVoidWormPart entity) {
-        return super.canRenderName(entity) && (entity.getAlwaysRenderNameTagForRender() || entity.hasCustomName() && entity == this.renderManager.pointedEntity);
+    protected boolean shouldShowName(EntityVoidWormPart entity) {
+        return super.shouldShowName(entity) && (entity.shouldShowName() || entity.hasCustomName() && entity == this.entityRenderDispatcher.crosshairPickEntity);
     }
 
 
@@ -79,7 +79,7 @@ public class RenderVoidWormBody extends LivingRenderer<EntityVoidWormPart, Entit
             if (!worm.isHurt()) {
                 IVertexBuilder ivertexbuilder = bufferIn.getBuffer(AMRenderTypes.getEyesAlphaEnabled(worm.isTail() ? TEXTURE_TAIL_GLOW : TEXTURE_BODY_GLOW));
                 float alpha = (float) MathHelper.clamp((worm.getHealth() - worm.getHealthThreshold()) / (worm.getMaxHealth() - worm.getHealthThreshold()), 0, 1F);
-                this.getEntityModel().render(matrixStackIn, ivertexbuilder, 240, LivingRenderer.getPackedOverlay(worm, 0.0F), 1.0F, 1.0F, 1.0F, 1);
+                this.getParentModel().renderToBuffer(matrixStackIn, ivertexbuilder, 240, LivingRenderer.getOverlayCoords(worm, 0.0F), 1.0F, 1.0F, 1.0F, 1);
             }
         }
     }

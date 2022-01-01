@@ -18,33 +18,33 @@ public class GroundPathNavigatorWide extends GroundPathNavigator {
         this.distancemodifier = distancemodifier;
     }
 
-    protected void pathFollow() {
-        Vector3d vector3d = this.getEntityPosition();
-        this.maxDistanceToWaypoint = this.entity.getWidth() * distancemodifier;
-        Vector3i vector3i = this.currentPath.func_242948_g();
-        double d0 = Math.abs(this.entity.getPosX() - ((double)vector3i.getX() + 0.5D));
-        double d1 = Math.abs(this.entity.getPosY() - (double)vector3i.getY());
-        double d2 = Math.abs(this.entity.getPosZ() - ((double)vector3i.getZ() + 0.5D));
+    protected void followThePath() {
+        Vector3d vector3d = this.getTempMobPos();
+        this.maxDistanceToWaypoint = this.mob.getBbWidth() * distancemodifier;
+        Vector3i vector3i = this.path.getNextNodePos();
+        double d0 = Math.abs(this.mob.getX() - ((double)vector3i.getX() + 0.5D));
+        double d1 = Math.abs(this.mob.getY() - (double)vector3i.getY());
+        double d2 = Math.abs(this.mob.getZ() - ((double)vector3i.getZ() + 0.5D));
         boolean flag = d0 < (double)this.maxDistanceToWaypoint && d2 < (double)this.maxDistanceToWaypoint && d1 < 1.0D;
-        if (flag || this.entity.func_233660_b_(this.currentPath.getCurrentPoint().nodeType) && this.func_234112_b_(vector3d)) {
-            this.currentPath.incrementPathIndex();
+        if (flag || this.mob.canCutCorner(this.path.getNextNode().type) && this.shouldTargetNextNodeInDirection(vector3d)) {
+            this.path.advance();
         }
 
-        this.checkForStuck(vector3d);
+        this.doStuckDetection(vector3d);
     }
 
-    private boolean func_234112_b_(Vector3d currentPosition) {
-        if (this.currentPath.getCurrentPathIndex() + 1 >= this.currentPath.getCurrentPathLength()) {
+    private boolean shouldTargetNextNodeInDirection(Vector3d currentPosition) {
+        if (this.path.getNextNodeIndex() + 1 >= this.path.getNodeCount()) {
             return false;
         } else {
-            Vector3d vector3d = Vector3d.copyCenteredHorizontally(this.currentPath.func_242948_g());
-            if (!currentPosition.isWithinDistanceOf(vector3d, 2.0D)) {
+            Vector3d vector3d = Vector3d.atBottomCenterOf(this.path.getNextNodePos());
+            if (!currentPosition.closerThan(vector3d, 2.0D)) {
                 return false;
             } else {
-                Vector3d vector3d1 = Vector3d.copyCenteredHorizontally(this.currentPath.func_242947_d(this.currentPath.getCurrentPathIndex() + 1));
+                Vector3d vector3d1 = Vector3d.atBottomCenterOf(this.path.getNodePos(this.path.getNextNodeIndex() + 1));
                 Vector3d vector3d2 = vector3d1.subtract(vector3d);
                 Vector3d vector3d3 = currentPosition.subtract(vector3d);
-                return vector3d2.dotProduct(vector3d3) > 0.0D;
+                return vector3d2.dot(vector3d3) > 0.0D;
             }
         }
     }

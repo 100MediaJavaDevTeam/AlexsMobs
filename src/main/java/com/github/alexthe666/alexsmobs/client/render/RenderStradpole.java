@@ -14,12 +14,12 @@ public class RenderStradpole extends MobRenderer<EntityStradpole, ModelStradpole
         super(renderManagerIn, new ModelStradpole(), 0.25F);
     }
 
-    protected void preRenderCallback(EntityStradpole entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityStradpole entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         //matrixStackIn.scale(0.8F, 0.8F, 0.8F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntityStradpole entity) {
+    public ResourceLocation getTextureLocation(EntityStradpole entity) {
         return TEXTURE;
     }
 }

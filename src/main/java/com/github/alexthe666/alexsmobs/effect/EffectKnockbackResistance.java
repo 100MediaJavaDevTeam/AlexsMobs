@@ -12,17 +12,17 @@ public class EffectKnockbackResistance extends Effect {
     public EffectKnockbackResistance() {
         super(EffectType.BENEFICIAL, 0X865337);
         this.setRegistryName(AlexsMobs.MODID, "knockback_resistance");
-        this.addAttributesModifier(Attributes.KNOCKBACK_RESISTANCE, "03C3C89D-7037-4B42-869F-B146BCB64D2F", 0.5D, AttributeModifier.Operation.ADDITION);
+        this.addAttributeModifier(Attributes.KNOCKBACK_RESISTANCE, "03C3C89D-7037-4B42-869F-B146BCB64D2F", 0.5D, AttributeModifier.Operation.ADDITION);
     }
 
-    public void performEffect(LivingEntity LivingEntityIn, int amplifier) {
+    public void applyEffectTick(LivingEntity LivingEntityIn, int amplifier) {
     }
 
-    public boolean isReady(int duration, int amplifier) {
+    public boolean isDurationEffectTick(int duration, int amplifier) {
         return duration > 0;
     }
 
-    public String getName() {
+    public String getDescriptionId() {
         return "alexsmobs.potion.knockback_resistance";
     }
 

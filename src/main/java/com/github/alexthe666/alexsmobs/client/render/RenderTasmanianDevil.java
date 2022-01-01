@@ -21,11 +21,11 @@ public class RenderTasmanianDevil extends MobRenderer<EntityTasmanianDevil, Mode
         this.addLayer(new EyeLayer(this));
     }
 
-    protected void preRenderCallback(EntityTasmanianDevil entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityTasmanianDevil entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
     }
 
 
-    public ResourceLocation getEntityTexture(EntityTasmanianDevil entity) {
+    public ResourceLocation getTextureLocation(EntityTasmanianDevil entity) {
         return TEXTURE;
     }
 
@@ -37,8 +37,8 @@ public class RenderTasmanianDevil extends MobRenderer<EntityTasmanianDevil, Mode
 
         public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityTasmanianDevil entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
           if(entitylivingbaseIn.getAnimation() == EntityTasmanianDevil.ANIMATION_HOWL && entitylivingbaseIn.getAnimationTick() < 34){
-              IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.getEyes(TEXTURE_EYES));
-              this.getEntityModel().render(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getPackedOverlay(entitylivingbaseIn, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
+              IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.eyes(TEXTURE_EYES));
+              this.getParentModel().renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getOverlayCoords(entitylivingbaseIn, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
           }
         }
     }

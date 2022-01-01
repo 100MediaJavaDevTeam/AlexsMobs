@@ -29,39 +29,39 @@ public class MantisShrimpAIFryRice extends MoveToBlockGoal {
     public MantisShrimpAIFryRice(EntityMantisShrimp entityMantisShrimp) {
         super(entityMantisShrimp, 1, 8);
         this.mantisShrimp = entityMantisShrimp;
-        this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE));
-        tag = ItemTags.getCollection().get(AMTagRegistry.SHRIMP_RICE_FRYABLES);
+        this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+        tag = ItemTags.getAllTags().getTag(AMTagRegistry.SHRIMP_RICE_FRYABLES);
     }
 
-    public void resetTask(){
+    public void stop(){
         cookingTicks = 0;
         if(!wasLitPrior){
-            BlockPos blockpos = this.func_241846_j().down();
-            BlockState state = mantisShrimp.world.getBlockState(blockpos);
+            BlockPos blockpos = this.getMoveToTarget().below();
+            BlockState state = mantisShrimp.level.getBlockState(blockpos);
             if(state.getBlock() instanceof AbstractFurnaceBlock && !wasLitPrior){
-                mantisShrimp.world.setBlockState(blockpos, state.with(AbstractFurnaceBlock.LIT, false));
+                mantisShrimp.level.setBlockAndUpdate(blockpos, state.setValue(AbstractFurnaceBlock.LIT, false));
             }
         }
-        super.resetTask();
+        super.stop();
     }
 
     public void tick() {
         super.tick();
-        BlockPos blockpos = this.func_241846_j().down();
-        if(this.getIsAboveDestination()){
-            BlockState state = mantisShrimp.world.getBlockState(blockpos);
+        BlockPos blockpos = this.getMoveToTarget().below();
+        if(this.isReachedTarget()){
+            BlockState state = mantisShrimp.level.getBlockState(blockpos);
             if(mantisShrimp.punchProgress == 0){
                 mantisShrimp.punch();
             }
             if(state.getBlock() instanceof AbstractFurnaceBlock && !wasLitPrior){
-                mantisShrimp.world.setBlockState(blockpos, state.with(AbstractFurnaceBlock.LIT, true));
+                mantisShrimp.level.setBlockAndUpdate(blockpos, state.setValue(AbstractFurnaceBlock.LIT, true));
             }
             cookingTicks++;
             if(cookingTicks > 200){
                 cookingTicks = 0;
                 ItemStack rice = new ItemStack(AMItemRegistry.SHRIMP_FRIED_RICE);
-                rice.setCount(mantisShrimp.getHeldItemMainhand().getCount());
-                mantisShrimp.setHeldItem(Hand.MAIN_HAND, rice);
+                rice.setCount(mantisShrimp.getMainHandItem().getCount());
+                mantisShrimp.setItemInHand(Hand.MAIN_HAND, rice);
 
             }
         }else{
@@ -70,29 +70,29 @@ public class MantisShrimpAIFryRice extends MoveToBlockGoal {
     }
 
     @Override
-    public boolean shouldExecute() {
-        return tag.contains(this.mantisShrimp.getHeldItemMainhand().getItem()) && !mantisShrimp.isSitting() && super.shouldExecute();
+    public boolean canUse() {
+        return tag.contains(this.mantisShrimp.getMainHandItem().getItem()) && !mantisShrimp.isSitting() && super.canUse();
     }
 
-    public boolean shouldContinueExecuting() {
-        return tag.contains(this.mantisShrimp.getHeldItemMainhand().getItem()) && !mantisShrimp.isSitting() && super.shouldContinueExecuting();
+    public boolean canContinueToUse() {
+        return tag.contains(this.mantisShrimp.getMainHandItem().getItem()) && !mantisShrimp.isSitting() && super.canContinueToUse();
     }
 
-    public double getTargetDistanceSq() {
+    public double acceptedDistance() {
         return 3.9F;
     }
 
     @Override
-    protected boolean shouldMoveTo(IWorldReader worldIn, BlockPos pos) {
-        if (!worldIn.isAirBlock(pos.up())) {
+    protected boolean isValidTarget(IWorldReader worldIn, BlockPos pos) {
+        if (!worldIn.isEmptyBlock(pos.above())) {
             return false;
         } else {
             BlockState blockstate = worldIn.getBlockState(pos);
             if(blockstate.getBlock() instanceof AbstractFurnaceBlock){
-                wasLitPrior = blockstate.get(AbstractFurnaceBlock.LIT);
+                wasLitPrior = blockstate.getValue(AbstractFurnaceBlock.LIT);
                 return true;
             }
-            return blockstate.getBlock().isIn(BlockTags.CAMPFIRES);
+            return blockstate.getBlock().is(BlockTags.CAMPFIRES);
         }
     }
 

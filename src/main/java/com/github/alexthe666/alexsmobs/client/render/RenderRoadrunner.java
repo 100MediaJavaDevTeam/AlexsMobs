@@ -14,12 +14,12 @@ public class RenderRoadrunner extends MobRenderer<EntityRoadrunner, ModelRoadrun
         super(renderManagerIn, new ModelRoadrunner(), 0.3F);
     }
 
-    protected void preRenderCallback(EntityRoadrunner entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityRoadrunner entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
       //  matrixStackIn.scale(1.2F, 1.2F, 1.2F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntityRoadrunner entity) {
+    public ResourceLocation getTextureLocation(EntityRoadrunner entity) {
         return TEXTURE;
     }
 }

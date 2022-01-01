@@ -26,20 +26,20 @@ public class RenderSpectre extends MobRenderer<EntitySpectre, ModelSpectre> {
         this.addLayer(new SpectreMembraneLayer(this));
     }
 
-    protected void preRenderCallback(EntitySpectre entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntitySpectre entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(1.3F, 1.3F, 1.3F);
     }
 
-    protected int getBlockLight(EntitySpectre entityIn, BlockPos partialTicks) {
+    protected int getBlockLightLevel(EntitySpectre entityIn, BlockPos partialTicks) {
         return 15;
     }
 
-    public ResourceLocation getEntityTexture(EntitySpectre entity) {
+    public ResourceLocation getTextureLocation(EntitySpectre entity) {
         return TEXTURE_BONE;
     }
 
     public float getAlphaForRender(EntitySpectre entityIn, float partialTicks) {
-        return ((float) Math.sin((entityIn.ticksExisted + partialTicks) * 0.1F) + 1.5F) * 0.1F + 0.5F;
+        return ((float) Math.sin((entityIn.tickCount + partialTicks) * 0.1F) + 1.5F) * 0.1F + 0.5F;
     }
 
     class SpectreEyesLayer extends AbstractEyesLayer<EntitySpectre, ModelSpectre> {
@@ -48,8 +48,8 @@ public class RenderSpectre extends MobRenderer<EntitySpectre, ModelSpectre> {
             super(p_i50928_1_);
         }
 
-        public RenderType getRenderType() {
-            return RenderType.getEyes(TEXTURE_EYES);
+        public RenderType renderType() {
+            return RenderType.eyes(TEXTURE_EYES);
         }
     }
 
@@ -61,10 +61,10 @@ public class RenderSpectre extends MobRenderer<EntitySpectre, ModelSpectre> {
 
         public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntitySpectre entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
             IVertexBuilder lvt_11_1_ = bufferIn.getBuffer(this.getRenderType());
-            this.getEntityModel().render(matrixStackIn, lvt_11_1_, 15728640, LivingRenderer.getPackedOverlay(entitylivingbaseIn, 0), 1.0F, 1.0F, 1.0F, getAlphaForRender(entitylivingbaseIn, partialTicks));
-            if (entitylivingbaseIn.getLeashed()) {
-                IVertexBuilder lead = bufferIn.getBuffer(AMRenderTypes.getEntityCutoutNoCull(TEXTURE_LEAD));
-                this.getEntityModel().render(matrixStackIn, lead, 15728640, LivingRenderer.getPackedOverlay(entitylivingbaseIn, 0), 1.0F, 1.0F, 1.0F, 1.0F);
+            this.getParentModel().renderToBuffer(matrixStackIn, lvt_11_1_, 15728640, LivingRenderer.getOverlayCoords(entitylivingbaseIn, 0), 1.0F, 1.0F, 1.0F, getAlphaForRender(entitylivingbaseIn, partialTicks));
+            if (entitylivingbaseIn.isLeashed()) {
+                IVertexBuilder lead = bufferIn.getBuffer(AMRenderTypes.entityCutoutNoCull(TEXTURE_LEAD));
+                this.getParentModel().renderToBuffer(matrixStackIn, lead, 15728640, LivingRenderer.getOverlayCoords(entitylivingbaseIn, 0), 1.0F, 1.0F, 1.0F, 1.0F);
             }
         }
 

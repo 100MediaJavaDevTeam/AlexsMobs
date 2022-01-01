@@ -27,7 +27,7 @@ import net.minecraftforge.fml.network.NetworkHooks;
 
 public class EntityTossedItem extends ProjectileItemEntity {
 
-    protected static final DataParameter<Boolean> DART = EntityDataManager.createKey(EntityTossedItem.class, DataSerializers.BOOLEAN);
+    protected static final DataParameter<Boolean> DART = EntityDataManager.defineId(EntityTossedItem.class, DataSerializers.BOOLEAN);
 
     public EntityTossedItem(EntityType p_i50154_1_, World p_i50154_2_) {
         super(p_i50154_1_, p_i50154_2_);
@@ -46,31 +46,31 @@ public class EntityTossedItem extends ProjectileItemEntity {
     }
 
     @Override
-    protected void registerData() {
-        super.registerData();
-        this.dataManager.register(DART, false);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(DART, false);
     }
 
     public boolean isDart() {
-        return this.dataManager.get(DART);
+        return this.entityData.get(DART);
     }
 
     public void setDart(boolean dart) {
-        this.dataManager.set(DART, dart);
+        this.entityData.set(DART, dart);
     }
 
     @Override
-    public IPacket<?> createSpawnPacket() {
+    public IPacket<?> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void handleStatusUpdate(byte id) {
+    public void handleEntityEvent(byte id) {
         if (id == 3) {
             double d0 = 0.08D;
 
             for(int i = 0; i < 8; ++i) {
-                this.world.addParticle(new ItemParticleData(ParticleTypes.ITEM, this.getItem()), this.getPosX(), this.getPosY(), this.getPosZ(), ((double)this.rand.nextFloat() - 0.5D) * 0.08D, ((double)this.rand.nextFloat() - 0.5D) * 0.08D, ((double)this.rand.nextFloat() - 0.5D) * 0.08D);
+                this.level.addParticle(new ItemParticleData(ParticleTypes.ITEM, this.getItem()), this.getX(), this.getY(), this.getZ(), ((double)this.random.nextFloat() - 0.5D) * 0.08D, ((double)this.random.nextFloat() - 0.5D) * 0.08D, ((double)this.random.nextFloat() - 0.5D) * 0.08D);
             }
         }
 
@@ -78,28 +78,28 @@ public class EntityTossedItem extends ProjectileItemEntity {
 
 
     @OnlyIn(Dist.CLIENT)
-    public void setVelocity(double x, double y, double z) {
-        this.setMotion(x, y, z);
-        if (this.prevRotationPitch == 0.0F && this.prevRotationYaw == 0.0F) {
+    public void lerpMotion(double x, double y, double z) {
+        this.setDeltaMovement(x, y, z);
+        if (this.xRotO == 0.0F && this.yRotO == 0.0F) {
             float f = MathHelper.sqrt(x * x + z * z);
-            this.rotationPitch = (float)(MathHelper.atan2(y, (double)f) * (double)(180F / (float)Math.PI));
-            this.rotationYaw = (float)(MathHelper.atan2(x, z) * (double)(180F / (float)Math.PI));
-            this.prevRotationPitch = this.rotationPitch;
-            this.prevRotationYaw = this.rotationYaw;
-            this.setLocationAndAngles(this.getPosX(), this.getPosY(), this.getPosZ(), this.rotationYaw, this.rotationPitch);
+            this.xRot = (float)(MathHelper.atan2(y, (double)f) * (double)(180F / (float)Math.PI));
+            this.yRot = (float)(MathHelper.atan2(x, z) * (double)(180F / (float)Math.PI));
+            this.xRotO = this.xRot;
+            this.yRotO = this.yRot;
+            this.moveTo(this.getX(), this.getY(), this.getZ(), this.yRot, this.xRot);
         }
 
     }
 
     public void tick() {
         super.tick();
-        Vector3d vector3d = this.getMotion();
-        float f = MathHelper.sqrt(horizontalMag(vector3d));
-        this.rotationPitch = func_234614_e_(this.prevRotationPitch, (float)(MathHelper.atan2(vector3d.y, (double)f) * (double)(180F / (float)Math.PI)));
-        this.rotationYaw = func_234614_e_(this.prevRotationYaw, (float)(MathHelper.atan2(vector3d.x, vector3d.z) * (double)(180F / (float)Math.PI)));
+        Vector3d vector3d = this.getDeltaMovement();
+        float f = MathHelper.sqrt(getHorizontalDistanceSqr(vector3d));
+        this.xRot = lerpRotation(this.xRotO, (float)(MathHelper.atan2(vector3d.y, (double)f) * (double)(180F / (float)Math.PI)));
+        this.yRot = lerpRotation(this.yRotO, (float)(MathHelper.atan2(vector3d.x, vector3d.z) * (double)(180F / (float)Math.PI)));
     }
 
-    protected static float func_234614_e_(float p_234614_0_, float p_234614_1_) {
+    protected static float lerpRotation(float p_234614_0_, float p_234614_1_) {
         while(p_234614_1_ - p_234614_0_ < -180.0F) {
             p_234614_0_ -= 360.0F;
         }
@@ -112,28 +112,28 @@ public class EntityTossedItem extends ProjectileItemEntity {
     }
 
 
-    protected void onEntityHit(EntityRayTraceResult p_213868_1_) {
-        super.onEntityHit(p_213868_1_);
-        if(this.getShooter() instanceof EntityCapuchinMonkey){
-            EntityCapuchinMonkey boss = (EntityCapuchinMonkey) this.getShooter();
-            if(!boss.isOnSameTeam(p_213868_1_.getEntity()) || !boss.isTamed() && !(p_213868_1_.getEntity() instanceof EntityCapuchinMonkey)){
-                p_213868_1_.getEntity().attackEntityFrom(DamageSource.causeThrownDamage(this, boss), isDart() ? 8 : 4);
+    protected void onHitEntity(EntityRayTraceResult p_213868_1_) {
+        super.onHitEntity(p_213868_1_);
+        if(this.getOwner() instanceof EntityCapuchinMonkey){
+            EntityCapuchinMonkey boss = (EntityCapuchinMonkey) this.getOwner();
+            if(!boss.isAlliedTo(p_213868_1_.getEntity()) || !boss.isTame() && !(p_213868_1_.getEntity() instanceof EntityCapuchinMonkey)){
+                p_213868_1_.getEntity().hurt(DamageSource.thrown(this, boss), isDart() ? 8 : 4);
             }
         }
     }
 
-    public void writeAdditional(CompoundNBT compound) {
+    public void addAdditionalSaveData(CompoundNBT compound) {
         compound.putBoolean("Dart", this.isDart());
     }
 
-    public void readAdditional(CompoundNBT compound) {
+    public void readAdditionalSaveData(CompoundNBT compound) {
         this.setDart(compound.getBoolean("Dart"));
     }
 
-    protected void onImpact(RayTraceResult result) {
-        super.onImpact(result);
-        if (!this.world.isRemote && (!this.isDart() || result.getType() == RayTraceResult.Type.BLOCK)) {
-            this.world.setEntityState(this, (byte)3);
+    protected void onHit(RayTraceResult result) {
+        super.onHit(result);
+        if (!this.level.isClientSide && (!this.isDart() || result.getType() == RayTraceResult.Type.BLOCK)) {
+            this.level.broadcastEntityEvent(this, (byte)3);
             this.remove();
         }
     }

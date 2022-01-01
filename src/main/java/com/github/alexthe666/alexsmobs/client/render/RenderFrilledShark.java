@@ -26,11 +26,11 @@ public class RenderFrilledShark extends MobRenderer<EntityFrilledShark, ModelFri
         this.addLayer(new TeethLayer(this));
     }
 
-    protected void preRenderCallback(EntityFrilledShark entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityFrilledShark entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(0.85F, 0.85F, 0.85F);
     }
 
-    public ResourceLocation getEntityTexture(EntityFrilledShark entity) {
+    public ResourceLocation getTextureLocation(EntityFrilledShark entity) {
         return entity.isKaiju() ? (entity.isDepressurized() ? TEXTURE_KAIJU_DEPRESSURIZED : TEXTURE_KAIJU) : (entity.isDepressurized() ? TEXTURE_DEPRESSURIZED : TEXTURE);
     }
 
@@ -43,7 +43,7 @@ public class RenderFrilledShark extends MobRenderer<EntityFrilledShark, ModelFri
 
         public void render(MatrixStack matrixStackIn, IRenderTypeBuffer buffer, int packedLightIn, EntityFrilledShark entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
             IVertexBuilder glintBuilder = buffer.getBuffer(AMRenderTypes.getEyesFlickering(TEXTURE_TEETH, 240));
-            this.getEntityModel().render(matrixStackIn, glintBuilder, 240, NO_OVERLAY, 1, 1, 1, 1);
+            this.getParentModel().renderToBuffer(matrixStackIn, glintBuilder, 240, NO_OVERLAY, 1, 1, 1, 1);
 
         }
     }

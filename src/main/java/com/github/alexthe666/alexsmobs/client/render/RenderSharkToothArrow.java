@@ -13,7 +13,7 @@ public class RenderSharkToothArrow extends ArrowRenderer<EntitySharkToothArrow> 
     }
 
     @Override
-    public ResourceLocation getEntityTexture(EntitySharkToothArrow entity) {
+    public ResourceLocation getTextureLocation(EntitySharkToothArrow entity) {
         return TEXTURE;
     }
 }

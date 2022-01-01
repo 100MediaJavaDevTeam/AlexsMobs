@@ -21,24 +21,24 @@ public class CrowAIMelee extends Goal {
         this.crow = crow;
     }
 
-    public boolean shouldExecute(){
-        return crow.getAttackTarget() != null && !crow.isSitting() && crow.getCommand() != 3;
+    public boolean canUse(){
+        return crow.getTarget() != null && !crow.isSitting() && crow.getCommand() != 3;
     }
 
-    public void startExecuting() {
-        clockwise = crow.getRNG().nextBoolean();
-        yLevel = crow.getRNG().nextInt(2);
+    public void start() {
+        clockwise = crow.getRandom().nextBoolean();
+        yLevel = crow.getRandom().nextInt(2);
         circlingTime = 0;
-        maxCircleTime = 20 + crow.getRNG().nextInt(100);
-        circleDistance = 1F + crow.getRNG().nextFloat() * 3F;
+        maxCircleTime = 20 + crow.getRandom().nextInt(100);
+        circleDistance = 1F + crow.getRandom().nextFloat() * 3F;
     }
 
-    public void resetTask() {
-        clockwise = crow.getRNG().nextBoolean();
-        yLevel = crow.getRNG().nextInt(2);
+    public void stop() {
+        clockwise = crow.getRandom().nextBoolean();
+        yLevel = crow.getRandom().nextInt(2);
         circlingTime = 0;
-        maxCircleTime = 20 + crow.getRNG().nextInt(100);
-        circleDistance = 1F + crow.getRNG().nextFloat() * 3F;
+        maxCircleTime = 20 + crow.getRandom().nextInt(100);
+        circleDistance = 1F + crow.getRandom().nextFloat() * 3F;
         if(crow.isOnGround()){
             crow.setFlying(false);
         }
@@ -48,26 +48,26 @@ public class CrowAIMelee extends Goal {
         if (this.crow.isFlying()) {
             circlingTime++;
         }
-        LivingEntity target = crow.getAttackTarget();
+        LivingEntity target = crow.getTarget();
         if(circlingTime > maxCircleTime){
-            crow.getMoveHelper().setMoveTo(target.getPosX(), target.getPosY() + target.getEyeHeight() / 2F, target.getPosZ(), 1.3F);
-            if(crow.getDistance(target) < 2){
+            crow.getMoveControl().setWantedPosition(target.getX(), target.getY() + target.getEyeHeight() / 2F, target.getZ(), 1.3F);
+            if(crow.distanceTo(target) < 2){
                crow.peck();
-                if(target.getCreatureAttribute() == CreatureAttribute.UNDEAD){
-                    target.attackEntityFrom(DamageSource.MAGIC, 4);
+                if(target.getMobType() == CreatureAttribute.UNDEAD){
+                    target.hurt(DamageSource.MAGIC, 4);
                 }else{
-                    target.attackEntityFrom(DamageSource.GENERIC, 1);
+                    target.hurt(DamageSource.GENERIC, 1);
                 }
 
-                resetTask();
+                stop();
             }
         }else{
-            Vector3d circlePos = getVultureCirclePos(target.getPositionVec());
+            Vector3d circlePos = getVultureCirclePos(target.position());
             if (circlePos == null) {
-                circlePos = target.getPositionVec();
+                circlePos = target.position();
             }
             crow.setFlying(true);
-            crow.getMoveHelper().setMoveTo(circlePos.getX(), circlePos.getY() + target.getEyeHeight() + 0.2F, circlePos.getZ(), 1F);
+            crow.getMoveControl().setWantedPosition(circlePos.x(), circlePos.y() + target.getEyeHeight() + 0.2F, circlePos.z(), 1F);
 
         }
     }
@@ -76,8 +76,8 @@ public class CrowAIMelee extends Goal {
         float angle = (0.01745329251F * 8 * (clockwise ? -circlingTime : circlingTime));
         double extraX = circleDistance * MathHelper.sin((angle));
         double extraZ = circleDistance * MathHelper.cos(angle);
-        Vector3d pos = new Vector3d(target.getX() + extraX, target.getY() + yLevel, target.getZ() + extraZ);
-        if (crow.world.isAirBlock(new BlockPos(pos))) {
+        Vector3d pos = new Vector3d(target.x() + extraX, target.y() + yLevel, target.z() + extraZ);
+        if (crow.level.isEmptyBlock(new BlockPos(pos))) {
             return pos;
         }
         return null;

@@ -19,25 +19,25 @@ public class RenderCrimsonMosquito extends MobRenderer<EntityCrimsonMosquito, Mo
         this.addLayer(new LayerCrimsonMosquitoBlood(this));
     }
 
-    protected void preRenderCallback(EntityCrimsonMosquito entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityCrimsonMosquito entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         float mosScale = entitylivingbaseIn.prevMosquitoScale + (entitylivingbaseIn.getMosquitoScale() - entitylivingbaseIn.prevMosquitoScale) * partialTickTime;
         matrixStackIn.scale(mosScale * 1.2F, mosScale * 1.2F, mosScale * 1.2F);
     }
 
-    protected boolean func_230495_a_(EntityCrimsonMosquito fly) {
+    protected boolean isShaking(EntityCrimsonMosquito fly) {
         return fly.isSick();
     }
 
-    protected void applyRotations(EntityCrimsonMosquito entityLiving, MatrixStack matrixStackIn, float ageInTicks, float rotationYaw, float partialTicks) {
-        if (this.func_230495_a_(entityLiving)) {
-            rotationYaw += (float)(Math.cos((double)entityLiving.ticksExisted * 7F) * Math.PI * (double)0.9F);
+    protected void setupRotations(EntityCrimsonMosquito entityLiving, MatrixStack matrixStackIn, float ageInTicks, float rotationYaw, float partialTicks) {
+        if (this.isShaking(entityLiving)) {
+            rotationYaw += (float)(Math.cos((double)entityLiving.tickCount * 7F) * Math.PI * (double)0.9F);
             float vibrate = 0.05F * entityLiving.getMosquitoScale();
-            matrixStackIn.translate((entityLiving.getRNG().nextFloat() - 0.5F)* vibrate, (entityLiving.getRNG().nextFloat() - 0.5F) * vibrate, (entityLiving.getRNG().nextFloat() - 0.5F)* vibrate);
+            matrixStackIn.translate((entityLiving.getRandom().nextFloat() - 0.5F)* vibrate, (entityLiving.getRandom().nextFloat() - 0.5F) * vibrate, (entityLiving.getRandom().nextFloat() - 0.5F)* vibrate);
         }
-        super.applyRotations(entityLiving, matrixStackIn, ageInTicks, rotationYaw, partialTicks);
+        super.setupRotations(entityLiving, matrixStackIn, ageInTicks, rotationYaw, partialTicks);
     }
 
-    public ResourceLocation getEntityTexture(EntityCrimsonMosquito entity) {
+    public ResourceLocation getTextureLocation(EntityCrimsonMosquito entity) {
         if (entity.isSick()) {
             return entity.isFromFly() ? TEXTURE_SICK_FLY : TEXTURE_SICK;
         }

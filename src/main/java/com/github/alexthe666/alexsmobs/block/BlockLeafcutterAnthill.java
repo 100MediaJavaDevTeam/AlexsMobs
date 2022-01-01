@@ -33,14 +33,14 @@ import java.util.List;
 public class BlockLeafcutterAnthill extends ContainerBlock {
 
     public BlockLeafcutterAnthill() {
-        super(AbstractBlock.Properties.create(Material.ORGANIC).sound(SoundType.GROUND).harvestTool(ToolType.SHOVEL).hardnessAndResistance(2.5F));
+        super(AbstractBlock.Properties.of(Material.GRASS).sound(SoundType.GRAVEL).harvestTool(ToolType.SHOVEL).strength(2.5F));
         this.setRegistryName("alexsmobs:leafcutter_anthill");
     }
 
-    public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
-        if (worldIn.getTileEntity(pos) instanceof TileEntityLeafcutterAnthill) {
-            TileEntityLeafcutterAnthill hill = (TileEntityLeafcutterAnthill) worldIn.getTileEntity(pos);
-            ItemStack heldItem = player.getHeldItem(handIn);
+    public ActionResultType use(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+        if (worldIn.getBlockEntity(pos) instanceof TileEntityLeafcutterAnthill) {
+            TileEntityLeafcutterAnthill hill = (TileEntityLeafcutterAnthill) worldIn.getBlockEntity(pos);
+            ItemStack heldItem = player.getItemInHand(handIn);
             if (heldItem.getItem() == AMItemRegistry.GONGYLIDIA && hill.hasQueen()) {
                 hill.releaseQueens();
                 if (!player.isCreative()) {
@@ -53,13 +53,13 @@ public class BlockLeafcutterAnthill extends ContainerBlock {
     }
 
 
-    public BlockRenderType getRenderType(BlockState p_149645_1_) {
+    public BlockRenderType getRenderShape(BlockState p_149645_1_) {
         return BlockRenderType.MODEL;
     }
 
-    public void onBlockHarvested(World worldIn, BlockPos pos, BlockState state, PlayerEntity player) {
-        if (!worldIn.isRemote && player.isCreative() && worldIn.getGameRules().getBoolean(GameRules.DO_TILE_DROPS)) {
-            TileEntity tileentity = worldIn.getTileEntity(pos);
+    public void playerWillDestroy(World worldIn, BlockPos pos, BlockState state, PlayerEntity player) {
+        if (!worldIn.isClientSide && player.isCreative() && worldIn.getGameRules().getBoolean(GameRules.RULE_DOBLOCKDROPS)) {
+            TileEntity tileentity = worldIn.getBlockEntity(pos);
             if (tileentity instanceof TileEntityLeafcutterAnthill) {
                 TileEntityLeafcutterAnthill anthivetileentity = (TileEntityLeafcutterAnthill) tileentity;
                 ItemStack itemstack = new ItemStack(this);
@@ -70,54 +70,54 @@ public class BlockLeafcutterAnthill extends ContainerBlock {
                 if (flag) {
                     CompoundNBT compoundnbt = new CompoundNBT();
                     compoundnbt.put("Ants", anthivetileentity.getAnts());
-                    itemstack.setTagInfo("BlockEntityTag", compoundnbt);
+                    itemstack.addTagElement("BlockEntityTag", compoundnbt);
                 }
                 CompoundNBT compoundnbt1 = new CompoundNBT();
-                itemstack.setTagInfo("BlockStateTag", compoundnbt1);
+                itemstack.addTagElement("BlockStateTag", compoundnbt1);
                 ItemEntity itementity = new ItemEntity(worldIn, pos.getX(), pos.getY(), pos.getZ(), itemstack);
-                itementity.setDefaultPickupDelay();
-                worldIn.addEntity(itementity);
+                itementity.setDefaultPickUpDelay();
+                worldIn.addFreshEntity(itementity);
             }
         }
 
-        super.onBlockHarvested(worldIn, pos, state, player);
+        super.playerWillDestroy(worldIn, pos, state, player);
     }
 
-    public void onFallenUpon(World worldIn, BlockPos pos, Entity entityIn, float fallDistance) {
+    public void fallOn(World worldIn, BlockPos pos, Entity entityIn, float fallDistance) {
         if (entityIn instanceof LivingEntity) {
             this.angerNearbyAnts(worldIn, (LivingEntity) entityIn, pos);
-            if (!worldIn.isRemote && worldIn.getTileEntity(pos) instanceof TileEntityLeafcutterAnthill) {
-                TileEntityLeafcutterAnthill beehivetileentity = (TileEntityLeafcutterAnthill) worldIn.getTileEntity(pos);
+            if (!worldIn.isClientSide && worldIn.getBlockEntity(pos) instanceof TileEntityLeafcutterAnthill) {
+                TileEntityLeafcutterAnthill beehivetileentity = (TileEntityLeafcutterAnthill) worldIn.getBlockEntity(pos);
                 beehivetileentity.angerAnts((LivingEntity) entityIn, worldIn.getBlockState(pos), BeehiveTileEntity.State.EMERGENCY);
                 if(entityIn instanceof ServerPlayerEntity){
                     AMAdvancementTriggerRegistry.STOMP_LEAFCUTTER_ANTHILL.trigger((ServerPlayerEntity)entityIn);
                 }
             }
         }
-        super.onFallenUpon(worldIn, pos, entityIn, fallDistance);
+        super.fallOn(worldIn, pos, entityIn, fallDistance);
     }
 
-    public void harvestBlock(World worldIn, PlayerEntity player, BlockPos pos, BlockState state, @Nullable TileEntity te, ItemStack stack) {
-        super.harvestBlock(worldIn, player, pos, state, te, stack);
-        if (!worldIn.isRemote && te instanceof TileEntityLeafcutterAnthill) {
+    public void playerDestroy(World worldIn, PlayerEntity player, BlockPos pos, BlockState state, @Nullable TileEntity te, ItemStack stack) {
+        super.playerDestroy(worldIn, player, pos, state, te, stack);
+        if (!worldIn.isClientSide && te instanceof TileEntityLeafcutterAnthill) {
             TileEntityLeafcutterAnthill beehivetileentity = (TileEntityLeafcutterAnthill) te;
-            if (EnchantmentHelper.getEnchantmentLevel(Enchantments.SILK_TOUCH, stack) == 0) {
+            if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, stack) == 0) {
                 beehivetileentity.angerAnts(player, state, BeehiveTileEntity.State.EMERGENCY);
-                worldIn.updateComparatorOutputLevel(pos, this);
+                worldIn.updateNeighbourForOutputSignal(pos, this);
                 this.angerNearbyAnts(worldIn, pos);
             }
         }
     }
 
     private void angerNearbyAnts(World world, BlockPos pos) {
-        List<EntityLeafcutterAnt> list = world.getEntitiesWithinAABB(EntityLeafcutterAnt.class, (new AxisAlignedBB(pos)).grow(20D, 6.0D, 20D));
+        List<EntityLeafcutterAnt> list = world.getEntitiesOfClass(EntityLeafcutterAnt.class, (new AxisAlignedBB(pos)).inflate(20D, 6.0D, 20D));
         if (!list.isEmpty()) {
-            List<PlayerEntity> list1 = world.getEntitiesWithinAABB(PlayerEntity.class, (new AxisAlignedBB(pos)).grow(20D, 6.0D, 20D));
+            List<PlayerEntity> list1 = world.getEntitiesOfClass(PlayerEntity.class, (new AxisAlignedBB(pos)).inflate(20D, 6.0D, 20D));
             if (list1.isEmpty()) return; //Forge: Prevent Error when no players are around.
             int i = list1.size();
             for (EntityLeafcutterAnt beeentity : list) {
-                if (beeentity.getAttackTarget() == null) {
-                    beeentity.setAttackTarget(list1.get(world.rand.nextInt(i)));
+                if (beeentity.getTarget() == null) {
+                    beeentity.setTarget(list1.get(world.random.nextInt(i)));
                 }
             }
         }
@@ -126,11 +126,11 @@ public class BlockLeafcutterAnthill extends ContainerBlock {
     }
 
     private void angerNearbyAnts(World world, LivingEntity entity, BlockPos pos) {
-        List<EntityLeafcutterAnt> list = world.getEntitiesWithinAABB(EntityLeafcutterAnt.class, (new AxisAlignedBB(pos)).grow(20D, 6.0D, 20D));
+        List<EntityLeafcutterAnt> list = world.getEntitiesOfClass(EntityLeafcutterAnt.class, (new AxisAlignedBB(pos)).inflate(20D, 6.0D, 20D));
         if (!list.isEmpty()) {
             for (EntityLeafcutterAnt beeentity : list) {
-                if (beeentity.getAttackTarget() == null) {
-                    beeentity.setAttackTarget(entity);
+                if (beeentity.getTarget() == null) {
+                    beeentity.setTarget(entity);
                 }
             }
         }
@@ -138,7 +138,7 @@ public class BlockLeafcutterAnthill extends ContainerBlock {
 
     @Nullable
     @Override
-    public TileEntity createNewTileEntity(IBlockReader worldIn) {
+    public TileEntity newBlockEntity(IBlockReader worldIn) {
         return new TileEntityLeafcutterAnthill();
     }
 }

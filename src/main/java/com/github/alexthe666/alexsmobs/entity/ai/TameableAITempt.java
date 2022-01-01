@@ -14,7 +14,7 @@ public class TameableAITempt extends TemptGoal {
         this.tameable = tameable;
     }
 
-    public boolean shouldExecute() {
-        return (!(tameable instanceof TameableEntity) || ((TameableEntity)tameable).isTamed()) && super.shouldExecute();
+    public boolean canUse() {
+        return (!(tameable instanceof TameableEntity) || ((TameableEntity)tameable).isTame()) && super.canUse();
     }
 }

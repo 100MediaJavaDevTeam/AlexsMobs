@@ -11,14 +11,14 @@ public class EffectOrcaMight extends Effect {
     public EffectOrcaMight() {
         super(EffectType.BENEFICIAL, 0X4A4A52);
         this.setRegistryName(AlexsMobs.MODID, "orcas_might");
-        this.addAttributesModifier(Attributes.ATTACK_SPEED, "03C3C89D-7037-4B42-869F-B146BCB64D3A", 3D, AttributeModifier.Operation.ADDITION);
+        this.addAttributeModifier(Attributes.ATTACK_SPEED, "03C3C89D-7037-4B42-869F-B146BCB64D3A", 3D, AttributeModifier.Operation.ADDITION);
     }
 
-    public boolean isReady(int duration, int amplifier) {
+    public boolean isDurationEffectTick(int duration, int amplifier) {
         return duration > 0;
     }
 
-    public String getName() {
+    public String getDescriptionId() {
         return "alexsmobs.potion.orcas_might";
     }
 

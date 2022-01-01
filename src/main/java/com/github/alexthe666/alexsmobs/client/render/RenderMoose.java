@@ -24,13 +24,13 @@ public class RenderMoose extends MobRenderer<EntityMoose, ModelMoose> {
         this.addLayer(new LayerSnow());
     }
 
-    protected void preRenderCallback(EntityMoose entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityMoose entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
       matrixStackIn.scale(1.3F, 1.3F, 1.3F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntityMoose entity) {
-        return entity.isAntlered() && !entity.isChild() ? TEXTURE_ANTLERED : TEXTURE;
+    public ResourceLocation getTextureLocation(EntityMoose entity) {
+        return entity.isAntlered() && !entity.isBaby() ? TEXTURE_ANTLERED : TEXTURE;
     }
 
 
@@ -42,8 +42,8 @@ public class RenderMoose extends MobRenderer<EntityMoose, ModelMoose> {
 
         public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityMoose entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
             if (entitylivingbaseIn.isSnowy()) {
-                IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.getEntityCutoutNoCull(TEXTURE_SNOWY));
-                this.getEntityModel().render(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getPackedOverlay(entitylivingbaseIn, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
+                IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.entityCutoutNoCull(TEXTURE_SNOWY));
+                this.getParentModel().renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getOverlayCoords(entitylivingbaseIn, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
             }
         }
     }

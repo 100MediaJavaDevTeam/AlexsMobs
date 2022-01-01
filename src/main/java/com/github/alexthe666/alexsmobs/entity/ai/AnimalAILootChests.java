@@ -40,7 +40,7 @@ public class AnimalAILootChests extends MoveToBlockGoal {
         if (world.getBlockState(pos).getBlock() instanceof ContainerBlock) {
             Block block = world.getBlockState(pos).getBlock();
             boolean listed = false;
-            TileEntity entity = world.getTileEntity(pos);
+            TileEntity entity = world.getBlockEntity(pos);
             if (entity instanceof IInventory) {
                 IInventory inventory = (IInventory) entity;
                 try {
@@ -57,43 +57,43 @@ public class AnimalAILootChests extends MoveToBlockGoal {
     }
 
     @Override
-    public boolean shouldExecute() {
-        if (this.entity instanceof TameableEntity && ((TameableEntity) entity).isTamed()) {
+    public boolean canUse() {
+        if (this.entity instanceof TameableEntity && ((TameableEntity) entity).isTame()) {
             return false;
         }
         if (!AMConfig.raccoonsStealFromChests) {
             return false;
         }
-        if (!this.entity.getHeldItem(Hand.MAIN_HAND).isEmpty()) {
+        if (!this.entity.getItemInHand(Hand.MAIN_HAND).isEmpty()) {
             return false;
         }
-        if (this.runDelay <= 0) {
-            if (!net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(this.entity.world, this.entity)) {
+        if (this.nextStartTick <= 0) {
+            if (!net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(this.entity.level, this.entity)) {
                 return false;
             }
         }
-        return super.shouldExecute();
+        return super.canUse();
     }
 
     @Override
-    public boolean shouldContinueExecuting() {
-        return super.shouldContinueExecuting() && this.entity.getHeldItem(Hand.MAIN_HAND).isEmpty();
+    public boolean canContinueToUse() {
+        return super.canContinueToUse() && this.entity.getItemInHand(Hand.MAIN_HAND).isEmpty();
     }
 
     public boolean canSeeChest() {
-        RayTraceResult raytraceresult = entity.world.rayTraceBlocks(new RayTraceContext(entity.getEyePosition(1.0F), new Vector3d(destinationBlock.getX() + 0.5, destinationBlock.getY() + 0.5, destinationBlock.getZ() + 0.5), RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.NONE, entity));
+        RayTraceResult raytraceresult = entity.level.clip(new RayTraceContext(entity.getEyePosition(1.0F), new Vector3d(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5), RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.NONE, entity));
         if (raytraceresult instanceof BlockRayTraceResult) {
             BlockRayTraceResult blockRayTraceResult = (BlockRayTraceResult) raytraceresult;
-            BlockPos pos = blockRayTraceResult.getPos();
-            return pos.equals(destinationBlock) || entity.world.isAirBlock(pos) || this.entity.world.getTileEntity(pos) == this.entity.world.getTileEntity(destinationBlock);
+            BlockPos pos = blockRayTraceResult.getBlockPos();
+            return pos.equals(blockPos) || entity.level.isEmptyBlock(pos) || this.entity.level.getBlockEntity(pos) == this.entity.level.getBlockEntity(blockPos);
         }
         return true;
     }
 
     public ItemStack getFoodFromInventory(IInventory inventory, Random random) {
         List<ItemStack> items = new ArrayList<ItemStack>();
-        for (int i = 0; i < inventory.getSizeInventory(); i++) {
-            ItemStack stack = inventory.getStackInSlot(i);
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
             if (chestLooter.shouldLootItem(stack)) {
                 items.add(stack);
             }
@@ -111,29 +111,29 @@ public class AnimalAILootChests extends MoveToBlockGoal {
     @Override
     public void tick() {
         super.tick();
-        if (this.destinationBlock != null) {
-            TileEntity te = this.entity.world.getTileEntity(this.destinationBlock);
+        if (this.blockPos != null) {
+            TileEntity te = this.entity.level.getBlockEntity(this.blockPos);
             if (te instanceof IInventory) {
                 IInventory feeder = (IInventory) te;
-                double distance = this.entity.getDistanceSq(this.destinationBlock.getX() + 0.5F, this.destinationBlock.getY() + 0.5F, this.destinationBlock.getZ() + 0.5F);
+                double distance = this.entity.distanceToSqr(this.blockPos.getX() + 0.5F, this.blockPos.getY() + 0.5F, this.blockPos.getZ() + 0.5F);
                 if (canSeeChest()) {
-                    if (this.getIsAboveDestination() && distance <= 3) {
+                    if (this.isReachedTarget() && distance <= 3) {
                         toggleChest(feeder, false);
-                        ItemStack stack = getFoodFromInventory(feeder, this.entity.world.rand);
+                        ItemStack stack = getFoodFromInventory(feeder, this.entity.level.random);
                         if (stack == ItemStack.EMPTY) {
-                            this.resetTask();
+                            this.stop();
                         } else {
                             ItemStack duplicate = stack.copy();
                             duplicate.setCount(1);
-                            if (!this.entity.getHeldItem(Hand.MAIN_HAND).isEmpty() && !this.entity.world.isRemote) {
-                                this.entity.entityDropItem(this.entity.getHeldItem(Hand.MAIN_HAND), 0.0F);
+                            if (!this.entity.getItemInHand(Hand.MAIN_HAND).isEmpty() && !this.entity.level.isClientSide) {
+                                this.entity.spawnAtLocation(this.entity.getItemInHand(Hand.MAIN_HAND), 0.0F);
                             }
-                            this.entity.setHeldItem(Hand.MAIN_HAND, duplicate);
+                            this.entity.setItemInHand(Hand.MAIN_HAND, duplicate);
                             if (entity instanceof EntityRaccoon) {
                                 ((EntityRaccoon) entity).lookForWaterBeforeEatingTimer = 10;
                             }
                             stack.shrink(1);
-                            this.resetTask();
+                            this.stop();
 
                         }
                     } else {
@@ -150,21 +150,21 @@ public class AnimalAILootChests extends MoveToBlockGoal {
     }
 
 
-    public void resetTask() {
-        super.resetTask();
-        if (this.destinationBlock != null) {
-            TileEntity te = this.entity.world.getTileEntity(this.destinationBlock);
+    public void stop() {
+        super.stop();
+        if (this.blockPos != null) {
+            TileEntity te = this.entity.level.getBlockEntity(this.blockPos);
             if (te instanceof IInventory) {
                 toggleChest((IInventory) te, false);
             }
         }
-        this.destinationBlock = null;
+        this.blockPos = null;
         this.hasOpenedChest = false;
     }
 
 
     @Override
-    protected boolean shouldMoveTo(IWorldReader worldIn, BlockPos pos) {
+    protected boolean isValidTarget(IWorldReader worldIn, BlockPos pos) {
         return pos != null && isChestRaidable(worldIn, pos);
     }
 
@@ -172,13 +172,13 @@ public class AnimalAILootChests extends MoveToBlockGoal {
         if (te instanceof ChestTileEntity) {
             ChestTileEntity chest = (ChestTileEntity) te;
             if (open) {
-                this.entity.world.addBlockEvent(this.destinationBlock, chest.getBlockState().getBlock(), 1, 1);
+                this.entity.level.blockEvent(this.blockPos, chest.getBlockState().getBlock(), 1, 1);
             } else {
-                this.entity.world.addBlockEvent(this.destinationBlock, chest.getBlockState().getBlock(), 1, 0);
+                this.entity.level.blockEvent(this.blockPos, chest.getBlockState().getBlock(), 1, 0);
             }
-            chest.numPlayersUsing = open ? 1 : 0;
-            this.entity.world.notifyNeighborsOfStateChange(destinationBlock, chest.getBlockState().getBlock());
-            this.entity.world.notifyNeighborsOfStateChange(destinationBlock.down(), chest.getBlockState().getBlock());
+            chest.openCount = open ? 1 : 0;
+            this.entity.level.updateNeighborsAt(blockPos, chest.getBlockState().getBlock());
+            this.entity.level.updateNeighborsAt(blockPos.below(), chest.getBlockState().getBlock());
         }
     }
 }

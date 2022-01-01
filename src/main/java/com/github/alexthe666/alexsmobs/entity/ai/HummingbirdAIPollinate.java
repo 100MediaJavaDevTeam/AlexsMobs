@@ -26,40 +26,40 @@ public class HummingbirdAIPollinate  extends MoveToBlockGoal {
         this.bird = bird;
     }
 
-    public boolean shouldExecute() {
-        return !bird.isChild() && bird.pollinateCooldown == 0 && super.shouldExecute();
+    public boolean canUse() {
+        return !bird.isBaby() && bird.pollinateCooldown == 0 && super.canUse();
     }
 
-    public void resetTask() {
+    public void stop() {
         idleAtFlowerTime = 0;
     }
 
-    public double getTargetDistanceSq() {
+    public double acceptedDistance() {
         return 3D;
     }
 
     public void tick() {
         super.tick();
-        BlockPos blockpos = this.func_241846_j();
-        if (!isWithinXZDist(blockpos, this.creature.getPositionVec(), this.getTargetDistanceSq())) {
+        BlockPos blockpos = this.getMoveToTarget();
+        if (!isWithinXZDist(blockpos, this.mob.position(), this.acceptedDistance())) {
             this.isAboveDestinationBear = false;
-            ++this.timeoutCounter;
-            double speedLoc = movementSpeed;
-            if(this.creature.getDistanceSq(blockpos.getX() + 0.5D, blockpos.getY() + 0.5D, blockpos.getZ() + 0.5D) >= 3){
-                speedLoc = movementSpeed * 0.3D;
+            ++this.tryTicks;
+            double speedLoc = speedModifier;
+            if(this.mob.distanceToSqr(blockpos.getX() + 0.5D, blockpos.getY() + 0.5D, blockpos.getZ() + 0.5D) >= 3){
+                speedLoc = speedModifier * 0.3D;
             }
-            this.creature.getMoveHelper().setMoveTo((double) ((float) blockpos.getX()) + 0.5D, blockpos.getY(), (double) ((float) blockpos.getZ()) + 0.5D, speedLoc);
+            this.mob.getMoveControl().setWantedPosition((double) ((float) blockpos.getX()) + 0.5D, blockpos.getY(), (double) ((float) blockpos.getZ()) + 0.5D, speedLoc);
 
         } else {
             this.isAboveDestinationBear = true;
-            --this.timeoutCounter;
+            --this.tryTicks;
         }
 
-        if (this.getIsAboveDestination() && Math.abs(bird.getPosY() - destinationBlock.getY()) <= 2) {
-            bird.lookAt(EntityAnchorArgument.Type.EYES, new Vector3d(destinationBlock.getX() + 0.5D, destinationBlock.getY(), destinationBlock.getZ() + 0.5));
+        if (this.isReachedTarget() && Math.abs(bird.getY() - blockPos.getY()) <= 2) {
+            bird.lookAt(EntityAnchorArgument.Type.EYES, new Vector3d(blockPos.getX() + 0.5D, blockPos.getY(), blockPos.getZ() + 0.5));
             if (this.idleAtFlowerTime >= 20) {
                 this.pollinate();
-                this.resetTask();
+                this.stop();
             } else {
                 ++this.idleAtFlowerTime;
             }
@@ -74,28 +74,28 @@ public class HummingbirdAIPollinate  extends MoveToBlockGoal {
     }
 
     private boolean isWithinXZDist(BlockPos blockpos, Vector3d positionVec, double distance) {
-        return blockpos.distanceSq(positionVec.getX(), positionVec.getY(), positionVec.getZ(), true) < distance * distance;
+        return blockpos.distSqr(positionVec.x(), positionVec.y(), positionVec.z(), true) < distance * distance;
     }
 
-    protected boolean getIsAboveDestination() {
+    protected boolean isReachedTarget() {
         return this.isAboveDestinationBear;
     }
 
     private void pollinate() {
-        bird.world.playEvent(2005, destinationBlock, 0);
+        bird.level.levelEvent(2005, blockPos, 0);
         bird.setCropsPollinated(bird.getCropsPollinated() + 1);
         bird.pollinateCooldown = 200;
         if(bird.getCropsPollinated() > 3){
-            if(isGrowable(destinationBlock, (ServerWorld) bird.world)){
-                BoneMealItem.applyBonemeal(new ItemStack(Items.BONE_MEAL), bird.world, destinationBlock);
+            if(isGrowable(blockPos, (ServerWorld) bird.level)){
+                BoneMealItem.growCrop(new ItemStack(Items.BONE_MEAL), bird.level, blockPos);
             }
             bird.setCropsPollinated(0);
         }
     }
 
     @Override
-    protected boolean shouldMoveTo(IWorldReader worldIn, BlockPos pos) {
-        if (worldIn.getBlockState(pos).getBlock().isIn(BlockTags.BEE_GROWABLES) || worldIn.getBlockState(pos).getBlock().isIn(BlockTags.FLOWERS)) {
+    protected boolean isValidTarget(IWorldReader worldIn, BlockPos pos) {
+        if (worldIn.getBlockState(pos).getBlock().is(BlockTags.BEE_GROWABLES) || worldIn.getBlockState(pos).getBlock().is(BlockTags.FLOWERS)) {
             return bird.pollinateCooldown == 0 && bird.canBlockBeSeen(pos);
         }
         return false;

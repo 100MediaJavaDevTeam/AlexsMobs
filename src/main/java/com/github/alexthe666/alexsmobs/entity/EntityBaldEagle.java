@@ -47,16 +47,18 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
 
+import net.minecraft.entity.ai.goal.Goal.Flag;
+
 public class EntityBaldEagle extends TameableEntity implements IFollower {
 
-    private static final DataParameter<Boolean> FLYING = EntityDataManager.createKey(EntityBaldEagle.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Boolean> TACKLING = EntityDataManager.createKey(EntityBaldEagle.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Boolean> HAS_CAP = EntityDataManager.createKey(EntityBaldEagle.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Integer> ATTACK_TICK = EntityDataManager.createKey(EntityBaldEagle.class, DataSerializers.VARINT);
-    private static final DataParameter<Integer> COMMAND = EntityDataManager.createKey(EntityBaldEagle.class, DataSerializers.VARINT);
-    private static final DataParameter<Boolean> SITTING = EntityDataManager.createKey(EntityBaldEagle.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Boolean> LAUNCHED = EntityDataManager.createKey(EntityBaldEagle.class, DataSerializers.BOOLEAN);
-    private static final Ingredient TEMPT_ITEMS = Ingredient.fromItems(Items.ROTTEN_FLESH, AMItemRegistry.FISH_OIL);
+    private static final DataParameter<Boolean> FLYING = EntityDataManager.defineId(EntityBaldEagle.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> TACKLING = EntityDataManager.defineId(EntityBaldEagle.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> HAS_CAP = EntityDataManager.defineId(EntityBaldEagle.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Integer> ATTACK_TICK = EntityDataManager.defineId(EntityBaldEagle.class, DataSerializers.INT);
+    private static final DataParameter<Integer> COMMAND = EntityDataManager.defineId(EntityBaldEagle.class, DataSerializers.INT);
+    private static final DataParameter<Boolean> SITTING = EntityDataManager.defineId(EntityBaldEagle.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> LAUNCHED = EntityDataManager.defineId(EntityBaldEagle.class, DataSerializers.BOOLEAN);
+    private static final Ingredient TEMPT_ITEMS = Ingredient.of(Items.ROTTEN_FLESH, AMItemRegistry.FISH_OIL);
     public float prevAttackProgress;
     public float attackProgress;
     public float prevFlyProgress;
@@ -91,18 +93,18 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
     }
 
     public static AttributeModifierMap.MutableAttribute bakeAttributes() {
-        return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MAX_HEALTH, 16.0D).createMutableAttribute(Attributes.FOLLOW_RANGE, 32.0D).createMutableAttribute(Attributes.ATTACK_DAMAGE, 5.0D).createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.3F);
+        return MonsterEntity.createMonsterAttributes().add(Attributes.MAX_HEALTH, 16.0D).add(Attributes.FOLLOW_RANGE, 32.0D).add(Attributes.ATTACK_DAMAGE, 5.0D).add(Attributes.MOVEMENT_SPEED, 0.3F);
     }
 
     public static boolean canEagleSpawn(EntityType<? extends AnimalEntity> animal, IWorld worldIn, SpawnReason reason, BlockPos pos, Random random) {
-        return worldIn.getLightSubtracted(pos, 0) > 8;
+        return worldIn.getRawBrightness(pos, 0) > 8;
     }
 
     protected void registerGoals() {
         super.registerGoals();
         this.goalSelector.addGoal(0, new SwimGoal(this) {
-            public boolean shouldExecute() {
-                return super.shouldExecute() && (EntityBaldEagle.this.getAir() < 30 || EntityBaldEagle.this.getAttackTarget() == null || !EntityBaldEagle.this.getAttackTarget().isInWaterOrBubbleColumn() && EntityBaldEagle.this.getPosY() > EntityBaldEagle.this.getAttackTarget().getPosY());
+            public boolean canUse() {
+                return super.canUse() && (EntityBaldEagle.this.getAirSupply() < 30 || EntityBaldEagle.this.getTarget() == null || !EntityBaldEagle.this.getTarget().isInWaterOrBubble() && EntityBaldEagle.this.getY() > EntityBaldEagle.this.getTarget().getY());
             }
         });
         this.goalSelector.addGoal(1, new SitGoal(this));
@@ -110,27 +112,27 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
         this.goalSelector.addGoal(3, new AITackle());
         this.goalSelector.addGoal(4, new AILandOnGlove());
         this.goalSelector.addGoal(5, new BreedGoal(this, 1.0D));
-        this.goalSelector.addGoal(6, new TemptGoal(this, 1.1D, TEMPT_ITEMS.merge(ImmutableList.of(Ingredient.fromTag(ItemTags.getCollection().get(AMTagRegistry.BALD_EAGLE_TAMEABLES)))), true));
-        this.goalSelector.addGoal(7, new TemptGoal(this, 1.1D, Ingredient.fromTag(ItemTags.FISHES), false));
+        this.goalSelector.addGoal(6, new TemptGoal(this, 1.1D, TEMPT_ITEMS.merge(ImmutableList.of(Ingredient.of(ItemTags.getAllTags().getTag(AMTagRegistry.BALD_EAGLE_TAMEABLES)))), true));
+        this.goalSelector.addGoal(7, new TemptGoal(this, 1.1D, Ingredient.of(ItemTags.FISHES), false));
         this.goalSelector.addGoal(8, new AIWanderIdle());
         this.goalSelector.addGoal(9, new LookAtGoal(this, PlayerEntity.class, 6.0F){
             @Override
-            public boolean shouldExecute() {
-                return EntityBaldEagle.this.returnControlTime == 0 && super.shouldExecute();
+            public boolean canUse() {
+                return EntityBaldEagle.this.returnControlTime == 0 && super.canUse();
             }
         });
         this.goalSelector.addGoal(10, new LookRandomlyGoal(this){
             @Override
-            public boolean shouldExecute() {
-                return EntityBaldEagle.this.returnControlTime == 0 && super.shouldExecute();
+            public boolean canUse() {
+                return EntityBaldEagle.this.returnControlTime == 0 && super.canUse();
             }
         });
         this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
         this.targetSelector.addGoal(3, (new AnimalAIHurtByTargetNotBaby(this)));
-        this.targetSelector.addGoal(4, new EntityAINearestTarget3D(this, LivingEntity.class, 5, true, true,  AMEntityRegistry.buildPredicateFromTag(EntityTypeTags.getCollection().get(AMTagRegistry.BALD_EAGLE_TARGETS))) {
-            public boolean shouldExecute() {
-                return super.shouldExecute() && !EntityBaldEagle.this.isLaunched() && EntityBaldEagle.this.getCommand() == 0;
+        this.targetSelector.addGoal(4, new EntityAINearestTarget3D(this, LivingEntity.class, 5, true, true,  AMEntityRegistry.buildPredicateFromTag(EntityTypeTags.getAllTags().getTag(AMTagRegistry.BALD_EAGLE_TARGETS))) {
+            public boolean canUse() {
+                return super.canUse() && !EntityBaldEagle.this.isLaunched() && EntityBaldEagle.this.getCommand() == 0;
             }
         });
     }
@@ -148,63 +150,63 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
     }
 
 
-    public boolean canSpawn(IWorld worldIn, SpawnReason spawnReasonIn) {
-        return AMEntityRegistry.rollSpawn(AMConfig.baldEagleSpawnRolls, this.getRNG(), spawnReasonIn);
+    public boolean checkSpawnRules(IWorld worldIn, SpawnReason spawnReasonIn) {
+        return AMEntityRegistry.rollSpawn(AMConfig.baldEagleSpawnRolls, this.getRandom(), spawnReasonIn);
     }
 
-    public boolean isOnSameTeam(Entity entityIn) {
-        if (this.isTamed()) {
+    public boolean isAlliedTo(Entity entityIn) {
+        if (this.isTame()) {
             LivingEntity livingentity = this.getOwner();
             if (entityIn == livingentity) {
                 return true;
             }
             if (entityIn instanceof TameableEntity) {
-                return ((TameableEntity) entityIn).isOwner(livingentity);
+                return ((TameableEntity) entityIn).isOwnedBy(livingentity);
             }
             if (livingentity != null) {
-                return livingentity.isOnSameTeam(entityIn);
+                return livingentity.isAlliedTo(entityIn);
             }
         }
 
-        return super.isOnSameTeam(entityIn);
+        return super.isAlliedTo(entityIn);
     }
 
-    public boolean isBreedingItem(ItemStack stack) {
+    public boolean isFood(ItemStack stack) {
         return stack.getItem() == Items.ROTTEN_FLESH;
     }
 
     private void switchNavigator(boolean onLand) {
         if (onLand) {
-            this.moveController = new MovementController(this);
-            this.navigator = new GroundPathNavigatorWide(this, world);
+            this.moveControl = new MovementController(this);
+            this.navigation = new GroundPathNavigatorWide(this, level);
             this.isLandNavigator = true;
         } else {
-            this.moveController = new EntityBaldEagle.MoveHelper(this);
-            this.navigator = new DirectPathNavigator(this, world);
+            this.moveControl = new EntityBaldEagle.MoveHelper(this);
+            this.navigation = new DirectPathNavigator(this, level);
             this.isLandNavigator = false;
         }
     }
 
-    public boolean writeUnlessPassenger(CompoundNBT compound) {
-        String s = this.getEntityString();
+    public boolean save(CompoundNBT compound) {
+        String s = this.getEncodeId();
         compound.putString("id", s);
-        super.writeUnlessPassenger(compound);
+        super.save(compound);
         return true;
     }
 
-    public boolean writeUnlessRemoved(CompoundNBT compound) {
-        if (!this.isTamed()) {
-            return super.writeUnlessRemoved(compound);
+    public boolean saveAsPassenger(CompoundNBT compound) {
+        if (!this.isTame()) {
+            return super.saveAsPassenger(compound);
         } else {
-            String s = this.getEntityString();
+            String s = this.getEncodeId();
             compound.putString("id", s);
-            this.writeWithoutTypeId(compound);
+            this.saveWithoutId(compound);
             return true;
         }
     }
 
-    public void writeAdditional(CompoundNBT compound) {
-        super.writeAdditional(compound);
+    public void addAdditionalSaveData(CompoundNBT compound) {
+        super.addAdditionalSaveData(compound);
         compound.putBoolean("BirdSitting", this.isSitting());
         compound.putBoolean("Launched", this.isLaunched());
         compound.putBoolean("HasCap", this.hasCap());
@@ -212,9 +214,9 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
         compound.putInt("LaunchTime", this.launchTime);
     }
 
-    public void readAdditional(CompoundNBT compound) {
-        super.readAdditional(compound);
-        this.setSitting(compound.getBoolean("BirdSitting"));
+    public void readAdditionalSaveData(CompoundNBT compound) {
+        super.readAdditionalSaveData(compound);
+        this.setOrderedToSit(compound.getBoolean("BirdSitting"));
         this.setLaunched(compound.getBoolean("Launched"));
         this.setCap(compound.getBoolean("HasCap"));
         this.setCommand(compound.getInt("EagleCommand"));
@@ -222,98 +224,98 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
     }
 
     public void travel(Vector3d vec3d) {
-        if (!this.shouldHoodedReturn() && this.hasCap() && this.isTamed() && !this.isPassenger()) {
+        if (!this.shouldHoodedReturn() && this.hasCap() && this.isTame() && !this.isPassenger()) {
             super.travel(Vector3d.ZERO);
             return;
         }
         super.travel(vec3d);
     }
 
-    public boolean attackEntityAsMob(Entity entityIn) {
-        if (this.dataManager.get(ATTACK_TICK) == 0 && this.attackProgress == 0 && entityIn.isAlive() && this.getDistance(entityIn) < entityIn.getWidth() + 5) {
-            this.dataManager.set(ATTACK_TICK, 5);
+    public boolean doHurtTarget(Entity entityIn) {
+        if (this.entityData.get(ATTACK_TICK) == 0 && this.attackProgress == 0 && entityIn.isAlive() && this.distanceTo(entityIn) < entityIn.getBbWidth() + 5) {
+            this.entityData.set(ATTACK_TICK, 5);
         }
         return true;
     }
 
     @Override
-    protected void registerData() {
-        super.registerData();
-        this.dataManager.register(FLYING, false);
-        this.dataManager.register(HAS_CAP, false);
-        this.dataManager.register(TACKLING, false);
-        this.dataManager.register(LAUNCHED, false);
-        this.dataManager.register(ATTACK_TICK, 0);
-        this.dataManager.register(COMMAND, Integer.valueOf(0));
-        this.dataManager.register(SITTING, Boolean.valueOf(false));
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(FLYING, false);
+        this.entityData.define(HAS_CAP, false);
+        this.entityData.define(TACKLING, false);
+        this.entityData.define(LAUNCHED, false);
+        this.entityData.define(ATTACK_TICK, 0);
+        this.entityData.define(COMMAND, Integer.valueOf(0));
+        this.entityData.define(SITTING, Boolean.valueOf(false));
     }
 
     public boolean isSitting() {
-        return this.dataManager.get(SITTING).booleanValue();
+        return this.entityData.get(SITTING).booleanValue();
     }
 
-    public void setSitting(boolean sit) {
-        this.dataManager.set(SITTING, Boolean.valueOf(sit));
+    public void setOrderedToSit(boolean sit) {
+        this.entityData.set(SITTING, Boolean.valueOf(sit));
     }
 
     public int getCommand() {
-        return this.dataManager.get(COMMAND).intValue();
+        return this.entityData.get(COMMAND).intValue();
     }
 
     public void setCommand(int command) {
-        this.dataManager.set(COMMAND, Integer.valueOf(command));
+        this.entityData.set(COMMAND, Integer.valueOf(command));
     }
 
     public boolean isLaunched() {
-        return this.dataManager.get(LAUNCHED);
+        return this.entityData.get(LAUNCHED);
     }
 
     public void setLaunched(boolean flying) {
-        this.dataManager.set(LAUNCHED, flying);
+        this.entityData.set(LAUNCHED, flying);
     }
 
     public boolean isFlying() {
-        return this.dataManager.get(FLYING);
+        return this.entityData.get(FLYING);
     }
 
     public void setFlying(boolean flying) {
-        if(flying && this.isChild()){
+        if(flying && this.isBaby()){
             flying = false;
         }
-        this.dataManager.set(FLYING, flying);
+        this.entityData.set(FLYING, flying);
     }
 
     public boolean hasCap() {
-        return this.dataManager.get(HAS_CAP);
+        return this.entityData.get(HAS_CAP);
     }
 
     public void setCap(boolean cap) {
-        this.dataManager.set(HAS_CAP, cap);
+        this.entityData.set(HAS_CAP, cap);
     }
 
     public boolean isTackling() {
-        return this.dataManager.get(TACKLING);
+        return this.entityData.get(TACKLING);
     }
 
     public void setTackling(boolean tackling) {
-        this.dataManager.set(TACKLING, tackling);
+        this.entityData.set(TACKLING, tackling);
     }
 
     public void followEntity(TameableEntity tameable, LivingEntity owner, double followSpeed) {
-        if (this.getDistance(owner) > 15) {
+        if (this.distanceTo(owner) > 15) {
             this.setFlying(true);
-            this.getMoveHelper().setMoveTo(owner.getPosX(), owner.getPosY() + owner.getHeight(), owner.getPosZ(), followSpeed);
+            this.getMoveControl().setWantedPosition(owner.getX(), owner.getY() + owner.getBbHeight(), owner.getZ(), followSpeed);
         } else {
             if (this.isFlying() && !this.isOverWaterOrVoid()) {
-                BlockPos vec = this.getCrowGround(this.getPosition());
+                BlockPos vec = this.getCrowGround(this.blockPosition());
                 if (vec != null) {
-                    this.getMoveHelper().setMoveTo(vec.getX(), vec.getY(), vec.getZ(), followSpeed);
+                    this.getMoveControl().setWantedPosition(vec.getX(), vec.getY(), vec.getZ(), followSpeed);
                 }
                 if (this.onGround) {
                     this.setFlying(false);
                 }
             } else {
-                this.getNavigator().tryMoveToEntityLiving(owner, followSpeed);
+                this.getNavigation().moveTo(owner, followSpeed);
             }
         }
     }
@@ -323,59 +325,59 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
         return source == DamageSource.IN_WALL || source == DamageSource.FALLING_BLOCK || super.isInvulnerableTo(source);
     }
 
-    public ActionResultType getEntityInteractionResult(PlayerEntity player, Hand hand) {
-        ItemStack itemstack = player.getHeldItem(hand);
+    public ActionResultType mobInteract(PlayerEntity player, Hand hand) {
+        ItemStack itemstack = player.getItemInHand(hand);
         Item item = itemstack.getItem();
-        ActionResultType type = super.getEntityInteractionResult(player, hand);
-        if (item.isIn(ItemTags.FISHES) && this.getHealth() < this.getMaxHealth()) {
+        ActionResultType type = super.mobInteract(player, hand);
+        if (item.is(ItemTags.FISHES) && this.getHealth() < this.getMaxHealth()) {
             this.heal(10);
             if (!player.isCreative()) {
                 itemstack.shrink(1);
             }
-            this.world.setEntityState(this, (byte) 7);
+            this.level.broadcastEntityEvent(this, (byte) 7);
             return ActionResultType.CONSUME;
-        } else if (ItemTags.getCollection().get(AMTagRegistry.BALD_EAGLE_TAMEABLES).contains(itemstack.getItem()) && !this.isTamed()) {
+        } else if (ItemTags.getAllTags().getTag(AMTagRegistry.BALD_EAGLE_TAMEABLES).contains(itemstack.getItem()) && !this.isTame()) {
             if (itemstack.hasContainerItem()) {
-                this.entityDropItem(itemstack.getContainerItem());
+                this.spawnAtLocation(itemstack.getContainerItem());
             }
             if (!player.isCreative()) {
                 itemstack.shrink(1);
             }
-            if (rand.nextBoolean()) {
-                this.world.setEntityState(this, (byte) 7);
-                this.setTamedBy(player);
+            if (random.nextBoolean()) {
+                this.level.broadcastEntityEvent(this, (byte) 7);
+                this.tame(player);
                 this.setCommand(1);
             } else {
-                this.world.setEntityState(this, (byte) 6);
+                this.level.broadcastEntityEvent(this, (byte) 6);
             }
             return ActionResultType.CONSUME;
-        } else if (isTamed() && !isBreedingItem(itemstack)) {
-            if (!this.isChild() && item == AMItemRegistry.FALCONRY_HOOD) {
+        } else if (isTame() && !isFood(itemstack)) {
+            if (!this.isBaby() && item == AMItemRegistry.FALCONRY_HOOD) {
                 if (!this.hasCap()) {
                     this.setCap(true);
                     if (!player.isCreative()) {
                         itemstack.shrink(1);
                     }
-                    this.playSound(SoundEvents.ITEM_ARMOR_EQUIP_LEATHER, this.getSoundVolume(), this.getSoundPitch());
+                    this.playSound(SoundEvents.ARMOR_EQUIP_LEATHER, this.getSoundVolume(), this.getVoicePitch());
                     return ActionResultType.SUCCESS;
                 }
             }else if(item == Items.SHEARS && this.hasCap()) {
-                this.playSound(SoundEvents.ENTITY_SHEEP_SHEAR, 1.0F, (this.rand.nextFloat() - this.rand.nextFloat()) * 0.2F + 1.0F);
-                if(!world.isRemote){
+                this.playSound(SoundEvents.SHEEP_SHEAR, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+                if(!level.isClientSide){
                     if(player instanceof ServerPlayerEntity){
-                        itemstack.attemptDamageItem(1, rand, (ServerPlayerEntity)player);
+                        itemstack.hurt(1, random, (ServerPlayerEntity)player);
                     }
                 }
-                this.entityDropItem(AMItemRegistry.FALCONRY_HOOD);
+                this.spawnAtLocation(AMItemRegistry.FALCONRY_HOOD);
                 this.setCap(false);
                 return ActionResultType.SUCCESS;
-            }else if (!this.isChild() && getRidingEagles(player) <= 0 && (player.getHeldItem(Hand.MAIN_HAND).getItem() == AMItemRegistry.FALCONRY_GLOVE || player.getHeldItem(Hand.OFF_HAND).getItem() == AMItemRegistry.FALCONRY_GLOVE)) {
-                rideCooldown = 30;
+            }else if (!this.isBaby() && getRidingEagles(player) <= 0 && (player.getItemInHand(Hand.MAIN_HAND).getItem() == AMItemRegistry.FALCONRY_GLOVE || player.getItemInHand(Hand.OFF_HAND).getItem() == AMItemRegistry.FALCONRY_GLOVE)) {
+                boardingCooldown = 30;
                 this.setLaunched(false);
-                this.removePassengers();
+                this.ejectPassengers();
                 this.startRiding(player, true);
-                if (!world.isRemote) {
-                    AlexsMobs.sendMSGToAll(new MessageMosquitoMountPlayer(this.getEntityId(), player.getEntityId()));
+                if (!level.isClientSide) {
+                    AlexsMobs.sendMSGToAll(new MessageMosquitoMountPlayer(this.getId(), player.getId()));
                 }
                 return ActionResultType.SUCCESS;
             } else {
@@ -383,13 +385,13 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
                 if (this.getCommand() == 3) {
                     this.setCommand(0);
                 }
-                player.sendStatusMessage(new TranslationTextComponent("entity.alexsmobs.all.command_" + this.getCommand(), this.getName()), true);
+                player.displayClientMessage(new TranslationTextComponent("entity.alexsmobs.all.command_" + this.getCommand(), this.getName()), true);
                 boolean sit = this.getCommand() == 2;
                 if (sit) {
-                    this.setSitting(true);
+                    this.setOrderedToSit(true);
                     return ActionResultType.SUCCESS;
                 } else {
-                    this.setSitting(false);
+                    this.setOrderedToSit(false);
                     return ActionResultType.SUCCESS;
                 }
             }
@@ -412,43 +414,43 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
         return crowCount;
     }
 
-    public void updateRidden() {
-        Entity entity = this.getRidingEntity();
+    public void rideTick() {
+        Entity entity = this.getVehicle();
         if (this.isPassenger() && (!entity.isAlive() || !this.isAlive())) {
             this.stopRiding();
-        } else if (isTamed() && entity instanceof LivingEntity && isOwner((LivingEntity) entity)) {
-            this.setMotion(0, 0, 0);
+        } else if (isTame() && entity instanceof LivingEntity && isOwnedBy((LivingEntity) entity)) {
+            this.setDeltaMovement(0, 0, 0);
             this.tick();
             if (this.isPassenger()) {
-                Entity mount = this.getRidingEntity();
+                Entity mount = this.getVehicle();
                 if (mount instanceof PlayerEntity) {
                     float yawAdd = 0;
-                    if (((PlayerEntity) mount).getHeldItem(Hand.MAIN_HAND).getItem() == AMItemRegistry.FALCONRY_GLOVE) {
-                        yawAdd = ((PlayerEntity) mount).getPrimaryHand() == HandSide.LEFT ? 135 : -135;
-                    } else if (((PlayerEntity) mount).getHeldItem(Hand.OFF_HAND).getItem() == AMItemRegistry.FALCONRY_GLOVE) {
-                        yawAdd = ((PlayerEntity) mount).getPrimaryHand() == HandSide.LEFT ? -135 : 135;
+                    if (((PlayerEntity) mount).getItemInHand(Hand.MAIN_HAND).getItem() == AMItemRegistry.FALCONRY_GLOVE) {
+                        yawAdd = ((PlayerEntity) mount).getMainArm() == HandSide.LEFT ? 135 : -135;
+                    } else if (((PlayerEntity) mount).getItemInHand(Hand.OFF_HAND).getItem() == AMItemRegistry.FALCONRY_GLOVE) {
+                        yawAdd = ((PlayerEntity) mount).getMainArm() == HandSide.LEFT ? -135 : 135;
                     } else {
                         this.setCommand(2);
-                        this.setSitting(true);
-                        this.dismount();
-                        this.copyLocationAndAnglesFrom(mount);
+                        this.setOrderedToSit(true);
+                        this.removeVehicle();
+                        this.copyPosition(mount);
                     }
                     float birdYaw = yawAdd * 0.5F;
-                    this.renderYawOffset = MathHelper.wrapDegrees(((LivingEntity) mount).renderYawOffset + birdYaw);
-                    this.rotationYaw = MathHelper.wrapDegrees(((LivingEntity) mount).rotationYaw + birdYaw);
-                    this.rotationYawHead = MathHelper.wrapDegrees(((LivingEntity) mount).rotationYawHead + birdYaw);
+                    this.yBodyRot = MathHelper.wrapDegrees(((LivingEntity) mount).yBodyRot + birdYaw);
+                    this.yRot = MathHelper.wrapDegrees(((LivingEntity) mount).yRot + birdYaw);
+                    this.yHeadRot = MathHelper.wrapDegrees(((LivingEntity) mount).yHeadRot + birdYaw);
                     float radius = 0.6F;
-                    float angle = (0.01745329251F * (((LivingEntity) mount).renderYawOffset - 180F + yawAdd));
+                    float angle = (0.01745329251F * (((LivingEntity) mount).yBodyRot - 180F + yawAdd));
                     double extraX = radius * MathHelper.sin((float) (Math.PI + angle));
                     double extraZ = radius * MathHelper.cos(angle);
-                    this.setPosition(mount.getPosX() + extraX, Math.max(mount.getPosY() + mount.getHeight() * 0.45F, mount.getPosY()), mount.getPosZ() + extraZ);
+                    this.setPos(mount.getX() + extraX, Math.max(mount.getY() + mount.getBbHeight() * 0.45F, mount.getY()), mount.getZ() + extraZ);
                 }
                 if (!mount.isAlive()) {
-                    this.dismount();
+                    this.removeVehicle();
                 }
             }
         } else {
-            super.updateRidden();
+            super.rideTick();
         }
     }
 
@@ -462,7 +464,7 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
         this.prevFlapAmount = flapAmount;
         this.prevSwoopProgress = swoopProgress;
         this.prevSitProgress = sitProgress;
-        float yMot = (float) -((float) this.getMotion().y * (double) (180F / (float) Math.PI));
+        float yMot = (float) -((float) this.getDeltaMovement().y * (double) (180F / (float) Math.PI));
         this.birdPitch = yMot;
         if (isFlying() && flyProgress < 5F) {
             flyProgress++;
@@ -512,14 +514,14 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
         if (this.isTackling()) {
             flapAmount = Math.min(2, flapAmount + 0.2F);
         }
-        if (!world.isRemote) {
+        if (!level.isClientSide) {
             if (isFlying() && this.isLandNavigator) {
                 switchNavigator(false);
             }
             if (!isFlying() && !this.isLandNavigator) {
                 switchNavigator(true);
             }
-            if (this.isTackling() && !this.isBeingRidden() && (this.getAttackTarget() == null || !this.getAttackTarget().isAlive()) && tackleCapCooldown == 0) {
+            if (this.isTackling() && !this.isVehicle() && (this.getTarget() == null || !this.getTarget().isAlive()) && tackleCapCooldown == 0) {
                 this.setTackling(false);
             }
             if (isFlying()) {
@@ -530,32 +532,32 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
                         this.setFlying(false);
                     }
                 }
-                if (this.getAttackTarget() != null && this.getAttackTarget().getPosY() < this.getPosX() && !this.isBeingRidden()) {
-                    this.setMotion(this.getMotion().mul(1.0, 0.9, 1.0));
+                if (this.getTarget() != null && this.getTarget().getY() < this.getX() && !this.isVehicle()) {
+                    this.setDeltaMovement(this.getDeltaMovement().multiply(1.0, 0.9, 1.0));
                 }
             } else {
                 timeFlying = 0;
                 this.setNoGravity(false);
             }
-            if (this.isInWaterOrBubbleColumn() && this.isBeingRidden()) {
-                this.setMotion(this.getMotion().add(0, 0.1F, 0));
+            if (this.isInWaterOrBubble() && this.isVehicle()) {
+                this.setDeltaMovement(this.getDeltaMovement().add(0, 0.1F, 0));
             }
             if(this.isSitting() && !this.isLaunched()){
-                this.setMotion(this.getMotion().add(0, -0.1F, 0));
+                this.setDeltaMovement(this.getDeltaMovement().add(0, -0.1F, 0));
             }
-            if (this.getAttackTarget() != null && this.isInWaterOrBubbleColumn()) {
+            if (this.getTarget() != null && this.isInWaterOrBubble()) {
                 timeFlying = 0;
                 this.setFlying(true);
             }
-            if (isFlying() && this.onGround && !this.isInWaterOrBubbleColumn() && this.timeFlying > 30) {
+            if (isFlying() && this.onGround && !this.isInWaterOrBubble() && this.timeFlying > 30) {
                 this.setFlying(false);
             }
         }
-        if (this.dataManager.get(ATTACK_TICK) > 0) {
-            if (this.dataManager.get(ATTACK_TICK) == 2 && this.getAttackTarget() != null && this.getDistance(this.getAttackTarget()) < this.getAttackTarget().getWidth() + 2D) {
-                this.getAttackTarget().attackEntityFrom(DamageSource.causeMobDamage(this), 2);
+        if (this.entityData.get(ATTACK_TICK) > 0) {
+            if (this.entityData.get(ATTACK_TICK) == 2 && this.getTarget() != null && this.distanceTo(this.getTarget()) < this.getTarget().getBbWidth() + 2D) {
+                this.getTarget().hurt(DamageSource.mobAttack(this), 2);
             }
-            this.dataManager.set(ATTACK_TICK, this.dataManager.get(ATTACK_TICK) - 1);
+            this.entityData.set(ATTACK_TICK, this.entityData.get(ATTACK_TICK) - 1);
             if (attackProgress < 5F) {
                 attackProgress++;
             }
@@ -568,8 +570,8 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
             this.setFlying(false);
             this.setTackling(false);
         }
-        if (rideCooldown > 0) {
-            rideCooldown--;
+        if (boardingCooldown > 0) {
+            boardingCooldown--;
         }
         if (returnControlTime > 0) {
             returnControlTime--;
@@ -581,82 +583,82 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
 
     @Nullable
     @Override
-    public AgeableEntity createChild(ServerWorld p_241840_1_, AgeableEntity p_241840_2_) {
+    public AgeableEntity getBreedOffspring(ServerWorld p_241840_1_, AgeableEntity p_241840_2_) {
         return AMEntityRegistry.BALD_EAGLE.create(p_241840_1_);
     }
 
-    public boolean onLivingFall(float distance, float damageMultiplier) {
+    public boolean causeFallDamage(float distance, float damageMultiplier) {
         return false;
     }
 
-    protected void updateFallState(double y, boolean onGroundIn, BlockState state, BlockPos pos) {
+    protected void checkFallDamage(double y, boolean onGroundIn, BlockState state, BlockPos pos) {
     }
 
     public Vector3d getBlockInViewAway(Vector3d fleePos, float radiusAdd) {
-        float radius = 0.75F * (0.7F * 6) * -3 - this.getRNG().nextInt(24) - radiusAdd;
-        float neg = this.getRNG().nextBoolean() ? 1 : -1;
-        float renderYawOffset = this.renderYawOffset;
-        float angle = (0.01745329251F * renderYawOffset) + 3.15F + (this.getRNG().nextFloat() * neg);
+        float radius = 0.75F * (0.7F * 6) * -3 - this.getRandom().nextInt(24) - radiusAdd;
+        float neg = this.getRandom().nextBoolean() ? 1 : -1;
+        float renderYawOffset = this.yBodyRot;
+        float angle = (0.01745329251F * renderYawOffset) + 3.15F + (this.getRandom().nextFloat() * neg);
         double extraX = radius * MathHelper.sin((float) (Math.PI + angle));
         double extraZ = radius * MathHelper.cos(angle);
-        BlockPos radialPos = new BlockPos(fleePos.getX() + extraX, 0, fleePos.getZ() + extraZ);
+        BlockPos radialPos = new BlockPos(fleePos.x() + extraX, 0, fleePos.z() + extraZ);
         BlockPos ground = getCrowGround(radialPos);
-        int distFromGround = (int) this.getPosY() - ground.getY();
-        int flightHeight = 7 + this.getRNG().nextInt(10);
-        BlockPos newPos = ground.up(distFromGround > 8 ? flightHeight : this.getRNG().nextInt(7) + 4);
-        if (!this.isTargetBlocked(Vector3d.copyCentered(newPos)) && this.getDistanceSq(Vector3d.copyCentered(newPos)) > 1) {
-            return Vector3d.copyCentered(newPos);
+        int distFromGround = (int) this.getY() - ground.getY();
+        int flightHeight = 7 + this.getRandom().nextInt(10);
+        BlockPos newPos = ground.above(distFromGround > 8 ? flightHeight : this.getRandom().nextInt(7) + 4);
+        if (!this.isTargetBlocked(Vector3d.atCenterOf(newPos)) && this.distanceToSqr(Vector3d.atCenterOf(newPos)) > 1) {
+            return Vector3d.atCenterOf(newPos);
         }
         return null;
     }
 
     private BlockPos getCrowGround(BlockPos in) {
-        BlockPos position = new BlockPos(in.getX(), this.getPosY(), in.getZ());
-        while (position.getY() < 256 && !world.getFluidState(position).isEmpty()) {
-            position = position.up();
+        BlockPos position = new BlockPos(in.getX(), this.getY(), in.getZ());
+        while (position.getY() < 256 && !level.getFluidState(position).isEmpty()) {
+            position = position.above();
         }
-        while (position.getY() > 2 && world.isAirBlock(position)) {
-            position = position.down();
+        while (position.getY() > 2 && level.isEmptyBlock(position)) {
+            position = position.below();
         }
         return position;
     }
 
     public Vector3d getBlockGrounding(Vector3d fleePos) {
-        float radius = 0.75F * (0.7F * 6) * -3 - this.getRNG().nextInt(24);
-        float neg = this.getRNG().nextBoolean() ? 1 : -1;
-        float renderYawOffset = this.renderYawOffset;
-        float angle = (0.01745329251F * renderYawOffset) + 3.15F + (this.getRNG().nextFloat() * neg);
+        float radius = 0.75F * (0.7F * 6) * -3 - this.getRandom().nextInt(24);
+        float neg = this.getRandom().nextBoolean() ? 1 : -1;
+        float renderYawOffset = this.yBodyRot;
+        float angle = (0.01745329251F * renderYawOffset) + 3.15F + (this.getRandom().nextFloat() * neg);
         double extraX = radius * MathHelper.sin((float) (Math.PI + angle));
         double extraZ = radius * MathHelper.cos(angle);
-        BlockPos radialPos = new BlockPos(fleePos.getX() + extraX, getPosY(), fleePos.getZ() + extraZ);
+        BlockPos radialPos = new BlockPos(fleePos.x() + extraX, getY(), fleePos.z() + extraZ);
         BlockPos ground = this.getCrowGround(radialPos);
         if (ground.getY() == 0) {
-            return this.getPositionVec();
+            return this.position();
         } else {
-            ground = this.getPosition();
-            while (ground.getY() > 2 && world.isAirBlock(ground)) {
-                ground = ground.down();
+            ground = this.blockPosition();
+            while (ground.getY() > 2 && level.isEmptyBlock(ground)) {
+                ground = ground.below();
             }
         }
-        if (!this.isTargetBlocked(Vector3d.copyCentered(ground.up()))) {
-            return Vector3d.copyCentered(ground);
+        if (!this.isTargetBlocked(Vector3d.atCenterOf(ground.above()))) {
+            return Vector3d.atCenterOf(ground);
         }
         return null;
     }
 
     public boolean isTargetBlocked(Vector3d target) {
-        Vector3d Vector3d = new Vector3d(this.getPosX(), this.getPosYEye(), this.getPosZ());
+        Vector3d Vector3d = new Vector3d(this.getX(), this.getEyeY(), this.getZ());
 
-        return this.world.rayTraceBlocks(new RayTraceContext(Vector3d, target, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.NONE, this)).getType() != RayTraceResult.Type.MISS;
+        return this.level.clip(new RayTraceContext(Vector3d, target, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.NONE, this)).getType() != RayTraceResult.Type.MISS;
     }
 
     private Vector3d getOrbitVec(Vector3d vector3d, float gatheringCircleDist) {
-        float angle = (0.01745329251F * (float) this.orbitDist * (orbitClockwise ? -ticksExisted : ticksExisted));
+        float angle = (0.01745329251F * (float) this.orbitDist * (orbitClockwise ? -tickCount : tickCount));
         double extraX = gatheringCircleDist * MathHelper.sin((angle));
         double extraZ = gatheringCircleDist * MathHelper.cos(angle);
         if (this.orbitPos != null) {
-            Vector3d pos = new Vector3d(orbitPos.getX() + extraX, orbitPos.getY() + rand.nextInt(2) - 2, orbitPos.getZ() + extraZ);
-            if (this.world.isAirBlock(new BlockPos(pos))) {
+            Vector3d pos = new Vector3d(orbitPos.getX() + extraX, orbitPos.getY() + random.nextInt(2) - 2, orbitPos.getZ() + extraZ);
+            if (this.level.isEmptyBlock(new BlockPos(pos))) {
                 return pos;
             }
         }
@@ -664,32 +666,32 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
     }
 
     private boolean isOverWaterOrVoid() {
-        BlockPos position = this.getPosition();
-        while (position.getY() > 0 && world.isAirBlock(position)) {
-            position = position.down();
+        BlockPos position = this.blockPosition();
+        while (position.getY() > 0 && level.isEmptyBlock(position)) {
+            position = position.below();
         }
-        return !world.getFluidState(position).isEmpty() || position.getY() <= 0;
+        return !level.getFluidState(position).isEmpty() || position.getY() <= 0;
     }
 
-    public void updatePassenger(Entity passenger) {
-        if (this.isPassenger(passenger)) {
+    public void positionRider(Entity passenger) {
+        if (this.hasPassenger(passenger)) {
             float radius = 0.3F;
-            float angle = (0.01745329251F * this.renderYawOffset);
+            float angle = (0.01745329251F * this.yBodyRot);
             double extraX = radius * MathHelper.sin((float) (Math.PI + angle));
             double extraZ = radius * MathHelper.cos(angle);
-            passenger.rotationYaw = this.renderYawOffset + 90F;
+            passenger.yRot = this.yBodyRot + 90F;
             if (passenger instanceof LivingEntity) {
                 LivingEntity living = (LivingEntity) passenger;
-                living.renderYawOffset = this.renderYawOffset + 90F;
+                living.yBodyRot = this.yBodyRot + 90F;
             }
             double extraY = 0;
-            if (passenger instanceof AbstractFishEntity && !passenger.isInWaterOrBubbleColumn()) {
+            if (passenger instanceof AbstractFishEntity && !passenger.isInWaterOrBubble()) {
                 extraY = 0.1F;
             }
-            passenger.setPosition(this.getPosX() + extraX, this.getPosY() - 0.3F + extraY + passenger.getHeight() * 0.3F, this.getPosZ() + extraZ);
+            passenger.setPos(this.getX() + extraX, this.getY() - 0.3F + extraY + passenger.getBbHeight() * 0.3F, this.getZ() + extraZ);
             passengerTimer++;
             if (this.isAlive() && passengerTimer > 0 && passengerTimer % 40 == 0) {
-                passenger.attackEntityFrom(DamageSource.causeMobDamage(this), 1);
+                passenger.hurt(DamageSource.mobAttack(this), 1);
             }
         }
     }
@@ -698,17 +700,17 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
         return true;
     }
 
-    public Vector3d func_230268_c_(LivingEntity livingEntity) {
-        return new Vector3d(this.getPosX(), this.getBoundingBox().minY, this.getPosZ());
+    public Vector3d getDismountLocationForPassenger(LivingEntity livingEntity) {
+        return new Vector3d(this.getX(), this.getBoundingBox().minY, this.getZ());
     }
 
     public boolean shouldHoodedReturn() {
         if (this.getOwner() != null) {
-            if (!this.getOwner().isAlive() || this.getOwner().isSneaking() ) {
+            if (!this.getOwner().isAlive() || this.getOwner().isShiftKeyDown() ) {
                 return true;
             }
         }
-        return !this.isAlive() || launchTime > 12000 || this.inPortal || this.portalCounter > 0 || removed;
+        return !this.isAlive() || launchTime > 12000 || this.isInsidePortal || this.portalTime > 0 || removed;
     }
 
     public void remove(boolean keepData) {
@@ -719,34 +721,34 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
 
     public void directFromPlayer(float rotationYaw, float rotationPitch, boolean loadChunk, Entity over) {
         Entity owner = this.getOwner();
-        if (owner != null && this.getDistance(owner) > 150) {
+        if (owner != null && this.distanceTo(owner) > 150) {
             returnControlTime = 100;
         }
-        if(Math.abs(prevPosX - this.getPosX()) > 0.1F || Math.abs(prevPosY - this.getPosY()) > 0.1F || Math.abs(prevPosZ - this.getPosZ()) > 0.1F){
+        if(Math.abs(xo - this.getX()) > 0.1F || Math.abs(yo - this.getY()) > 0.1F || Math.abs(zo - this.getZ()) > 0.1F){
             stillTicksCounter = 0;
         }else{
             stillTicksCounter++;
         }
         int stillTPthreshold = AMConfig.falconryTeleportsBack ? 200 : 6000;
-        this.setSitting(false);
+        this.setOrderedToSit(false);
         this.setLaunched(true);
-        if((returnControlTime > 0 && AMConfig.falconryTeleportsBack || stillTicksCounter > stillTPthreshold && this.getDistance(owner) > 30) && owner != null){
-            this.copyLocationAndAnglesFrom(owner);
+        if((returnControlTime > 0 && AMConfig.falconryTeleportsBack || stillTicksCounter > stillTPthreshold && this.distanceTo(owner) > 30) && owner != null){
+            this.copyPosition(owner);
             returnControlTime = 0;
             stillTicksCounter = 0;
             launchTime = Math.max(launchTime, 12000);
         }
-        if (!world.isRemote) {
+        if (!level.isClientSide) {
             if (returnControlTime > 0 && owner != null) {
-                double d0 = this.getPosX() - owner.getPosX();
-                double d2 = this.getPosZ() - owner.getPosZ();
+                double d0 = this.getX() - owner.getX();
+                double d2 = this.getZ() - owner.getZ();
                 float f = (float) (MathHelper.atan2(d2, d0) * (double) (180F / (float) Math.PI)) + 90.0F;
-                this.getLookController().setLookPositionWithEntity(owner, 30, 30);
+                this.getLookControl().setLookAt(owner, 30, 30);
             } else {
-                this.renderYawOffset = rotationYaw;
-                this.rotationYaw = rotationYaw;
-                this.rotationYawHead = rotationYaw;
-                this.rotationPitch = rotationPitch;
+                this.yBodyRot = rotationYaw;
+                this.yRot = rotationYaw;
+                this.yHeadRot = rotationYaw;
+                this.xRot = rotationPitch;
             }
             if (rotationPitch < 10 && this.isOnGround()) {
                 this.setFlying(true);
@@ -755,32 +757,32 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
             float rad = 3F;
             float speed = 1.2F;
             if (returnControlTime > 0) {
-                this.getMoveHelper().setMoveTo(owner.getPosX(), owner.getPosY() + 10, owner.getPosZ(), speed);
+                this.getMoveControl().setWantedPosition(owner.getX(), owner.getY() + 10, owner.getZ(), speed);
             } else {
-                this.getMoveHelper().setMoveTo(this.getPosX() + rad * 1.5F * Math.cos(yawOffset * (Math.PI / 180.0F)), this.getPosY() - rad * Math.sin(rotationPitch * (Math.PI / 180.0F)), this.getPosZ() + rad * Math.sin(yawOffset * (Math.PI / 180.0F)), speed);
+                this.getMoveControl().setWantedPosition(this.getX() + rad * 1.5F * Math.cos(yawOffset * (Math.PI / 180.0F)), this.getY() - rad * Math.sin(rotationPitch * (Math.PI / 180.0F)), this.getZ() + rad * Math.sin(yawOffset * (Math.PI / 180.0F)), speed);
             }
             if (loadChunk) {
-                loadChunkOnServer(this.getPosition());
+                loadChunkOnServer(this.blockPosition());
             }
-            this.setRevengeTarget(null);
-            this.setAttackTarget(null);
+            this.setLastHurtByMob(null);
+            this.setTarget(null);
             if (over == null) {
-                List<Entity> list = this.world.getEntitiesInAABBexcluding(this, this.getBoundingBox().grow(3.0D), EntityPredicates.CAN_AI_TARGET);
+                List<Entity> list = this.level.getEntities(this, this.getBoundingBox().inflate(3.0D), EntityPredicates.NO_CREATIVE_OR_SPECTATOR);
                 Entity closest = null;
                 for (Entity e : list) {
-                    if (closest == null || this.getDistance(e) < this.getDistance(closest)) {
+                    if (closest == null || this.distanceTo(e) < this.distanceTo(closest)) {
                         closest = e;
                     }
                 }
                 over = closest;
             }
         }
-        if (over != null && !this.isOnSameTeam(over) && over != owner && canFalconryAttack(over)) {
-            if (tackleCapCooldown == 0 && this.getDistance(over) <= over.getWidth() + 4D) {
+        if (over != null && !this.isAlliedTo(over) && over != owner && canFalconryAttack(over)) {
+            if (tackleCapCooldown == 0 && this.distanceTo(over) <= over.getBbWidth() + 4D) {
                 this.setTackling(true);
-                if (this.getDistance(over) <= over.getWidth() + 2D) {
-                    float speedDamage = (float) Math.ceil(MathHelper.clamp(this.getMotion().length() + 0.2, 0, 1.2D) * 3.333);
-                    over.attackEntityFrom(DamageSource.causeMobDamage(this), 5 + speedDamage + rand.nextInt(2));
+                if (this.distanceTo(over) <= over.getBbWidth() + 2D) {
+                    float speedDamage = (float) Math.ceil(MathHelper.clamp(this.getDeltaMovement().length() + 0.2, 0, 1.2D) * 3.333);
+                    over.hurt(DamageSource.mobAttack(this), 5 + speedDamage + random.nextInt(2));
                     tackleCapCooldown = 22;
                 }
             }
@@ -790,39 +792,39 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
     }
 
     private boolean canFalconryAttack(Entity over) {
-        return !(over instanceof ItemEntity) && (!(over instanceof LivingEntity) || !this.isOwner((LivingEntity)over));
+        return !(over instanceof ItemEntity) && (!(over instanceof LivingEntity) || !this.isOwnedBy((LivingEntity)over));
     }
 
     //killEntity
-    public void onKillEntity(ServerWorld world, LivingEntity entity) {
-        if (this.isLaunched() && this.hasCap() && this.isTamed() && this.getOwner() != null) {
-            if (this.getOwner() instanceof ServerPlayerEntity && this.getDistance(this.getOwner()) >= 100) {
+    public void killed(ServerWorld world, LivingEntity entity) {
+        if (this.isLaunched() && this.hasCap() && this.isTame() && this.getOwner() != null) {
+            if (this.getOwner() instanceof ServerPlayerEntity && this.distanceTo(this.getOwner()) >= 100) {
                 AMAdvancementTriggerRegistry.BALD_EAGLE_CHALLENGE.trigger((ServerPlayerEntity) this.getOwner());
             }
         }
-        super.onKillEntity(world, entity);
+        super.killed(world, entity);
     }
 
 
-    public boolean attackEntityFrom(DamageSource source, float amount) {
+    public boolean hurt(DamageSource source, float amount) {
         if (this.isInvulnerableTo(source)) {
             return false;
         } else {
-            Entity entity = source.getTrueSource();
-            if (entity != null && this.isTamed() && !(entity instanceof PlayerEntity) && !(entity instanceof AbstractArrowEntity) && this.isLaunched()) {
+            Entity entity = source.getEntity();
+            if (entity != null && this.isTame() && !(entity instanceof PlayerEntity) && !(entity instanceof AbstractArrowEntity) && this.isLaunched()) {
                 amount = (amount + 1.0F) / 4.0F;
             }
-            return super.attackEntityFrom(source, amount);
+            return super.hurt(source, amount);
         }
     }
 
     public void loadChunkOnServer(BlockPos center) {
-        if (!this.world.isRemote) {
-            ServerWorld serverWorld = (ServerWorld) world;
+        if (!this.level.isClientSide) {
+            ServerWorld serverWorld = (ServerWorld) level;
             for (int i = -1; i <= 1; i++) {
                 for (int j = -1; j <= 1; j++) {
-                    ChunkPos pos = new ChunkPos(this.getPosition().add(i * 16, 0, j * 16));
-                    serverWorld.forceChunk(pos.x, pos.z, true);
+                    ChunkPos pos = new ChunkPos(this.blockPosition().offset(i * 16, 0, j * 16));
+                    serverWorld.setChunkForced(pos.x, pos.z, true);
 
                 }
             }
@@ -838,33 +840,33 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
         }
 
         public void tick() {
-            if (this.action == MovementController.Action.MOVE_TO) {
-                Vector3d vector3d = new Vector3d(this.posX - parentEntity.getPosX(), this.posY - parentEntity.getPosY(), this.posZ - parentEntity.getPosZ());
+            if (this.operation == MovementController.Action.MOVE_TO) {
+                Vector3d vector3d = new Vector3d(this.wantedX - parentEntity.getX(), this.wantedY - parentEntity.getY(), this.wantedZ - parentEntity.getZ());
                 double d5 = vector3d.length();
                 if (d5 < 0.3) {
-                    this.action = MovementController.Action.WAIT;
-                    parentEntity.setMotion(parentEntity.getMotion().scale(0.5D));
+                    this.operation = MovementController.Action.WAIT;
+                    parentEntity.setDeltaMovement(parentEntity.getDeltaMovement().scale(0.5D));
                 } else {
-                    double d0 = this.posX - this.parentEntity.getPosX();
-                    double d1 = this.posY - this.parentEntity.getPosY();
-                    double d2 = this.posZ - this.parentEntity.getPosZ();
+                    double d0 = this.wantedX - this.parentEntity.getX();
+                    double d1 = this.wantedY - this.parentEntity.getY();
+                    double d2 = this.wantedZ - this.parentEntity.getZ();
                     double d3 = MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
-                    parentEntity.setMotion(parentEntity.getMotion().add(vector3d.scale(this.speed * 0.05D / d5)));
-                    Vector3d vector3d1 = parentEntity.getMotion();
-                    parentEntity.rotationYaw = -((float) MathHelper.atan2(vector3d1.x, vector3d1.z)) * (180F / (float) Math.PI);
-                    parentEntity.renderYawOffset = parentEntity.rotationYaw;
+                    parentEntity.setDeltaMovement(parentEntity.getDeltaMovement().add(vector3d.scale(this.speedModifier * 0.05D / d5)));
+                    Vector3d vector3d1 = parentEntity.getDeltaMovement();
+                    parentEntity.yRot = -((float) MathHelper.atan2(vector3d1.x, vector3d1.z)) * (180F / (float) Math.PI);
+                    parentEntity.yBodyRot = parentEntity.yRot;
 
                 }
 
             }
         }
 
-        private boolean func_220673_a(Vector3d p_220673_1_, int p_220673_2_) {
+        private boolean canReach(Vector3d p_220673_1_, int p_220673_2_) {
             AxisAlignedBB axisalignedbb = this.parentEntity.getBoundingBox();
 
             for (int i = 1; i < p_220673_2_; ++i) {
-                axisalignedbb = axisalignedbb.offset(p_220673_1_);
-                if (!this.parentEntity.world.hasNoCollisions(this.parentEntity, axisalignedbb)) {
+                axisalignedbb = axisalignedbb.move(p_220673_1_);
+                if (!this.parentEntity.level.noCollision(this.parentEntity, axisalignedbb)) {
                     return false;
                 }
             }
@@ -885,39 +887,39 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
 
         public AIWanderIdle() {
             super();
-            this.setMutexFlags(EnumSet.of(Flag.MOVE));
+            this.setFlags(EnumSet.of(Flag.MOVE));
             this.eagle = EntityBaldEagle.this;
         }
 
         @Override
-        public boolean shouldExecute() {
+        public boolean canUse() {
             if (orbitResetCooldown < 0) {
                 orbitResetCooldown++;
             }
-            if ((eagle.getAttackTarget() != null && eagle.getAttackTarget().isAlive() && !this.eagle.isBeingRidden()) || this.eagle.isPassenger() || this.eagle.isSitting() || eagle.controlledFlag) {
+            if ((eagle.getTarget() != null && eagle.getTarget().isAlive() && !this.eagle.isVehicle()) || this.eagle.isPassenger() || this.eagle.isSitting() || eagle.controlledFlag) {
                 return false;
             } else {
-                if (this.eagle.getRNG().nextInt(15) != 0 && !eagle.isFlying()) {
+                if (this.eagle.getRandom().nextInt(15) != 0 && !eagle.isFlying()) {
                     return false;
                 }
-                if(this.eagle.isChild()){
+                if(this.eagle.isBaby()){
                     this.flightTarget = false;
-                }else if (this.eagle.isInWaterOrBubbleColumn()) {
+                }else if (this.eagle.isInWaterOrBubble()) {
                     this.flightTarget = true;
                 } else if (this.eagle.hasCap()) {
                     this.flightTarget = false;
                 } else if (this.eagle.isOnGround()) {
-                    this.flightTarget = rand.nextBoolean();
+                    this.flightTarget = random.nextBoolean();
                 } else {
-                    if (orbitResetCooldown == 0 && rand.nextInt(6) == 0) {
+                    if (orbitResetCooldown == 0 && random.nextInt(6) == 0) {
                         orbitResetCooldown = 400;
-                        eagle.orbitPos = eagle.getPosition();
-                        eagle.orbitDist = 4 + rand.nextInt(5);
-                        eagle.orbitClockwise = rand.nextBoolean();
+                        eagle.orbitPos = eagle.blockPosition();
+                        eagle.orbitDist = 4 + random.nextInt(5);
+                        eagle.orbitClockwise = random.nextBoolean();
                         orbitTime = 0;
-                        maxOrbitTime = (int) (360 + 360 * rand.nextFloat());
+                        maxOrbitTime = (int) (360 + 360 * random.nextFloat());
                     }
-                    this.flightTarget = eagle.isBeingRidden() || rand.nextInt(7) > 0 && eagle.timeFlying < 700;
+                    this.flightTarget = eagle.isVehicle() || random.nextInt(7) > 0 && eagle.timeFlying < 700;
                 }
                 Vector3d lvt_1_1_ = this.getPosition();
                 if (lvt_1_1_ == null) {
@@ -939,89 +941,89 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
                 orbitResetCooldown++;
             }
             if (orbitResetCooldown > 0 && eagle.orbitPos != null) {
-                if (orbitTime < maxOrbitTime && !eagle.isInWaterOrBubbleColumn()) {
+                if (orbitTime < maxOrbitTime && !eagle.isInWaterOrBubble()) {
                     orbitTime++;
                 } else {
                     orbitTime = 0;
                     eagle.orbitPos = null;
-                    orbitResetCooldown = -400 - rand.nextInt(400);
+                    orbitResetCooldown = -400 - random.nextInt(400);
                 }
             }
-            if (eagle.collidedHorizontally && !eagle.onGround) {
-                resetTask();
+            if (eagle.horizontalCollision && !eagle.onGround) {
+                stop();
             }
             if (flightTarget) {
-                eagle.getMoveHelper().setMoveTo(x, y, z, 1F);
+                eagle.getMoveControl().setWantedPosition(x, y, z, 1F);
             } else {
                 if (eagle.isFlying() && !eagle.onGround) {
-                    if (!eagle.isInWaterOrBubbleColumn()) {
-                        eagle.setMotion(eagle.getMotion().mul(1.2F, 0.6F, 1.2F));
+                    if (!eagle.isInWaterOrBubble()) {
+                        eagle.setDeltaMovement(eagle.getDeltaMovement().multiply(1.2F, 0.6F, 1.2F));
                     }
                 } else {
-                    this.eagle.getNavigator().tryMoveToXYZ(this.x, this.y, this.z, 1F);
+                    this.eagle.getNavigation().moveTo(this.x, this.y, this.z, 1F);
                 }
             }
             if (!flightTarget && isFlying() && eagle.onGround) {
                 eagle.setFlying(false);
                 orbitTime = 0;
                 eagle.orbitPos = null;
-                orbitResetCooldown = -400 - rand.nextInt(400);
+                orbitResetCooldown = -400 - random.nextInt(400);
             }
-            if (isFlying() && (!world.isAirBlock(eagle.getPositionUnderneath()) || eagle.onGround) && !eagle.isInWaterOrBubbleColumn() && eagle.timeFlying > 30) {
+            if (isFlying() && (!level.isEmptyBlock(eagle.getBlockPosBelowThatAffectsMyMovement()) || eagle.onGround) && !eagle.isInWaterOrBubble() && eagle.timeFlying > 30) {
                 eagle.setFlying(false);
                 orbitTime = 0;
                 eagle.orbitPos = null;
-                orbitResetCooldown = -400 - rand.nextInt(400);
+                orbitResetCooldown = -400 - random.nextInt(400);
             }
         }
 
         @Nullable
         protected Vector3d getPosition() {
-            Vector3d vector3d = eagle.getPositionVec();
-            if (eagle.isTamed() && eagle.getCommand() == 1 && eagle.getOwner() != null) {
-                vector3d = eagle.getOwner().getPositionVec();
-                eagle.orbitPos = eagle.getOwner().getPosition();
+            Vector3d vector3d = eagle.position();
+            if (eagle.isTame() && eagle.getCommand() == 1 && eagle.getOwner() != null) {
+                vector3d = eagle.getOwner().position();
+                eagle.orbitPos = eagle.getOwner().blockPosition();
             }
             if (orbitResetCooldown > 0 && eagle.orbitPos != null) {
-                return eagle.getOrbitVec(vector3d, 4 + rand.nextInt(2));
+                return eagle.getOrbitVec(vector3d, 4 + random.nextInt(2));
             }
-            if (eagle.isBeingRidden() || eagle.isOverWaterOrVoid()) {
+            if (eagle.isVehicle() || eagle.isOverWaterOrVoid()) {
                 flightTarget = true;
             }
             if (flightTarget) {
-                if (eagle.timeFlying < 500 || eagle.isBeingRidden() || eagle.isOverWaterOrVoid()) {
+                if (eagle.timeFlying < 500 || eagle.isVehicle() || eagle.isOverWaterOrVoid()) {
                     return eagle.getBlockInViewAway(vector3d, 0);
                 } else {
                     return eagle.getBlockGrounding(vector3d);
                 }
             } else {
-                return RandomPositionGenerator.findRandomTarget(this.eagle, 10, 7);
+                return RandomPositionGenerator.getPos(this.eagle, 10, 7);
             }
         }
 
-        public boolean shouldContinueExecuting() {
+        public boolean canContinueToUse() {
             if (eagle.isSitting()) {
                 return false;
             }
             if (flightTarget) {
-                return eagle.isFlying() && eagle.getDistanceSq(x, y, z) > 2F;
+                return eagle.isFlying() && eagle.distanceToSqr(x, y, z) > 2F;
             } else {
-                return (!this.eagle.getNavigator().noPath()) && !this.eagle.isBeingRidden();
+                return (!this.eagle.getNavigation().isDone()) && !this.eagle.isVehicle();
             }
         }
 
-        public void startExecuting() {
+        public void start() {
             if (flightTarget) {
                 eagle.setFlying(true);
-                eagle.getMoveHelper().setMoveTo(x, y, z, 1F);
+                eagle.getMoveControl().setWantedPosition(x, y, z, 1F);
             } else {
-                this.eagle.getNavigator().tryMoveToXYZ(this.x, this.y, this.z, 1F);
+                this.eagle.getNavigation().moveTo(this.x, this.y, this.z, 1F);
             }
         }
 
-        public void resetTask() {
-            this.eagle.getNavigator().clearPath();
-            super.resetTask();
+        public void stop() {
+            this.eagle.getNavigation().stop();
+            super.stop();
         }
     }
 
@@ -1036,80 +1038,80 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
         }
 
         @Override
-        public boolean shouldExecute() {
-            return eagle.getAttackTarget() != null && !eagle.controlledFlag && !eagle.isBeingRidden();
+        public boolean canUse() {
+            return eagle.getTarget() != null && !eagle.controlledFlag && !eagle.isVehicle();
         }
 
-        public void startExecuting() {
+        public void start() {
             eagle.orbitPos = null;
         }
 
-        public void resetTask() {
+        public void stop() {
             circleTime = 0;
-            maxCircleTime = 60 + rand.nextInt(60);
+            maxCircleTime = 60 + random.nextInt(60);
         }
 
         public void tick() {
-            LivingEntity target = eagle.getAttackTarget();
-            boolean smallPrey = target != null && target.getHeight() < 1F && target.getWidth() < 0.7F && !(target instanceof EntityBaldEagle) || target instanceof AbstractFishEntity;
+            LivingEntity target = eagle.getTarget();
+            boolean smallPrey = target != null && target.getBbHeight() < 1F && target.getBbWidth() < 0.7F && !(target instanceof EntityBaldEagle) || target instanceof AbstractFishEntity;
             if (eagle.orbitPos != null && circleTime < maxCircleTime) {
                 circleTime++;
                 eagle.setTackling(false);
                 eagle.setFlying(true);
                 if (target != null) {
                     int i = 0;
-                    int up = 2 + eagle.getRNG().nextInt(4);
-                    eagle.orbitPos = target.getPosition().up((int) (target.getHeight()));
-                    while (eagle.world.isAirBlock(eagle.orbitPos) && i < up) {
+                    int up = 2 + eagle.getRandom().nextInt(4);
+                    eagle.orbitPos = target.blockPosition().above((int) (target.getBbHeight()));
+                    while (eagle.level.isEmptyBlock(eagle.orbitPos) && i < up) {
                         i++;
-                        eagle.orbitPos = eagle.orbitPos.up();
+                        eagle.orbitPos = eagle.orbitPos.above();
                     }
                 }
-                Vector3d vec = eagle.getOrbitVec(Vector3d.ZERO, 4 + rand.nextInt(2));
+                Vector3d vec = eagle.getOrbitVec(Vector3d.ZERO, 4 + random.nextInt(2));
                 if (vec != null) {
-                    eagle.getMoveHelper().setMoveTo(vec.x, vec.y, vec.z, 1.2F);
+                    eagle.getMoveControl().setWantedPosition(vec.x, vec.y, vec.z, 1.2F);
                 }
             } else if (target != null) {
-                if (eagle.isFlying() || eagle.isInWaterOrBubbleColumn()) {
-                    double d0 = eagle.getPosX() - target.getPosX();
-                    double d2 = eagle.getPosZ() - target.getPosZ();
+                if (eagle.isFlying() || eagle.isInWaterOrBubble()) {
+                    double d0 = eagle.getX() - target.getX();
+                    double d2 = eagle.getZ() - target.getZ();
                     double xzDist = Math.sqrt(d0 * d0 + d2 * d2);
-                    double yAddition = target.getHeight();
+                    double yAddition = target.getBbHeight();
                     if (xzDist > 15) {
                         yAddition = 3D;
                     }
                     eagle.setTackling(true);
-                    eagle.getMoveHelper().setMoveTo(target.getPosX(), target.getPosY() + yAddition, target.getPosZ(), eagle.isInWaterOrBubbleColumn() ? 1.3F : 1.0F);
+                    eagle.getMoveControl().setWantedPosition(target.getX(), target.getY() + yAddition, target.getZ(), eagle.isInWaterOrBubble() ? 1.3F : 1.0F);
                 } else {
-                    this.eagle.getNavigator().tryMoveToEntityLiving(target, 1F);
+                    this.eagle.getNavigation().moveTo(target, 1F);
                 }
-                if (eagle.getDistance(target) < target.getWidth() + 2.5F) {
+                if (eagle.distanceTo(target) < target.getBbWidth() + 2.5F) {
                     if (eagle.isTackling()) {
                         if (smallPrey) {
                             eagle.setFlying(true);
                             eagle.timeFlying = 0;
                             float radius = 0.3F;
-                            float angle = (0.01745329251F * eagle.renderYawOffset);
+                            float angle = (0.01745329251F * eagle.yBodyRot);
                             double extraX = radius * MathHelper.sin((float) (Math.PI + angle));
                             double extraZ = radius * MathHelper.cos(angle);
-                            target.rotationYaw = eagle.renderYawOffset + 90F;
+                            target.yRot = eagle.yBodyRot + 90F;
                             if (target instanceof LivingEntity) {
                                 LivingEntity living = target;
-                                living.renderYawOffset = eagle.renderYawOffset + 90F;
+                                living.yBodyRot = eagle.yBodyRot + 90F;
                             }
-                            target.setPosition(eagle.getPosX() + extraX, eagle.getPosY() - 0.4F + target.getHeight() * 0.45F, eagle.getPosZ() + extraZ);
+                            target.setPos(eagle.getX() + extraX, eagle.getY() - 0.4F + target.getBbHeight() * 0.45F, eagle.getZ() + extraZ);
                             target.startRiding(eagle, true);
                         } else {
-                            target.attackEntityFrom(DamageSource.causeMobDamage(eagle), 5);
+                            target.hurt(DamageSource.mobAttack(eagle), 5);
                             eagle.setFlying(false);
-                            eagle.orbitPos = target.getPosition().up(2);
+                            eagle.orbitPos = target.blockPosition().above(2);
                             circleTime = 0;
-                            maxCircleTime = 60 + rand.nextInt(60);
+                            maxCircleTime = 60 + random.nextInt(60);
                         }
                     } else {
-                        eagle.attackEntityAsMob(target);
+                        eagle.doHurtTarget(target);
                     }
-                } else if (eagle.getDistance(target) > 12 || target.isInWaterOrBubbleColumn()) {
+                } else if (eagle.distanceTo(target) > 12 || target.isInWaterOrBubble()) {
                     eagle.setFlying(true);
                 }
             }
@@ -1125,46 +1127,46 @@ public class EntityBaldEagle extends TameableEntity implements IFollower {
 
         public AILandOnGlove() {
             this.eagle = EntityBaldEagle.this;
-            this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE));
+            this.setFlags(EnumSet.of(Goal.Flag.MOVE));
         }
 
-        public boolean shouldExecute() {
-            return eagle.isLaunched() && !eagle.controlledFlag && eagle.isTamed() && !eagle.isPassenger() && !eagle.isBeingRidden() && (eagle.getAttackTarget() == null || !eagle.getAttackTarget().isAlive());
+        public boolean canUse() {
+            return eagle.isLaunched() && !eagle.controlledFlag && eagle.isTame() && !eagle.isPassenger() && !eagle.isVehicle() && (eagle.getTarget() == null || !eagle.getTarget().isAlive());
         }
 
         public void tick() {
-            if (eagle.getMotion().lengthSquared() < 0.03D) {
+            if (eagle.getDeltaMovement().lengthSqr() < 0.03D) {
                 seperateTime++;
             }
             LivingEntity owner = eagle.getOwner();
             if (owner != null) {
                 if (seperateTime > 200) {
                     seperateTime = 0;
-                    eagle.copyLocationAndAnglesFrom(owner);
+                    eagle.copyPosition(owner);
                 }
                 eagle.setFlying(true);
-                double d0 = eagle.getPosX() - owner.getPosX();
-                double d2 = eagle.getPosZ() - owner.getPosZ();
+                double d0 = eagle.getX() - owner.getX();
+                double d2 = eagle.getZ() - owner.getZ();
                 double xzDist = Math.sqrt(d0 * d0 + d2 * d2);
                 double yAdd = xzDist > 14 ? 5 : 0;
-                eagle.getMoveHelper().setMoveTo(owner.getPosX(), owner.getPosY() + yAdd + owner.getEyeHeight(), owner.getPosZ(), 1);
+                eagle.getMoveControl().setWantedPosition(owner.getX(), owner.getY() + yAdd + owner.getEyeHeight(), owner.getZ(), 1);
 
-                if (this.eagle.getDistance(owner) < owner.getWidth() + 1.4D) {
+                if (this.eagle.distanceTo(owner) < owner.getBbWidth() + 1.4D) {
                     this.eagle.setLaunched(false);
                     if (this.eagle.getRidingEagles(owner) <= 0) {
                         this.eagle.startRiding(owner);
-                        if (!eagle.world.isRemote) {
-                            AlexsMobs.sendMSGToAll(new MessageMosquitoMountPlayer(eagle.getEntityId(), owner.getEntityId()));
+                        if (!eagle.level.isClientSide) {
+                            AlexsMobs.sendMSGToAll(new MessageMosquitoMountPlayer(eagle.getId(), owner.getId()));
                         }
                     } else {
                         this.eagle.setCommand(2);
-                        this.eagle.setSitting(true);
+                        this.eagle.setOrderedToSit(true);
                     }
                 }
             }
         }
 
-        public void resetTask() {
+        public void stop() {
             seperateTime = 0;
         }
     }

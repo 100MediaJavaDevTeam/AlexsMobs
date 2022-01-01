@@ -30,19 +30,19 @@ public class ItemModFishBucket extends BucketItem {
     private final EntityType<?> fishType;
 
     public ItemModFishBucket(EntityType<?> fishTypeIn, Fluid fluid, Item.Properties builder) {
-        super(fluid, builder.maxStackSize(1));
+        super(fluid, builder.stacksTo(1));
         this.fishType = fishTypeIn;
         this.fishTypeSupplier = () -> fishTypeIn;
     }
 
-    public void onLiquidPlaced(World worldIn, ItemStack p_203792_2_, BlockPos pos) {
+    public void checkExtraContent(World worldIn, ItemStack p_203792_2_, BlockPos pos) {
         if (worldIn instanceof ServerWorld) {
             this.placeFish((ServerWorld)worldIn, p_203792_2_, pos);
         }
     }
 
     protected void playEmptySound(@Nullable PlayerEntity player, IWorld worldIn, BlockPos pos) {
-        worldIn.playSound(player, pos, SoundEvents.ITEM_BUCKET_EMPTY_FISH, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+        worldIn.playSound(player, pos, SoundEvents.BUCKET_EMPTY_FISH, SoundCategory.NEUTRAL, 1.0F, 1.0F);
     }
 
     private void placeFish(ServerWorld worldIn, ItemStack stack, BlockPos pos) {
@@ -72,34 +72,34 @@ public class ItemModFishBucket extends BucketItem {
         if (entity != null && entity instanceof EntityPlatypus) {
             CompoundNBT compoundnbt = stack.getOrCreateTag();
             if(compoundnbt.contains("PlatypusData")){
-                ((EntityPlatypus)entity).readAdditional(compoundnbt.getCompound("PlatypusData"));
+                ((EntityPlatypus)entity).readAdditionalSaveData(compoundnbt.getCompound("PlatypusData"));
             }
 
         }
         if (entity != null && entity instanceof EntityFrilledShark) {
             CompoundNBT compoundnbt = stack.getOrCreateTag();
             if(compoundnbt.contains("FrilledSharkData")){
-                ((EntityFrilledShark)entity).readAdditional(compoundnbt.getCompound("FrilledSharkData"));
+                ((EntityFrilledShark)entity).readAdditionalSaveData(compoundnbt.getCompound("FrilledSharkData"));
             }
 
         }
         if (entity != null && entity instanceof EntityMimicOctopus) {
             CompoundNBT compoundnbt = stack.getOrCreateTag();
             if(compoundnbt.contains("MimicOctopusData")){
-                ((EntityMimicOctopus)entity).readAdditional(compoundnbt.getCompound("MimicOctopusData"));
+                ((EntityMimicOctopus)entity).readAdditionalSaveData(compoundnbt.getCompound("MimicOctopusData"));
             }
             ((EntityMimicOctopus)entity).setMoistness(60000);
         }
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void addInformation(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn) {
+    public void appendHoverText(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn) {
         if (this.fishType == AMEntityRegistry.LOBSTER) {
             CompoundNBT compoundnbt = stack.getTag();
             if (compoundnbt != null && compoundnbt.contains("BucketVariantTag", 3)) {
                 int i = compoundnbt.getInt("BucketVariantTag");
                 String s = "entity.alexsmobs.lobster.variant_" + EntityLobster.getVariantName(i);
-                tooltip.add((new TranslationTextComponent(s)).mergeStyle(TextFormatting.GRAY).mergeStyle(TextFormatting.ITALIC));
+                tooltip.add((new TranslationTextComponent(s)).withStyle(TextFormatting.GRAY).withStyle(TextFormatting.ITALIC));
             }
         }
     }

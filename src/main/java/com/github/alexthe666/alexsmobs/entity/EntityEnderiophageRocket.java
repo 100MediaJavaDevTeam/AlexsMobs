@@ -35,23 +35,23 @@ public class EntityEnderiophageRocket extends FireworkRocketEntity {
 
     public EntityEnderiophageRocket(World worldIn, double x, double y, double z, ItemStack givenItem) {
         super(AMEntityRegistry.ENDERIOPHAGE_ROCKET, worldIn);
-        this.setPosition(x, y, z);
+        this.setPos(x, y, z);
         if (!givenItem.isEmpty() && givenItem.hasTag()) {
-            this.dataManager.set(FIREWORK_ITEM, givenItem.copy());
+            this.entityData.set(DATA_ID_FIREWORKS_ITEM, givenItem.copy());
         }
 
-        this.setMotion(this.rand.nextGaussian() * 0.001D, 0.05D, this.rand.nextGaussian() * 0.001D);
-        this.lifetime = 18 + this.rand.nextInt(14);
+        this.setDeltaMovement(this.random.nextGaussian() * 0.001D, 0.05D, this.random.nextGaussian() * 0.001D);
+        this.lifetime = 18 + this.random.nextInt(14);
     }
 
     public EntityEnderiophageRocket(World p_i231581_1_, @Nullable Entity p_i231581_2_, double p_i231581_3_, double p_i231581_5_, double p_i231581_7_, ItemStack p_i231581_9_) {
         this(p_i231581_1_, p_i231581_3_, p_i231581_5_, p_i231581_7_, p_i231581_9_);
-        this.setShooter(p_i231581_2_);
+        this.setOwner(p_i231581_2_);
     }
 
     public EntityEnderiophageRocket(World p_i47367_1_, ItemStack p_i47367_2_, LivingEntity p_i47367_3_) {
-        this(p_i47367_1_, p_i47367_3_, p_i47367_3_.getPosX(), p_i47367_3_.getPosY(), p_i47367_3_.getPosZ(), p_i47367_2_);
-        this.dataManager.set(BOOSTED_ENTITY_ID, OptionalInt.of(p_i47367_3_.getEntityId()));
+        this(p_i47367_1_, p_i47367_3_, p_i47367_3_.getX(), p_i47367_3_.getY(), p_i47367_3_.getZ(), p_i47367_2_);
+        this.entityData.set(DATA_ATTACHED_TO_TARGET, OptionalInt.of(p_i47367_3_.getId()));
     }
 
     public EntityEnderiophageRocket(FMLPlayMessages.SpawnEntity spawnEntity, World world) {
@@ -59,34 +59,34 @@ public class EntityEnderiophageRocket extends FireworkRocketEntity {
     }
 
     @Override
-    public IPacket<?> createSpawnPacket() {
+    public IPacket<?> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);
     }
 
     public void tick() {
         super.tick();
         ++this.phageAge;
-        if (this.world.isRemote) {
-            this.world.addParticle(ParticleTypes.END_ROD, this.getPosX(), this.getPosY() - 0.3D, this.getPosZ(), this.rand.nextGaussian() * 0.05D, -this.getMotion().y * 0.5D, this.rand.nextGaussian() * 0.05D);
+        if (this.level.isClientSide) {
+            this.level.addParticle(ParticleTypes.END_ROD, this.getX(), this.getY() - 0.3D, this.getZ(), this.random.nextGaussian() * 0.05D, -this.getDeltaMovement().y * 0.5D, this.random.nextGaussian() * 0.05D);
         }
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void handleStatusUpdate(byte id) {
+    public void handleEntityEvent(byte id) {
         if (id == 17) {
-            this.world.addParticle(ParticleTypes.EXPLOSION, this.getPosX(), this.getPosY(), this.getPosZ(), this.rand.nextGaussian() * 0.05D, 0.005D, this.rand.nextGaussian() * 0.05D);
-            for(int i = 0; i < this.rand.nextInt(15) + 30; ++i) {
-                this.world.addParticle(AMParticleRegistry.DNA, this.getPosX(), this.getPosY(), this.getPosZ(), this.rand.nextGaussian() * 0.25D, this.rand.nextGaussian() * 0.25D, this.rand.nextGaussian() * 0.25D);
+            this.level.addParticle(ParticleTypes.EXPLOSION, this.getX(), this.getY(), this.getZ(), this.random.nextGaussian() * 0.05D, 0.005D, this.random.nextGaussian() * 0.05D);
+            for(int i = 0; i < this.random.nextInt(15) + 30; ++i) {
+                this.level.addParticle(AMParticleRegistry.DNA, this.getX(), this.getY(), this.getZ(), this.random.nextGaussian() * 0.25D, this.random.nextGaussian() * 0.25D, this.random.nextGaussian() * 0.25D);
             }
-            for(int i = 0; i < this.rand.nextInt(15) + 15; ++i) {
-                this.world.addParticle(ParticleTypes.END_ROD, this.getPosX(), this.getPosY(), this.getPosZ(), this.rand.nextGaussian() * 0.15D, this.rand.nextGaussian() * 0.15D, this.rand.nextGaussian() * 0.15D);
+            for(int i = 0; i < this.random.nextInt(15) + 15; ++i) {
+                this.level.addParticle(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(), this.random.nextGaussian() * 0.15D, this.random.nextGaussian() * 0.15D, this.random.nextGaussian() * 0.15D);
             }
-            SoundEvent soundEvent = AlexsMobs.PROXY.isFarFromCamera(this.getPosX(), this.getPosY(), this.getPosZ()) ? SoundEvents.ENTITY_FIREWORK_ROCKET_BLAST : SoundEvents.ENTITY_FIREWORK_ROCKET_BLAST_FAR;
-            this.world.playSound(this.getPosX(), this.getPosY(), this.getPosZ(), soundEvent, SoundCategory.AMBIENT, 20.0F, 0.95F + this.rand.nextFloat() * 0.1F, true);
+            SoundEvent soundEvent = AlexsMobs.PROXY.isFarFromCamera(this.getX(), this.getY(), this.getZ()) ? SoundEvents.FIREWORK_ROCKET_BLAST : SoundEvents.FIREWORK_ROCKET_BLAST_FAR;
+            this.level.playLocalSound(this.getX(), this.getY(), this.getZ(), soundEvent, SoundCategory.AMBIENT, 20.0F, 0.95F + this.random.nextFloat() * 0.1F, true);
 
 
         }else{
-            super.handleStatusUpdate(id);
+            super.handleEntityEvent(id);
         }
     }
 

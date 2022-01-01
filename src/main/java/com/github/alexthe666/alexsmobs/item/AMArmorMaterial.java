@@ -19,7 +19,7 @@ public class AMArmorMaterial extends CustomArmorMaterial {
         this.maxDamageFactor = durability;
     }
 
-    public int getDurability(EquipmentSlotType slotIn) {
+    public int getDurabilityForSlot(EquipmentSlotType slotIn) {
         return MAX_DAMAGE_ARRAY[slotIn.getIndex()] * this.maxDamageFactor;
     }
 }

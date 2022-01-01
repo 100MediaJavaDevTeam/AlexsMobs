@@ -19,17 +19,17 @@ public class RenderBlobfish extends MobRenderer<EntityBlobfish, EntityModel<Enti
         super(renderManagerIn, new ModelBlobfish(), 0.35F);
     }
 
-    protected void preRenderCallback(EntityBlobfish entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityBlobfish entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         if(entitylivingbaseIn.isDepressurized()){
-            entityModel = modelDepressurized;
+            model = modelDepressurized;
         }else{
-            entityModel = model;
+            model = model;
         }
         matrixStackIn.scale(entitylivingbaseIn.getBlobfishScale(), entitylivingbaseIn.getBlobfishScale(), entitylivingbaseIn.getBlobfishScale());
     }
 
 
-    public ResourceLocation getEntityTexture(EntityBlobfish entity) {
+    public ResourceLocation getTextureLocation(EntityBlobfish entity) {
         return entity.isDepressurized() ? TEXTURE_DEPRESSURIZED : TEXTURE;
     }
 }

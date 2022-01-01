@@ -21,11 +21,11 @@ public class LayerRaccoonEyes extends LayerRenderer<EntityRaccoon, ModelRaccoon>
     }
 
     public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityRaccoon raccoon, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
-        long roundedTime = raccoon.world.getDayTime() % 24000;
+        long roundedTime = raccoon.level.getDayTime() % 24000;
         boolean night = roundedTime >= 13000 && roundedTime <= 22000;
         BlockPos ratPos = raccoon.getLightPosition();
-        int i = raccoon.world.getLightFor(LightType.SKY, ratPos);
-        int j = raccoon.world.getLightFor(LightType.BLOCK, ratPos);
+        int i = raccoon.level.getBrightness(LightType.SKY, ratPos);
+        int j = raccoon.level.getBrightness(LightType.BLOCK, ratPos);
         int brightness;
         if (night) {
             brightness = j;
@@ -33,8 +33,8 @@ public class LayerRaccoonEyes extends LayerRenderer<EntityRaccoon, ModelRaccoon>
             brightness = Math.max(i, j);
         }
         if (brightness < 7) {
-            IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.getEyes(TEXTURE));
-            this.getEntityModel().render(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getPackedOverlay(raccoon, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
+            IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.eyes(TEXTURE));
+            this.getParentModel().renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getOverlayCoords(raccoon, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
         }
 
     }

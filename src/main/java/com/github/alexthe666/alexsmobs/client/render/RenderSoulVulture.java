@@ -16,12 +16,12 @@ public class RenderSoulVulture extends MobRenderer<EntitySoulVulture, ModelSoulV
         this.addLayer(new LayerSoulVultureGlow(this));
     }
 
-    protected void preRenderCallback(EntitySoulVulture entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntitySoulVulture entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
       //  matrixStackIn.scale(1.2F, 1.2F, 1.2F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntitySoulVulture entity) {
+    public ResourceLocation getTextureLocation(EntitySoulVulture entity) {
         return TEXTURE;
     }
 }

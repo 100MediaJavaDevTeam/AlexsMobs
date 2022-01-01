@@ -36,27 +36,29 @@ import net.minecraftforge.common.ToolType;
 import javax.annotation.Nullable;
 import java.util.List;
 
+import net.minecraft.block.AbstractBlock.Properties;
+
 public class BlockCapsid extends ContainerBlock {
 
-    public static final DirectionProperty HORIZONTAL_FACING = HorizontalBlock.HORIZONTAL_FACING;
+    public static final DirectionProperty HORIZONTAL_FACING = HorizontalBlock.FACING;
     public BlockCapsid() {
-        super(Properties.create(Material.GLASS).notSolid().setAllowsSpawn(BlockCapsid::spawnOption).setOpaque(BlockCapsid::isntSolid).sound(SoundType.GLASS).setLightLevel((state) -> 5).harvestTool(ToolType.PICKAXE).hardnessAndResistance(4.5F));
+        super(Properties.of(Material.GLASS).noOcclusion().isValidSpawn(BlockCapsid::spawnOption).isRedstoneConductor(BlockCapsid::isntSolid).sound(SoundType.GLASS).lightLevel((state) -> 5).harvestTool(ToolType.PICKAXE).strength(4.5F));
         this.setRegistryName("alexsmobs:capsid");
     }
 
     public BlockState rotate(BlockState p_185499_1_, Rotation p_185499_2_) {
-        return (BlockState)p_185499_1_.with(HORIZONTAL_FACING, p_185499_2_.rotate((Direction)p_185499_1_.get(HORIZONTAL_FACING)));
+        return (BlockState)p_185499_1_.setValue(HORIZONTAL_FACING, p_185499_2_.rotate((Direction)p_185499_1_.getValue(HORIZONTAL_FACING)));
     }
 
     public BlockState mirror(BlockState p_185471_1_, Mirror p_185471_2_) {
-        return p_185471_1_.rotate(p_185471_2_.toRotation((Direction)p_185471_1_.get(HORIZONTAL_FACING)));
+        return p_185471_1_.rotate(p_185471_2_.getRotation((Direction)p_185471_1_.getValue(HORIZONTAL_FACING)));
     }
 
     public BlockState getStateForPlacement(BlockItemUseContext context) {
-        return this.getDefaultState().with(HORIZONTAL_FACING, context.getPlacementHorizontalFacing());
+        return this.defaultBlockState().setValue(HORIZONTAL_FACING, context.getHorizontalDirection());
     }
 
-    protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> builder) {
         builder.add(HORIZONTAL_FACING);
     }
 
@@ -69,54 +71,54 @@ public class BlockCapsid extends ContainerBlock {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public boolean isSideInvisible(BlockState p_200122_1_, BlockState p_200122_2_, Direction p_200122_3_) {
-        return p_200122_2_.getBlock() == this ? true : super.isSideInvisible(p_200122_1_, p_200122_2_, p_200122_3_);
+    public boolean skipRendering(BlockState p_200122_1_, BlockState p_200122_2_, Direction p_200122_3_) {
+        return p_200122_2_.getBlock() == this ? true : super.skipRendering(p_200122_1_, p_200122_2_, p_200122_3_);
     }
 
-    public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
-        ItemStack heldItem = player.getHeldItem(handIn);
-        if (worldIn.getTileEntity(pos) instanceof TileEntityCapsid && (!player.isSneaking()  && heldItem.getItem() != this.asItem())) {
-            TileEntityCapsid capsid = (TileEntityCapsid)worldIn.getTileEntity(pos);
+    public ActionResultType use(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+        ItemStack heldItem = player.getItemInHand(handIn);
+        if (worldIn.getBlockEntity(pos) instanceof TileEntityCapsid && (!player.isShiftKeyDown()  && heldItem.getItem() != this.asItem())) {
+            TileEntityCapsid capsid = (TileEntityCapsid)worldIn.getBlockEntity(pos);
             ItemStack copy = heldItem.copy();
             copy.setCount(1);
-            if(capsid.getStackInSlot(0).isEmpty()){
-                capsid.setInventorySlotContents(0, copy);
+            if(capsid.getItem(0).isEmpty()){
+                capsid.setItem(0, copy);
                 if(!player.isCreative()){
                     heldItem.shrink(1);
                 }
                 return ActionResultType.SUCCESS;
-            }else if(capsid.getStackInSlot(0).isItemEqual(copy) && capsid.getStackInSlot(0).getMaxStackSize() > capsid.getStackInSlot(0).getCount() + copy.getCount()){
-                capsid.getStackInSlot(0).grow(1);
+            }else if(capsid.getItem(0).sameItem(copy) && capsid.getItem(0).getMaxStackSize() > capsid.getItem(0).getCount() + copy.getCount()){
+                capsid.getItem(0).grow(1);
                 if(!player.isCreative()){
                     heldItem.shrink(1);
                 }
                 return ActionResultType.SUCCESS;
             }else{
-                spawnAsEntity(worldIn, pos, capsid.getStackInSlot(0).copy());
-                capsid.setInventorySlotContents(0, ItemStack.EMPTY);
+                popResource(worldIn, pos, capsid.getItem(0).copy());
+                capsid.setItem(0, ItemStack.EMPTY);
                 return ActionResultType.SUCCESS;
             }
         }
         return ActionResultType.PASS;
     }
 
-    public void onReplaced(BlockState state, World worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
-        TileEntity tileentity = worldIn.getTileEntity(pos);
+    public void onRemove(BlockState state, World worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
+        TileEntity tileentity = worldIn.getBlockEntity(pos);
         if (tileentity instanceof TileEntityCapsid) {
-            InventoryHelper.dropInventoryItems(worldIn, pos, (TileEntityCapsid) tileentity);
-            worldIn.updateComparatorOutputLevel(pos, this);
+            InventoryHelper.dropContents(worldIn, pos, (TileEntityCapsid) tileentity);
+            worldIn.updateNeighbourForOutputSignal(pos, this);
         }
-        super.onReplaced(state, worldIn, pos, newState, isMoving);
+        super.onRemove(state, worldIn, pos, newState, isMoving);
     }
 
 
-    public BlockRenderType getRenderType(BlockState p_149645_1_) {
+    public BlockRenderType getRenderShape(BlockState p_149645_1_) {
         return BlockRenderType.MODEL;
     }
 
     @Nullable
     @Override
-    public TileEntity createNewTileEntity(IBlockReader worldIn) {
+    public TileEntity newBlockEntity(IBlockReader worldIn) {
         return new TileEntityCapsid();
     }
 }

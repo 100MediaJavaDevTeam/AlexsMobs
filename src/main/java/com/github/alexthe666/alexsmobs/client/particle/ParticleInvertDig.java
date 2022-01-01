@@ -31,41 +31,41 @@ public class ParticleInvertDig extends SimpleAnimatedParticle {
 
     protected ParticleInvertDig(ClientWorld world, double x, double y, double z, IAnimatedSprite spriteWithAge, double creatorId) {
         super(world, x, y, z, spriteWithAge, 0);
-        this.motionX = 0;
-        this.motionY = 0;
-        this.motionZ = 0;
-        this.particleScale = 0.1F;
-        this.particleAlpha = 1F;
-        this.maxAge = ItemDimensionalCarver.MAX_TIME;
-        this.canCollide = false;
-        this.creator = world.getEntityByID((int) creatorId);
+        this.xd = 0;
+        this.yd = 0;
+        this.zd = 0;
+        this.quadSize = 0.1F;
+        this.alpha = 1F;
+        this.lifetime = ItemDimensionalCarver.MAX_TIME;
+        this.hasPhysics = false;
+        this.creator = world.getEntity((int) creatorId);
     }
 
-    public int getBrightnessForRender(float p_189214_1_) {
+    public int getLightColor(float p_189214_1_) {
         return 240;
     }
 
     public void tick() {
-        this.prevPosX = this.posX;
-        this.prevPosY = this.posY;
-        this.prevPosZ = this.posZ;
+        this.xo = this.x;
+        this.yo = this.y;
+        this.zo = this.z;
         boolean live = false;
-        this.particleScale = 0.1F + Math.min((age / (float)maxAge), 0.5F) * 0.5F;
-        if (this.age++ >= maxAge || creator == null) {
-            this.setExpired();
+        this.quadSize = 0.1F + Math.min((age / (float)lifetime), 0.5F) * 0.5F;
+        if (this.age++ >= lifetime || creator == null) {
+            this.remove();
         } else {
             if (creator instanceof PlayerEntity) {
-                ItemStack item = ((PlayerEntity) creator).getActiveItemStack();
+                ItemStack item = ((PlayerEntity) creator).getUseItem();
                 if (item.getItem() == AMItemRegistry.DIMENSIONAL_CARVER) {
-                    this.age = MathHelper.clamp(maxAge - ((PlayerEntity) creator).getItemInUseCount(), 0, maxAge);
+                    this.age = MathHelper.clamp(lifetime - ((PlayerEntity) creator).getUseItemRemainingTicks(), 0, lifetime);
                     live = true;
                 }
             }
         }
         if(!live){
-            this.setExpired();
+            this.remove();
         }
-        this.selectSpriteWithAge(this.spriteWithAge);
+        this.setSpriteFromAge(this.sprites);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -76,9 +76,9 @@ public class ParticleInvertDig extends SimpleAnimatedParticle {
             this.spriteSet = spriteSet;
         }
 
-        public Particle makeParticle(BasicParticleType typeIn, ClientWorld worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+        public Particle createParticle(BasicParticleType typeIn, ClientWorld worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
             ParticleInvertDig heartparticle = new ParticleInvertDig(worldIn, x, y, z, this.spriteSet, xSpeed);
-            heartparticle.selectSpriteWithAge(this.spriteSet);
+            heartparticle.setSpriteFromAge(this.spriteSet);
             return heartparticle;
         }
     }

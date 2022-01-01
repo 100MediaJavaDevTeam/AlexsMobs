@@ -14,12 +14,12 @@ public class RenderKomodoDragon extends MobRenderer<EntityKomodoDragon, ModelKom
         super(renderManagerIn, new ModelKomodoDragon(), 0.6F);
     }
 
-    protected void preRenderCallback(EntityKomodoDragon entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityKomodoDragon entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(1.2F, 1.2F, 1.2F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntityKomodoDragon entity) {
+    public ResourceLocation getTextureLocation(EntityKomodoDragon entity) {
         return TEXTURE;
     }
 }

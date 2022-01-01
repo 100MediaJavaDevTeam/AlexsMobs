@@ -26,22 +26,22 @@ public class RenderSandShot extends EntityRenderer<EntitySandShot> {
     }
 
     public void render(EntitySandShot entityIn, float entityYaw, float partialTicks, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn) {
-        matrixStackIn.push();
+        matrixStackIn.pushPose();
         matrixStackIn.translate(0.0D, (double)0.15F, 0.0D);
-        matrixStackIn.rotate(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.prevRotationYaw, entityIn.rotationYaw) - 90.0F));
-        matrixStackIn.rotate(Vector3f.ZP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.prevRotationPitch, entityIn.rotationPitch)));
+        matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.yRotO, entityIn.yRot) - 90.0F));
+        matrixStackIn.mulPose(Vector3f.ZP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.xRotO, entityIn.xRot)));
         matrixStackIn.scale(1.2F, 1.2F, 1.2F);
         int i = EntityGuster.getColorForVariant(entityIn.getVariant());
         float r = (float) (i >> 16 & 255) / 255.0F;
         float g = (float) (i >> 8 & 255) / 255.0F;
         float b = (float) (i & 255) / 255.0F;
-        IVertexBuilder ivertexbuilder = bufferIn.getBuffer(this.model.getRenderType(SAND_SHOT));
-        this.model.render(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, r, g, b, 1.0F);
-        matrixStackIn.pop();
+        IVertexBuilder ivertexbuilder = bufferIn.getBuffer(this.model.renderType(SAND_SHOT));
+        this.model.renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, r, g, b, 1.0F);
+        matrixStackIn.popPose();
         super.render(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
     }
 
-    public ResourceLocation getEntityTexture(EntitySandShot entity) {
+    public ResourceLocation getTextureLocation(EntitySandShot entity) {
         return SAND_SHOT;
     }
 }

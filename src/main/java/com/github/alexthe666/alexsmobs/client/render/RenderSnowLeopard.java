@@ -15,12 +15,12 @@ public class RenderSnowLeopard extends MobRenderer<EntitySnowLeopard, ModelSnowL
         super(renderManagerIn, new ModelSnowLeopard(), 0.4F);
     }
 
-    protected void preRenderCallback(EntitySnowLeopard entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntitySnowLeopard entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(0.9F,0.9F, 0.9F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntitySnowLeopard entity) {
+    public ResourceLocation getTextureLocation(EntitySnowLeopard entity) {
         return entity.isSleeping() ? TEXTURE_SLEEPING : TEXTURE;
     }
 }

@@ -19,14 +19,14 @@ public class RenderElephant extends MobRenderer<EntityElephant, ModelElephant> {
         this.addLayer(new LayerElephantItem(this));
     }
 
-    protected void preRenderCallback(EntityElephant entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityElephant entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
        if(entitylivingbaseIn.isTusked()){
            matrixStackIn.scale(1.1F, 1.1F, 1.1F);
        }
     }
 
 
-    public ResourceLocation getEntityTexture(EntityElephant entity) {
-        return entity.isTusked() && !entity.isChild() ? TEXTURE_TUSK : TEXTURE;
+    public ResourceLocation getTextureLocation(EntityElephant entity) {
+        return entity.isTusked() && !entity.isBaby() ? TEXTURE_TUSK : TEXTURE;
     }
 }

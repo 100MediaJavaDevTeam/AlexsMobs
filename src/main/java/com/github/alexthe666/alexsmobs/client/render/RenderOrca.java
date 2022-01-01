@@ -14,12 +14,12 @@ public class RenderOrca extends MobRenderer<EntityOrca, ModelOrca> {
         super(renderManagerIn, new ModelOrca(), 1.0F);
     }
 
-    protected void preRenderCallback(EntityOrca entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityOrca entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(1.3F, 1.3F, 1.3F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntityOrca entity) {
+    public ResourceLocation getTextureLocation(EntityOrca entity) {
         return TEXTURE;
     }
 }

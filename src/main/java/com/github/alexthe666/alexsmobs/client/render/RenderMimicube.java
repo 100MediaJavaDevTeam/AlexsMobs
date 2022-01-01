@@ -20,11 +20,11 @@ public class RenderMimicube extends MobRenderer<EntityMimicube, ModelMimicube> {
         this.addLayer(new LayerMimicubeTexture(this));
     }
 
-    protected void preRenderCallback(EntityMimicube entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityMimicube entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
     }
 
 
-    public ResourceLocation getEntityTexture(EntityMimicube entity) {
+    public ResourceLocation getTextureLocation(EntityMimicube entity) {
         return TEXTURE;
     }
 }

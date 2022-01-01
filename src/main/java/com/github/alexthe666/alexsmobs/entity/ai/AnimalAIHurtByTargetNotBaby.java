@@ -14,18 +14,18 @@ public class AnimalAIHurtByTargetNotBaby extends HurtByTargetGoal {
         this.animal = creatureIn;
     }
 
-    public void startExecuting() {
-        super.startExecuting();
-        if (animal.isChild()) {
+    public void start() {
+        super.start();
+        if (animal.isBaby()) {
             this.alertOthers();
-            this.resetTask();
+            this.stop();
         }
 
     }
 
-    protected void setAttackTarget(MobEntity mobIn, LivingEntity targetIn) {
-        if (!mobIn.isChild()) {
-            super.setAttackTarget(mobIn, targetIn);
+    protected void alertOther(MobEntity mobIn, LivingEntity targetIn) {
+        if (!mobIn.isBaby()) {
+            super.alertOther(mobIn, targetIn);
         }
     }
 }

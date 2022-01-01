@@ -24,23 +24,23 @@ public class RenderVoidWormShot extends EntityRenderer<EntityVoidWormShot> {
     }
 
     @Override
-    public ResourceLocation getEntityTexture(EntityVoidWormShot entity) {
+    public ResourceLocation getTextureLocation(EntityVoidWormShot entity) {
         return entity.isPortalType() ? TEXTURE_PORTAL : TEXTURE;
     }
 
     @Override
     public void render(EntityVoidWormShot entityIn, float entityYaw, float partialTicks, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn) {
-        matrixStackIn.push();
-        matrixStackIn.rotate(new Quaternion(Vector3f.XP, 180F, true));
-        matrixStackIn.rotate(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.prevRotationYaw, entityIn.rotationYaw)));
-        matrixStackIn.rotate(Vector3f.XP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.prevRotationPitch, entityIn.rotationPitch)));
-        matrixStackIn.push();
-        MODEL.animate(entityIn, entityIn.ticksExisted + partialTicks);
+        matrixStackIn.pushPose();
+        matrixStackIn.mulPose(new Quaternion(Vector3f.XP, 180F, true));
+        matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.yRotO, entityIn.yRot)));
+        matrixStackIn.mulPose(Vector3f.XP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.xRotO, entityIn.xRot)));
+        matrixStackIn.pushPose();
+        MODEL.animate(entityIn, entityIn.tickCount + partialTicks);
         matrixStackIn.translate(0, -1.5F, 0);
-        IVertexBuilder ivertexbuilder = bufferIn.getBuffer(AMRenderTypes.getFullBright(getEntityTexture(entityIn)));
-        MODEL.render(matrixStackIn, ivertexbuilder, 210, NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
-        matrixStackIn.pop();
-        matrixStackIn.pop();
+        IVertexBuilder ivertexbuilder = bufferIn.getBuffer(AMRenderTypes.getFullBright(getTextureLocation(entityIn)));
+        MODEL.renderToBuffer(matrixStackIn, ivertexbuilder, 210, NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
+        matrixStackIn.popPose();
+        matrixStackIn.popPose();
 
 
     }

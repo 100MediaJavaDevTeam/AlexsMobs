@@ -23,17 +23,17 @@ public class AnimalAIFleeAdult extends Goal {
         this.fleeDistance = fleeDistance;
     }
 
-    public boolean shouldExecute() {
-        if (this.childAnimal.getGrowingAge() >= 0) {
+    public boolean canUse() {
+        if (this.childAnimal.getAge() >= 0) {
             return false;
         } else {
-            List<AnimalEntity> list = this.childAnimal.world.getEntitiesWithinAABB(this.childAnimal.getClass(), this.childAnimal.getBoundingBox().grow(fleeDistance, 4.0D, fleeDistance));
+            List<AnimalEntity> list = this.childAnimal.level.getEntitiesOfClass(this.childAnimal.getClass(), this.childAnimal.getBoundingBox().inflate(fleeDistance, 4.0D, fleeDistance));
             AnimalEntity animalentity = null;
             double d0 = Double.MAX_VALUE;
 
             for(AnimalEntity animalentity1 : list) {
-                if (animalentity1.getGrowingAge() >= 0) {
-                    double d1 = this.childAnimal.getDistanceSq(animalentity1);
+                if (animalentity1.getAge() >= 0) {
+                    double d1 = this.childAnimal.distanceToSqr(animalentity1);
                     if (!(d1 > d0)) {
                         d0 = d1;
                         animalentity = animalentity1;
@@ -47,36 +47,36 @@ public class AnimalAIFleeAdult extends Goal {
                 return false;
             } else {
                 this.parentAnimal = animalentity;
-                Vector3d vec3d = RandomPositionGenerator.findRandomTargetBlockAwayFrom(this.childAnimal, (int) fleeDistance, 7, new Vector3d(this.parentAnimal.getPosX(), this.parentAnimal.getPosY(), this.parentAnimal.getPosZ()));
+                Vector3d vec3d = RandomPositionGenerator.getPosAvoid(this.childAnimal, (int) fleeDistance, 7, new Vector3d(this.parentAnimal.getX(), this.parentAnimal.getY(), this.parentAnimal.getZ()));
                 if (vec3d == null) {
                     return false;
-                } else if (this.parentAnimal.getDistanceSq(vec3d.x, vec3d.y, vec3d.z) < this.parentAnimal.getDistanceSq(this.childAnimal)) {
+                } else if (this.parentAnimal.distanceToSqr(vec3d.x, vec3d.y, vec3d.z) < this.parentAnimal.distanceToSqr(this.childAnimal)) {
                     return false;
                 } else {
-                    this.path = childAnimal.getNavigator().getPathToPos(new BlockPos(vec3d.x, vec3d.y, vec3d.z), 0);
+                    this.path = childAnimal.getNavigation().createPath(new BlockPos(vec3d.x, vec3d.y, vec3d.z), 0);
                     return this.path != null;
                 }
             }
         }
     }
 
-    public boolean shouldContinueExecuting() {
-        if (this.childAnimal.getGrowingAge() >= 0) {
+    public boolean canContinueToUse() {
+        if (this.childAnimal.getAge() >= 0) {
             return false;
         } else if (!this.parentAnimal.isAlive()) {
             return false;
         } else {
-            return !childAnimal.getNavigator().noPath();
+            return !childAnimal.getNavigation().isDone();
         }
     }
 
 
-    public void startExecuting() {
-        childAnimal.getNavigator().setPath(this.path, moveSpeed);
+    public void start() {
+        childAnimal.getNavigation().moveTo(this.path, moveSpeed);
     }
-    public void resetTask() {
+    public void stop() {
         this.parentAnimal = null;
-        this.childAnimal.getNavigator().clearPath();
+        this.childAnimal.getNavigation().stop();
         this.path = null;
     }
 

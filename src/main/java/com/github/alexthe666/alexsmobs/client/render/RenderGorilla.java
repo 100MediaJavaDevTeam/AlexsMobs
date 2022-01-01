@@ -19,11 +19,11 @@ public class RenderGorilla extends MobRenderer<EntityGorilla, ModelGorilla> {
         this.addLayer(new LayerGorillaItem(this));
     }
 
-    protected void preRenderCallback(EntityGorilla entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityGorilla entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(entitylivingbaseIn.getGorillaScale(), entitylivingbaseIn.getGorillaScale(), entitylivingbaseIn.getGorillaScale());
     }
 
-    public ResourceLocation getEntityTexture(EntityGorilla entity) {
+    public ResourceLocation getTextureLocation(EntityGorilla entity) {
         return entity.isFunkyKong() ? TEXTURE_FUNKY : entity.isDonkeyKong() ? TEXTURE_DK : entity.isSilverback() ? TEXTURE_SILVERBACK : TEXTURE;
     }
 }

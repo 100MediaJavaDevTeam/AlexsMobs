@@ -7,6 +7,6 @@ public interface IFollower {
     boolean shouldFollow();
 
    default void followEntity(TameableEntity tameable, LivingEntity owner, double followSpeed){
-       tameable.navigator.tryMoveToEntityLiving(owner, followSpeed);
+       tameable.navigation.moveTo(owner, followSpeed);
    }
 }

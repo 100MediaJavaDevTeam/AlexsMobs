@@ -16,6 +16,8 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 
+import net.minecraft.entity.ai.goal.Goal.Flag;
+
 public class EndergradeAITargetItems<T extends ItemEntity> extends TargetGoal {
     protected final EndergradeAITargetItems.Sorter theNearestAttackableTargetSorter;
     protected final Predicate<? super ItemEntity> targetEntitySelector;
@@ -26,7 +28,7 @@ public class EndergradeAITargetItems<T extends ItemEntity> extends TargetGoal {
 
     public EndergradeAITargetItems(EntityEndergrade creature, boolean checkSight) {
         this(creature, checkSight, false);
-        this.setMutexFlags(EnumSet.of(Flag.MOVE));
+        this.setFlags(EnumSet.of(Flag.MOVE));
     }
 
     public EndergradeAITargetItems(EntityEndergrade creature, boolean checkSight, boolean onlyNearby) {
@@ -45,27 +47,27 @@ public class EndergradeAITargetItems<T extends ItemEntity> extends TargetGoal {
                 return !stack.isEmpty()  && endergrade.canTargetItem(stack);
             }
         };
-        this.setMutexFlags(EnumSet.of(Flag.MOVE));
+        this.setFlags(EnumSet.of(Flag.MOVE));
     }
 
     @Override
-    public boolean shouldExecute() {
-        if (this.goalOwner.isPassenger() || goalOwner.isBeingRidden() && goalOwner.getControllingPassenger() != null) {
+    public boolean canUse() {
+        if (this.mob.isPassenger() || mob.isVehicle() && mob.getControllingPassenger() != null) {
             return false;
         }
-        if(!goalOwner.getHeldItem(Hand.MAIN_HAND).isEmpty()){
+        if(!mob.getItemInHand(Hand.MAIN_HAND).isEmpty()){
             return false;
         }
         if (!this.mustUpdate) {
-            long worldTime = this.goalOwner.world.getGameTime() % 10;
-            if (this.goalOwner.getIdleTime() >= 100 && worldTime != 0) {
+            long worldTime = this.mob.level.getGameTime() % 10;
+            if (this.mob.getNoActionTime() >= 100 && worldTime != 0) {
                 return false;
             }
-            if (this.goalOwner.getRNG().nextInt(this.executionChance) != 0 && worldTime != 0) {
+            if (this.mob.getRandom().nextInt(this.executionChance) != 0 && worldTime != 0) {
                 return false;
             }
         }
-        List<ItemEntity> list = this.goalOwner.world.getEntitiesWithinAABB(ItemEntity.class, this.getTargetableArea(this.getTargetDistance()), this.targetEntitySelector);
+        List<ItemEntity> list = this.mob.level.getEntitiesOfClass(ItemEntity.class, this.getTargetableArea(this.getFollowDistance()), this.targetEntitySelector);
         if (list.isEmpty()) {
             return false;
         } else {
@@ -78,47 +80,47 @@ public class EndergradeAITargetItems<T extends ItemEntity> extends TargetGoal {
         }
     }
 
-    protected double getTargetDistance() {
+    protected double getFollowDistance() {
         return 16D;
     }
 
 
     protected AxisAlignedBB getTargetableArea(double targetDistance) {
-        Vector3d renderCenter = new Vector3d(this.goalOwner.getPosX() + 0.5, this.goalOwner.getPosY()+ 0.5, this.goalOwner.getPosZ() + 0.5D);
+        Vector3d renderCenter = new Vector3d(this.mob.getX() + 0.5, this.mob.getY()+ 0.5, this.mob.getZ() + 0.5D);
         double renderRadius = 9;
         AxisAlignedBB aabb = new AxisAlignedBB(-renderRadius, -renderRadius, -renderRadius, renderRadius, renderRadius, renderRadius);
-        return aabb.offset(renderCenter);
+        return aabb.move(renderCenter);
     }
 
     @Override
-    public void startExecuting() {
-        this.goalOwner.getMoveHelper().setMoveTo(this.targetEntity.getPosX(), this.targetEntity.getPosY(), this.targetEntity.getPosZ(), 1);
-        super.startExecuting();
+    public void start() {
+        this.mob.getMoveControl().setWantedPosition(this.targetEntity.getX(), this.targetEntity.getY(), this.targetEntity.getZ(), 1);
+        super.start();
     }
 
     @Override
     public void tick() {
         super.tick();
         if (this.targetEntity == null || this.targetEntity != null && !this.targetEntity.isAlive()) {
-            this.resetTask();
+            this.stop();
         }else{
-            this.goalOwner.getMoveHelper().setMoveTo(this.targetEntity.getPosX(), this.targetEntity.getPosY(), this.targetEntity.getPosZ(), 1);
+            this.mob.getMoveControl().setWantedPosition(this.targetEntity.getX(), this.targetEntity.getY(), this.targetEntity.getZ(), 1);
         }
-        if (this.targetEntity != null && this.targetEntity.isAlive() && this.goalOwner.getDistanceSq(this.targetEntity) < 2.0D && goalOwner.getHeldItem(Hand.MAIN_HAND).isEmpty()) {
+        if (this.targetEntity != null && this.targetEntity.isAlive() && this.mob.distanceToSqr(this.targetEntity) < 2.0D && mob.getItemInHand(Hand.MAIN_HAND).isEmpty()) {
             ItemStack duplicate = this.targetEntity.getItem().copy();
             endergrade.bite();
             duplicate.setCount(1);
-            if (!goalOwner.getHeldItem(Hand.MAIN_HAND).isEmpty() && !goalOwner.world.isRemote) {
-                goalOwner.entityDropItem(goalOwner.getHeldItem(Hand.MAIN_HAND), 0.0F);
+            if (!mob.getItemInHand(Hand.MAIN_HAND).isEmpty() && !mob.level.isClientSide) {
+                mob.spawnAtLocation(mob.getItemInHand(Hand.MAIN_HAND), 0.0F);
             }
-            goalOwner.setHeldItem(Hand.MAIN_HAND, duplicate);
+            mob.setItemInHand(Hand.MAIN_HAND, duplicate);
             endergrade.onGetItem(targetEntity);
             this.targetEntity.getItem().shrink(1);
-            resetTask();
+            stop();
         }
     }
 
-    public void resetTask() {
+    public void stop() {
         targetEntity = null;
         this.endergrade.hasItemTarget = false;
         endergrade.stopWandering = false;
@@ -129,8 +131,8 @@ public class EndergradeAITargetItems<T extends ItemEntity> extends TargetGoal {
     }
 
     @Override
-    public boolean shouldContinueExecuting() {
-        return this.goalOwner.getMoveHelper().isUpdating();
+    public boolean canContinueToUse() {
+        return this.mob.getMoveControl().hasWanted();
     }
 
     public static class Sorter implements Comparator<Entity> {
@@ -141,8 +143,8 @@ public class EndergradeAITargetItems<T extends ItemEntity> extends TargetGoal {
         }
 
         public int compare(Entity p_compare_1_, Entity p_compare_2_) {
-            double d0 = this.theEntity.getDistanceSq(p_compare_1_);
-            double d1 = this.theEntity.getDistanceSq(p_compare_2_);
+            double d0 = this.theEntity.distanceToSqr(p_compare_1_);
+            double d1 = this.theEntity.distanceToSqr(p_compare_2_);
             return d0 < d1 ? -1 : (d0 > d1 ? 1 : 0);
         }
     }

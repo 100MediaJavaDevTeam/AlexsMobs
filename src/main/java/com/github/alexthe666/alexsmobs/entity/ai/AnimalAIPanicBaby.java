@@ -12,7 +12,7 @@ public class AnimalAIPanicBaby extends PanicGoal {
         this.animal = creatureIn;
     }
 
-    public boolean shouldExecute() {
-        return animal.isChild() && super.shouldExecute();
+    public boolean canUse() {
+        return animal.isBaby() && super.canUse();
     }
 }

@@ -16,12 +16,12 @@ public class RenderCapuchinMonkey extends MobRenderer<EntityCapuchinMonkey, Mode
         this.addLayer(new LayerCapuchinItem(this));
     }
 
-    protected void preRenderCallback(EntityCapuchinMonkey entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityCapuchinMonkey entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(0.8F, 0.8F, 0.8F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntityCapuchinMonkey entity) {
+    public ResourceLocation getTextureLocation(EntityCapuchinMonkey entity) {
         return TEXTURE;
     }
 }

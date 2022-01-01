@@ -53,8 +53,8 @@ public class TileEntityLeafcutterAnthill extends TileEntity implements ITickable
             for (Entity entity : list) {
                 if (entity instanceof EntityLeafcutterAnt) {
                     EntityLeafcutterAnt entityLeafcutterAnt = (EntityLeafcutterAnt) entity;
-                    if (p_226963_1_.getPositionVec().squareDistanceTo(entity.getPositionVec()) <= 16.0D) {
-                        entityLeafcutterAnt.setAttackTarget(p_226963_1_);
+                    if (p_226963_1_.position().distanceToSqr(entity.position()) <= 16.0D) {
+                        entityLeafcutterAnt.setTarget(p_226963_1_);
                     }
                     entityLeafcutterAnt.setStayOutOfHiveCountdown(400);
                 }
@@ -72,17 +72,17 @@ public class TileEntityLeafcutterAnthill extends TileEntity implements ITickable
     }
 
     private boolean addAntToWorld(BlockState p_235651_1_, Ant p_235651_2_, @Nullable List<Entity> p_235651_3_, BeehiveTileEntity.State p_235651_4_) {
-        BlockPos blockpos = this.getPos();
+        BlockPos blockpos = this.getBlockPos();
         CompoundNBT compoundnbt = p_235651_2_.entityData;
         compoundnbt.remove("Passengers");
         compoundnbt.remove("Leash");
         compoundnbt.remove("UUID");
-        BlockPos blockpos1 = blockpos.up();
-        boolean flag = !this.world.getBlockState(blockpos1).getCollisionShape(this.world, blockpos1).isEmpty();
+        BlockPos blockpos1 = blockpos.above();
+        boolean flag = !this.level.getBlockState(blockpos1).getBlockSupportShape(this.level, blockpos1).isEmpty();
         if (flag && p_235651_4_ != BeehiveTileEntity.State.EMERGENCY) {
             return false;
         } else {
-            Entity entity = loadEntityAndExecute(compoundnbt, this.world, (p_226960_0_) -> {
+            Entity entity = loadEntityAndExecute(compoundnbt, this.level, (p_226960_0_) -> {
                 return p_226960_0_;
             });
             if (entity != null) {
@@ -97,18 +97,18 @@ public class TileEntityLeafcutterAnthill extends TileEntity implements ITickable
                         p_235651_3_.add(entityLeafcutterAnt);
                     }
 
-                    float f = entity.getWidth();
+                    float f = entity.getBbWidth();
                     double d0 = (double) blockpos.getX() + 0.5D;
                     double d1 = (double) blockpos.getY() + 1.0D;
                     double d2 = (double) blockpos.getZ() + 0.5D;
-                    entity.setLocationAndAngles(d0, d1, d2, entity.rotationYaw, entity.rotationPitch);
+                    entity.moveTo(d0, d1, d2, entity.yRot, entity.xRot);
                     if(((EntityLeafcutterAnt) entity).isQueen()){
                         entityLeafcutterAnt.setStayOutOfHiveCountdown(400);
                     }
                 }
 
-                this.world.playSound(null, blockpos, SoundEvents.BLOCK_BEEHIVE_EXIT, SoundCategory.BLOCKS, 1.0F, 1.0F);
-                return this.world.addEntity(entity);
+                this.level.playSound(null, blockpos, SoundEvents.BEEHIVE_EXIT, SoundCategory.BLOCKS, 1.0F, 1.0F);
+                return this.level.addFreshEntity(entity);
 
             } else {
                 return false;
@@ -122,11 +122,11 @@ public class TileEntityLeafcutterAnthill extends TileEntity implements ITickable
     public void tryEnterHive(EntityLeafcutterAnt p_226962_1_, boolean p_226962_2_, int p_226962_3_) {
         if (this.ants.size() < AMConfig.leafcutterAntColonySize) {
             p_226962_1_.stopRiding();
-            p_226962_1_.removePassengers();
+            p_226962_1_.ejectPassengers();
             CompoundNBT compoundnbt = new CompoundNBT();
-            p_226962_1_.writeUnlessPassenger(compoundnbt);
+            p_226962_1_.save(compoundnbt);
             if (p_226962_2_) {
-                if(!world.isRemote && p_226962_1_.getRNG().nextFloat() < AMConfig.leafcutterAntFungusGrowChance){
+                if(!level.isClientSide && p_226962_1_.getRandom().nextFloat() < AMConfig.leafcutterAntFungusGrowChance){
                     growFungus();
                 }
                 leafFeedings++;
@@ -136,10 +136,10 @@ public class TileEntityLeafcutterAnthill extends TileEntity implements ITickable
                 }
             }
             this.ants.add(new Ant(compoundnbt, p_226962_3_, p_226962_2_ ? 100 : 200, p_226962_1_.isQueen()));
-            if (this.world != null) {
+            if (this.level != null) {
 
-                BlockPos blockpos = this.getPos();
-                this.world.playSound(null, blockpos.getX(), blockpos.getY(), blockpos.getZ(), SoundEvents.BLOCK_BEEHIVE_ENTER, SoundCategory.BLOCKS, 1.0F, 1.0F);
+                BlockPos blockpos = this.getBlockPos();
+                this.level.playSound(null, blockpos.getX(), blockpos.getY(), blockpos.getZ(), SoundEvents.BEEHIVE_ENTER, SoundCategory.BLOCKS, 1.0F, 1.0F);
             }
 
             p_226962_1_.remove();
@@ -169,20 +169,20 @@ public class TileEntityLeafcutterAnthill extends TileEntity implements ITickable
     }
 
 
-    public void markDirty() {
+    public void setChanged() {
         if (this.isNearFire()) {
-            this.angerAnts(null, this.world.getBlockState(this.getPos()), BeehiveTileEntity.State.EMERGENCY);
+            this.angerAnts(null, this.level.getBlockState(this.getBlockPos()), BeehiveTileEntity.State.EMERGENCY);
         }
 
-        super.markDirty();
+        super.setChanged();
     }
 
     public boolean isNearFire() {
-        if (this.world == null) {
+        if (this.level == null) {
             return false;
         } else {
-            for (BlockPos blockpos : BlockPos.getAllInBoxMutable(this.pos.add(-1, -1, -1), this.pos.add(1, 1, 1))) {
-                if (this.world.getBlockState(blockpos).getBlock() instanceof FireBlock) {
+            for (BlockPos blockpos : BlockPos.betweenClosed(this.worldPosition.offset(-1, -1, -1), this.worldPosition.offset(1, 1, 1))) {
+                if (this.level.getBlockState(blockpos).getBlock() instanceof FireBlock) {
                     return true;
                 }
             }
@@ -192,34 +192,34 @@ public class TileEntityLeafcutterAnthill extends TileEntity implements ITickable
     }
 
     public void tick() {
-        if (!world.isRemote) {
+        if (!level.isClientSide) {
             tickAnts();
         }
     }
 
     private void growFungus() {
-        BlockPos bottomChamber = this.getPos().down();
-        while (world.getBlockState(bottomChamber.down()).getBlock() == AMBlockRegistry.LEAFCUTTER_ANT_CHAMBER && bottomChamber.getY() > 0) {
-            bottomChamber = bottomChamber.down();
+        BlockPos bottomChamber = this.getBlockPos().below();
+        while (level.getBlockState(bottomChamber.below()).getBlock() == AMBlockRegistry.LEAFCUTTER_ANT_CHAMBER && bottomChamber.getY() > 0) {
+            bottomChamber = bottomChamber.below();
         }
         BlockPos chamber = bottomChamber;
         if (isUnfilledChamber(chamber)) {
-            int fungalLevel = world.getBlockState(chamber).get(BlockLeafcutterAntChamber.FUNGUS);
-            int fungalLevel2 = MathHelper.clamp(fungalLevel + 1 + world.getRandom().nextInt(1), 0, 5);
-            world.setBlockState(chamber, AMBlockRegistry.LEAFCUTTER_ANT_CHAMBER.getDefaultState().with(BlockLeafcutterAntChamber.FUNGUS, fungalLevel2));
+            int fungalLevel = level.getBlockState(chamber).getValue(BlockLeafcutterAntChamber.FUNGUS);
+            int fungalLevel2 = MathHelper.clamp(fungalLevel + 1 + level.getRandom().nextInt(1), 0, 5);
+            level.setBlockAndUpdate(chamber, AMBlockRegistry.LEAFCUTTER_ANT_CHAMBER.defaultBlockState().setValue(BlockLeafcutterAntChamber.FUNGUS, fungalLevel2));
         } else {
             boolean flag = false;
             List<BlockPos> possibleChambers = new ArrayList<>();
             while (!flag) {
-                for (BlockPos blockpos : BlockPos.getAllInBoxMutable(chamber.add(-4, 0, -4), chamber.add(4, 0, 4))) {
+                for (BlockPos blockpos : BlockPos.betweenClosed(chamber.offset(-4, 0, -4), chamber.offset(4, 0, 4))) {
                     if (isUnfilledChamber(blockpos)) {
-                        possibleChambers.add(blockpos.toImmutable());
+                        possibleChambers.add(blockpos.immutable());
                         flag = true;
                     }
                 }
                 if (!flag) {
-                    chamber = chamber.up();
-                    if (chamber.getY() > this.pos.getY()) {
+                    chamber = chamber.above();
+                    if (chamber.getY() > this.worldPosition.getY()) {
                         return;
                     }
                 }
@@ -228,16 +228,16 @@ public class TileEntityLeafcutterAnthill extends TileEntity implements ITickable
             if (!possibleChambers.isEmpty()) {
                 BlockPos newChamber = possibleChambers.get(0);
                 if (newChamber != null && isUnfilledChamber(newChamber)) {
-                    int fungalLevel = world.getBlockState(newChamber).get(BlockLeafcutterAntChamber.FUNGUS);
-                    int fungalLevel2 = MathHelper.clamp(fungalLevel + 1 + world.getRandom().nextInt(1), 0, 5);
-                    world.setBlockState(newChamber, AMBlockRegistry.LEAFCUTTER_ANT_CHAMBER.getDefaultState().with(BlockLeafcutterAntChamber.FUNGUS, fungalLevel2));
+                    int fungalLevel = level.getBlockState(newChamber).getValue(BlockLeafcutterAntChamber.FUNGUS);
+                    int fungalLevel2 = MathHelper.clamp(fungalLevel + 1 + level.getRandom().nextInt(1), 0, 5);
+                    level.setBlockAndUpdate(newChamber, AMBlockRegistry.LEAFCUTTER_ANT_CHAMBER.defaultBlockState().setValue(BlockLeafcutterAntChamber.FUNGUS, fungalLevel2));
                 }
             }
         }
     }
 
     private boolean isUnfilledChamber(BlockPos pos) {
-        return world.getBlockState(pos).getBlock() == AMBlockRegistry.LEAFCUTTER_ANT_CHAMBER && world.getBlockState(pos).get(BlockLeafcutterAntChamber.FUNGUS) < 5;
+        return level.getBlockState(pos).getBlock() == AMBlockRegistry.LEAFCUTTER_ANT_CHAMBER && level.getBlockState(pos).getValue(BlockLeafcutterAntChamber.FUNGUS) < 5;
     }
 
     private void tickAnts() {
@@ -257,8 +257,8 @@ public class TileEntityLeafcutterAnthill extends TileEntity implements ITickable
     }
 
 
-    public void read(BlockState state, CompoundNBT nbt) {
-        super.read(state, nbt);
+    public void load(BlockState state, CompoundNBT nbt) {
+        super.load(state, nbt);
         this.ants.clear();
         this.leafFeedings = nbt.getInt("LeafFeedings");
         ListNBT listnbt = nbt.getList("Ants", 10);
@@ -285,8 +285,8 @@ public class TileEntityLeafcutterAnthill extends TileEntity implements ITickable
         return listnbt;
     }
 
-    public CompoundNBT write(CompoundNBT compound) {
-        super.write(compound);
+    public CompoundNBT save(CompoundNBT compound) {
+        super.save(compound);
         compound.put("Ants", this.getAnts());
         compound.putInt("LeafFeedings",leafFeedings);
         return compound;
@@ -336,7 +336,7 @@ public class TileEntityLeafcutterAnthill extends TileEntity implements ITickable
 
     public static Optional<Entity> loadEntityUnchecked(CompoundNBT compound, World worldIn) {
         EntityLeafcutterAnt leafcutterAnt = AMEntityRegistry.LEAFCUTTER_ANT.create(worldIn);
-        leafcutterAnt.read(compound);
+        leafcutterAnt.load(compound);
         return Optional.of(leafcutterAnt);
     }
 

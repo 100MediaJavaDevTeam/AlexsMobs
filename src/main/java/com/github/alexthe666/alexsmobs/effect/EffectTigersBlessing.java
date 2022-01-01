@@ -12,14 +12,14 @@ public class EffectTigersBlessing extends Effect {
         this.setRegistryName(AlexsMobs.MODID, "tigers_blessing");
     }
 
-    public void performEffect(LivingEntity entity, int amplifier) {
+    public void applyEffectTick(LivingEntity entity, int amplifier) {
     }
 
-    public boolean isReady(int duration, int amplifier) {
+    public boolean isDurationEffectTick(int duration, int amplifier) {
         return duration > 0;
     }
 
-    public String getName() {
+    public String getDescriptionId() {
         return "alexsmobs.potion.tigers_blessing";
     }
 }

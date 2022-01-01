@@ -51,11 +51,11 @@ public class MessageTarantulaHawkSting {
             }
 
             if (player != null) {
-                if (player.world != null) {
-                    Entity entity = player.world.getEntityByID(message.hawk);
-                    Entity spider = player.world.getEntityByID(message.spider);
-                    if (entity instanceof EntityTarantulaHawk && spider instanceof LivingEntity && ((LivingEntity) spider).getCreatureAttribute() == CreatureAttribute.ARTHROPOD) {
-                        ((LivingEntity) spider).addPotionEffect(new EffectInstance(AMEffectRegistry.DEBILITATING_STING, EntityTarantulaHawk.STING_DURATION));
+                if (player.level != null) {
+                    Entity entity = player.level.getEntity(message.hawk);
+                    Entity spider = player.level.getEntity(message.spider);
+                    if (entity instanceof EntityTarantulaHawk && spider instanceof LivingEntity && ((LivingEntity) spider).getMobType() == CreatureAttribute.ARTHROPOD) {
+                        ((LivingEntity) spider).addEffect(new EffectInstance(AMEffectRegistry.DEBILITATING_STING, EntityTarantulaHawk.STING_DURATION));
                     }
                 }
             }

@@ -19,9 +19,9 @@ public class LayerGrizzlyItem extends LayerRenderer<EntityGrizzlyBear, ModelGriz
     }
 
     public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityGrizzlyBear entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
-        ItemStack itemstack = entitylivingbaseIn.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
-        matrixStackIn.push();
-        if(entitylivingbaseIn.isChild()){
+        ItemStack itemstack = entitylivingbaseIn.getItemBySlot(EquipmentSlotType.MAINHAND);
+        matrixStackIn.pushPose();
+        if(entitylivingbaseIn.isBaby()){
             matrixStackIn.scale(0.35F, 0.35F, 0.35F);
             matrixStackIn.translate(0.0D, 2.75D, 0.125D);
             translateToHand(false, matrixStackIn);
@@ -31,17 +31,17 @@ public class LayerGrizzlyItem extends LayerRenderer<EntityGrizzlyBear, ModelGriz
             translateToHand(false, matrixStackIn);
             matrixStackIn.translate(0.2F, 0.7F, -0.4F);
         }
-        matrixStackIn.rotate(Vector3f.YP.rotationDegrees(10F));
-        matrixStackIn.rotate(Vector3f.XP.rotationDegrees(100F));
+        matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(10F));
+        matrixStackIn.mulPose(Vector3f.XP.rotationDegrees(100F));
         matrixStackIn.scale(1, 1, 1);
-        Minecraft.getInstance().getFirstPersonRenderer().renderItemSide(entitylivingbaseIn, itemstack, ItemCameraTransforms.TransformType.GROUND, false, matrixStackIn, bufferIn, packedLightIn);
-        matrixStackIn.pop();
+        Minecraft.getInstance().getItemInHandRenderer().renderItem(entitylivingbaseIn, itemstack, ItemCameraTransforms.TransformType.GROUND, false, matrixStackIn, bufferIn, packedLightIn);
+        matrixStackIn.popPose();
     }
 
     protected void translateToHand(boolean left, MatrixStack matrixStack) {
-        this.getEntityModel().root.translateRotate(matrixStack);
-        this.getEntityModel().midbody.translateRotate(matrixStack);
-        this.getEntityModel().body.translateRotate(matrixStack);
-        this.getEntityModel().right_arm.translateRotate(matrixStack);
+        this.getParentModel().root.translateAndRotate(matrixStack);
+        this.getParentModel().midbody.translateAndRotate(matrixStack);
+        this.getParentModel().body.translateAndRotate(matrixStack);
+        this.getParentModel().right_arm.translateAndRotate(matrixStack);
     }
 }

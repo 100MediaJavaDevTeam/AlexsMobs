@@ -16,12 +16,12 @@ public class RenderEndergrade extends MobRenderer<EntityEndergrade, ModelEndergr
         this.addLayer(new LayerEndergradeSaddle(this));
     }
 
-    protected void preRenderCallback(EntityEndergrade entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityEndergrade entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(1.2F, 1.2F, 1.2F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntityEndergrade entity) {
+    public ResourceLocation getTextureLocation(EntityEndergrade entity) {
         return TEXTURE;
     }
 }

@@ -20,8 +20,8 @@ public class EntityCachalotPart extends PartEntity<EntityCachalotWhale> {
 
     public EntityCachalotPart(EntityCachalotWhale parent, float sizeX, float sizeY) {
         super(parent);
-        this.size = EntitySize.flexible(sizeX, sizeY);
-        this.recalculateSize();
+        this.size = EntitySize.scalable(sizeX, sizeY);
+        this.refreshDimensions();
     }
 
     public EntityCachalotPart(EntityCachalotWhale entityCachalotWhale, float sizeX, float sizeY, EntitySize size) {
@@ -30,44 +30,44 @@ public class EntityCachalotPart extends PartEntity<EntityCachalotWhale> {
     }
 
     protected void collideWithNearbyEntities() {
-        List<Entity> entities = this.world.getEntitiesWithinAABBExcludingEntity(this, this.getBoundingBox().expand(0.20000000298023224D, 0.0D, 0.20000000298023224D));
+        List<Entity> entities = this.level.getEntities(this, this.getBoundingBox().expandTowards(0.20000000298023224D, 0.0D, 0.20000000298023224D));
         Entity parent = this.getParent();
         if (parent != null) {
-            entities.stream().filter(entity -> entity != parent && !(entity instanceof EntityCachalotPart && ((EntityCachalotPart) entity).getParent() == parent) && entity.canBePushed()).forEach(entity -> entity.applyEntityCollision(parent));
+            entities.stream().filter(entity -> entity != parent && !(entity instanceof EntityCachalotPart && ((EntityCachalotPart) entity).getParent() == parent) && entity.isPushable()).forEach(entity -> entity.push(parent));
 
         }
     }
 
     public ActionResultType getEntityInteractionResult(PlayerEntity player, Hand hand) {
-        return this.getParent() == null ? ActionResultType.PASS : this.getParent().getEntityInteractionResult(player, hand);
+        return this.getParent() == null ? ActionResultType.PASS : this.getParent().mobInteract(player, hand);
     }
 
     protected void collideWithEntity(Entity entityIn) {
-        entityIn.applyEntityCollision(this);
+        entityIn.push(this);
     }
 
-    public boolean canBeCollidedWith() {
+    public boolean isPickable() {
         return true;
     }
 
-    public boolean attackEntityFrom(DamageSource source, float amount) {
+    public boolean hurt(DamageSource source, float amount) {
         return !this.isInvulnerableTo(source) && this.getParent().attackEntityPartFrom(this, source, amount);
     }
 
-    public boolean isEntityEqual(Entity entityIn) {
+    public boolean is(Entity entityIn) {
         return this == entityIn || this.getParent() == entityIn;
     }
 
-    public IPacket<?> createSpawnPacket() {
+    public IPacket<?> getAddEntityPacket() {
         throw new UnsupportedOperationException();
     }
 
-    public EntitySize getSize(Pose poseIn) {
+    public EntitySize getDimensions(Pose poseIn) {
         return this.size.scale(scale);
     }
 
     @Override
-    protected void registerData() {
+    protected void defineSynchedData() {
 
     }
 
@@ -76,12 +76,12 @@ public class EntityCachalotPart extends PartEntity<EntityCachalotWhale> {
     }
 
     @Override
-    protected void readAdditional(CompoundNBT compound) {
+    protected void readAdditionalSaveData(CompoundNBT compound) {
 
     }
 
     @Override
-    protected void writeAdditional(CompoundNBT compound) {
+    protected void addAdditionalSaveData(CompoundNBT compound) {
 
     }
 }

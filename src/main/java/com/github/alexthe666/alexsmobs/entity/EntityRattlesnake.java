@@ -42,8 +42,8 @@ public class EntityRattlesnake extends AnimalEntity implements IAnimatedEntity {
     public int randomToungeTick = 0;
     public int maxCurlTime = 75;
     private int curlTime = 0;
-    private static final DataParameter<Boolean> RATTLING = EntityDataManager.createKey(EntityRattlesnake.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Boolean> CURLED = EntityDataManager.createKey(EntityRattlesnake.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> RATTLING = EntityDataManager.defineId(EntityRattlesnake.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> CURLED = EntityDataManager.defineId(EntityRattlesnake.class, DataSerializers.BOOLEAN);
     private static final Predicate<LivingEntity> WARNABLE_PREDICATE = (mob) -> {
         return mob instanceof PlayerEntity && !((PlayerEntity) mob).isCreative() && !mob.isSpectator() || mob instanceof EntityRoadrunner;
     };
@@ -80,43 +80,43 @@ public class EntityRattlesnake extends AnimalEntity implements IAnimatedEntity {
         return AMSoundRegistry.RATTLESNAKE_HURT;
     }
 
-    public boolean canSpawn(IWorld worldIn, SpawnReason spawnReasonIn) {
-        return AMEntityRegistry.rollSpawn(AMConfig.rattlesnakeSpawnRolls, this.getRNG(), spawnReasonIn);
+    public boolean checkSpawnRules(IWorld worldIn, SpawnReason spawnReasonIn) {
+        return AMEntityRegistry.rollSpawn(AMConfig.rattlesnakeSpawnRolls, this.getRandom(), spawnReasonIn);
     }
 
-    public boolean attackEntityAsMob(Entity entityIn) {
+    public boolean doHurtTarget(Entity entityIn) {
         this.setAnimation(ANIMATION_BITE);
         return true;
     }
 
-    public boolean isPotionApplicable(EffectInstance potioneffectIn) {
-        if (potioneffectIn.getPotion() == Effects.POISON) {
+    public boolean canBeAffected(EffectInstance potioneffectIn) {
+        if (potioneffectIn.getEffect() == Effects.POISON) {
             return false;
         }
-        return super.isPotionApplicable(potioneffectIn);
+        return super.canBeAffected(potioneffectIn);
     }
 
     @Override
-    protected void registerData() {
-        super.registerData();
-        this.dataManager.register(CURLED, Boolean.valueOf(false));
-        this.dataManager.register(RATTLING, Boolean.valueOf(false));
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(CURLED, Boolean.valueOf(false));
+        this.entityData.define(RATTLING, Boolean.valueOf(false));
     }
 
     public boolean isCurled() {
-        return this.dataManager.get(CURLED).booleanValue();
+        return this.entityData.get(CURLED).booleanValue();
     }
 
     public void setCurled(boolean curled) {
-        this.dataManager.set(CURLED, curled);
+        this.entityData.set(CURLED, curled);
     }
 
     public boolean isRattling() {
-        return this.dataManager.get(RATTLING).booleanValue();
+        return this.entityData.get(RATTLING).booleanValue();
     }
 
     public void setRattling(boolean rattling) {
-        this.dataManager.set(RATTLING, rattling);
+        this.entityData.set(RATTLING, rattling);
     }
 
     public void tick(){
@@ -128,8 +128,8 @@ public class EntityRattlesnake extends AnimalEntity implements IAnimatedEntity {
         if (!this.isCurled() && curlProgress > 0) {
             curlProgress -= 1;
         }
-        if (rand.nextInt(15) == 0 && randomToungeTick == 0) {
-            randomToungeTick = 10 + rand.nextInt(20);
+        if (random.nextInt(15) == 0 && randomToungeTick == 0) {
+            randomToungeTick = 10 + random.nextInt(20);
         }
         if (randomToungeTick > 0) {
             randomToungeTick--;
@@ -137,33 +137,33 @@ public class EntityRattlesnake extends AnimalEntity implements IAnimatedEntity {
         if (isCurled() && !isRattling() && ++curlTime > maxCurlTime) {
             this.setCurled(false);
             curlTime = 0;
-            maxCurlTime = 75 + rand.nextInt(50);
+            maxCurlTime = 75 + random.nextInt(50);
         }
-        if(!world.isRemote && this.isCurled() && (this.getAttackTarget() != null && this.getAttackTarget().isAlive())){
+        if(!level.isClientSide && this.isCurled() && (this.getTarget() != null && this.getTarget().isAlive())){
             this.setCurled(false);
         }
-        if(!world.isRemote && this.isRattling()  && this.getAttackTarget() == null){
+        if(!level.isClientSide && this.isRattling()  && this.getTarget() == null){
             this.setCurled(true);
 
         }
-        if (!world.isRemote && !this.isCurled() && this.getAttackTarget() == null && rand.nextInt(500) == 0) {
-            maxCurlTime = 300 + rand.nextInt(250);
+        if (!level.isClientSide && !this.isCurled() && this.getTarget() == null && random.nextInt(500) == 0) {
+            maxCurlTime = 300 + random.nextInt(250);
             this.setCurled(true);
         }
         if(this.getAnimation() == ANIMATION_BITE && this.getAnimationTick() == 4){
-             this.playSound(AMSoundRegistry.RATTLESNAKE_ATTACK, getSoundVolume(), getSoundPitch());
+             this.playSound(AMSoundRegistry.RATTLESNAKE_ATTACK, getSoundVolume(), getVoicePitch());
         }
-        LivingEntity target = this.getAttackTarget();
-        if(this.getAnimation() == ANIMATION_BITE && this.getAnimationTick() == 8 && target != null && this.getDistance(target) < 2D){
+        LivingEntity target = this.getTarget();
+        if(this.getAnimation() == ANIMATION_BITE && this.getAnimationTick() == 8 && target != null && this.distanceTo(target) < 2D){
             boolean meepMeep = target instanceof EntityRoadrunner;
-            target.attackEntityFrom(DamageSource.causeMobDamage(this), meepMeep ? 1.0F : (float)getAttribute(Attributes.ATTACK_DAMAGE).getBaseValue());
+            target.hurt(DamageSource.mobAttack(this), meepMeep ? 1.0F : (float)getAttribute(Attributes.ATTACK_DAMAGE).getBaseValue());
             if(!meepMeep){
-                target.addPotionEffect(new EffectInstance(Effects.POISON, 300, 2));
+                target.addEffect(new EffectInstance(Effects.POISON, 300, 2));
             }
         }
         if(isRattling()){
             if(loopSoundTick == 0){
-                this.playSound(AMSoundRegistry.RATTLESNAKE_LOOP, this.getSoundVolume() * 0.5F, this.getSoundPitch());
+                this.playSound(AMSoundRegistry.RATTLESNAKE_LOOP, this.getSoundVolume() * 0.5F, this.getVoicePitch());
             }
             loopSoundTick++;
             if(loopSoundTick > 50){
@@ -175,8 +175,8 @@ public class EntityRattlesnake extends AnimalEntity implements IAnimatedEntity {
 
     public void travel(Vector3d vec3d) {
         if (this.isOnGround() && this.isCurled()) {
-            if (this.getNavigator().getPath() != null) {
-                this.getNavigator().clearPath();
+            if (this.getNavigation().getPath() != null) {
+                this.getNavigation().stop();
             }
             vec3d = Vector3d.ZERO;
         }
@@ -184,16 +184,16 @@ public class EntityRattlesnake extends AnimalEntity implements IAnimatedEntity {
     }
 
     public static AttributeModifierMap.MutableAttribute bakeAttributes() {
-        return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MAX_HEALTH, 8D).createMutableAttribute(Attributes.ARMOR, 0.0D).createMutableAttribute(Attributes.ATTACK_DAMAGE, 2.0D).createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.28F);
+        return MonsterEntity.createMonsterAttributes().add(Attributes.MAX_HEALTH, 8D).add(Attributes.ARMOR, 0.0D).add(Attributes.ATTACK_DAMAGE, 2.0D).add(Attributes.MOVEMENT_SPEED, 0.28F);
     }
 
-    public boolean isBreedingItem(ItemStack stack) {
-        return stack.getItem().isFood() && stack.getItem().getFood() != null && stack.getItem().getFood().isMeat();
+    public boolean isFood(ItemStack stack) {
+        return stack.getItem().isEdible() && stack.getItem().getFoodProperties() != null && stack.getItem().getFoodProperties().isMeat();
     }
 
     @Nullable
     @Override
-    public AgeableEntity createChild(ServerWorld p_241840_1_, AgeableEntity p_241840_2_) {
+    public AgeableEntity getBreedOffspring(ServerWorld p_241840_1_, AgeableEntity p_241840_2_) {
         return AMEntityRegistry.RATTLESNAKE.create(p_241840_1_);
     }
 
@@ -223,8 +223,8 @@ public class EntityRattlesnake extends AnimalEntity implements IAnimatedEntity {
     }
 
     public static boolean canRattlesnakeSpawn(EntityType<? extends AnimalEntity> animal, IWorld worldIn, SpawnReason reason, BlockPos pos, Random random) {
-        boolean spawnBlock = BlockTags.getCollection().get(AMTagRegistry.RATTLESNAKE_SPAWNS).contains(worldIn.getBlockState(pos.down()).getBlock());
-        return spawnBlock && worldIn.getLightSubtracted(pos, 0) > 8;
+        boolean spawnBlock = BlockTags.getAllTags().getTag(AMTagRegistry.RATTLESNAKE_SPAWNS).contains(worldIn.getBlockState(pos.below()).getBlock());
+        return spawnBlock && worldIn.getRawBrightness(pos, 0) > 8;
 }
 
     class WarnPredatorsGoal extends Goal {
@@ -232,14 +232,14 @@ public class EntityRattlesnake extends AnimalEntity implements IAnimatedEntity {
         Entity target = null;
 
         @Override
-        public boolean shouldExecute() {
-            if(EntityRattlesnake.this.getRNG().nextInt(executionChance) == 0){
+        public boolean canUse() {
+            if(EntityRattlesnake.this.getRandom().nextInt(executionChance) == 0){
                 double dist = 5D;
-                List<LivingEntity> list = EntityRattlesnake.this.world.getEntitiesWithinAABB(LivingEntity.class, EntityRattlesnake.this.getBoundingBox().grow(dist, dist, dist), WARNABLE_PREDICATE);
+                List<LivingEntity> list = EntityRattlesnake.this.level.getEntitiesOfClass(LivingEntity.class, EntityRattlesnake.this.getBoundingBox().inflate(dist, dist, dist), WARNABLE_PREDICATE);
                 double d0 = Double.MAX_VALUE;
                 Entity possibleTarget = null;
                 for(Entity entity : list) {
-                    double d1 = EntityRattlesnake.this.getDistanceSq(entity);
+                    double d1 = EntityRattlesnake.this.distanceToSqr(entity);
                     if (!(d1 > d0)) {
                         d0 = d1;
                         possibleTarget = entity;
@@ -252,12 +252,12 @@ public class EntityRattlesnake extends AnimalEntity implements IAnimatedEntity {
         }
 
         @Override
-        public boolean shouldContinueExecuting(){
-            return target != null && EntityRattlesnake.this.getDistance(target) < 5D && EntityRattlesnake.this.getAttackTarget() == null;
+        public boolean canContinueToUse(){
+            return target != null && EntityRattlesnake.this.distanceTo(target) < 5D && EntityRattlesnake.this.getTarget() == null;
         }
 
         @Override
-        public void resetTask() {
+        public void stop() {
             target = null;
             EntityRattlesnake.this.setRattling(false);
         }
@@ -267,7 +267,7 @@ public class EntityRattlesnake extends AnimalEntity implements IAnimatedEntity {
             EntityRattlesnake.this.setRattling(true);
             EntityRattlesnake.this.setCurled(true);
             EntityRattlesnake.this.curlTime = 0;
-            EntityRattlesnake.this.getLookController().setLookPositionWithEntity(target, 30, 30);
+            EntityRattlesnake.this.getLookControl().setLookAt(target, 30, 30);
         }
     }
 
@@ -276,21 +276,21 @@ public class EntityRattlesnake extends AnimalEntity implements IAnimatedEntity {
             super(EntityRattlesnake.this, PlayerEntity.class, 3, true, true, TARGETABLE_PREDICATE);
         }
 
-        public boolean shouldExecute() {
-            if (EntityRattlesnake.this.isChild()) {
+        public boolean canUse() {
+            if (EntityRattlesnake.this.isBaby()) {
                 return false;
             } else {
-                return super.shouldExecute();
+                return super.canUse();
             }
         }
 
-        public void startExecuting(){
-            super.startExecuting();
+        public void start(){
+            super.start();
             EntityRattlesnake.this.setCurled(false);
             EntityRattlesnake.this.setRattling(true);
         }
 
-        protected double getTargetDistance() {
+        protected double getFollowDistance() {
             return 2D;
         }
     }

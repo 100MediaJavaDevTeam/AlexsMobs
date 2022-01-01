@@ -26,8 +26,8 @@ public class LayerLeafcutterAntLeaf extends LayerRenderer<EntityLeafcutterAnt, E
     }
 
     public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityLeafcutterAnt entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
-        if (entitylivingbaseIn.hasLeaf() && !entitylivingbaseIn.isQueen() && this.getEntityModel() instanceof ModelLeafcutterAnt) {
-            int leafType = entitylivingbaseIn.getEntityId() % 3;
+        if (entitylivingbaseIn.hasLeaf() && !entitylivingbaseIn.isQueen() && this.getParentModel() instanceof ModelLeafcutterAnt) {
+            int leafType = entitylivingbaseIn.getId() % 3;
             ResourceLocation res;
             if (leafType == 2) {
                 res = TEXTURE_2;
@@ -36,15 +36,15 @@ public class LayerLeafcutterAntLeaf extends LayerRenderer<EntityLeafcutterAnt, E
             } else {
                 res = TEXTURE_0;
             }
-            IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.getEntityCutoutNoCull(res));
+            IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.entityCutoutNoCull(res));
             int leafColor = Minecraft.getInstance().getItemColors().getColor(new ItemStack(Items.JUNGLE_LEAVES), 0);
             if(entitylivingbaseIn.getHarvestedPos() != null && entitylivingbaseIn.getHarvestedState() != null){
-                leafColor = Minecraft.getInstance().getBlockColors().getColor(entitylivingbaseIn.getHarvestedState(), entitylivingbaseIn.world, entitylivingbaseIn.getHarvestedPos(), 0);
+                leafColor = Minecraft.getInstance().getBlockColors().getColor(entitylivingbaseIn.getHarvestedState(), entitylivingbaseIn.level, entitylivingbaseIn.getHarvestedPos(), 0);
             }
             float f = (float)(leafColor >> 16 & 255) / 255.0F;
             float f1 = (float)(leafColor >> 8 & 255) / 255.0F;
             float f2 = (float)(leafColor & 255) / 255.0F;
-            this.getEntityModel().render(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getPackedOverlay(entitylivingbaseIn, 0.0F), f, f1, f2, 1.0F);
+            this.getParentModel().renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getOverlayCoords(entitylivingbaseIn, 0.0F), f, f1, f2, 1.0F);
 
 
         }

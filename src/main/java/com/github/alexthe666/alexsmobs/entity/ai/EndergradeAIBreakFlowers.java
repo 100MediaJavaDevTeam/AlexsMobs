@@ -19,42 +19,42 @@ public class EndergradeAIBreakFlowers extends MoveToBlockGoal {
         this.endergrade = bird;
     }
 
-    public boolean shouldExecute() {
-        return !endergrade.isChild() && !endergrade.hasItemTarget && super.shouldExecute();
+    public boolean canUse() {
+        return !endergrade.isBaby() && !endergrade.hasItemTarget && super.canUse();
     }
 
-    public boolean shouldContinueExecuting() {
-        return !endergrade.hasItemTarget && super.shouldContinueExecuting();
+    public boolean canContinueToUse() {
+        return !endergrade.hasItemTarget && super.canContinueToUse();
     }
 
-    public void resetTask() {
+    public void stop() {
         idleAtFlowerTime = 0;
         this.endergrade.stopWandering = false;
     }
 
-    public double getTargetDistanceSq() {
+    public double acceptedDistance() {
         return 2D;
     }
 
     public void tick() {
         super.tick();
         this.endergrade.stopWandering = true;
-        BlockPos blockpos = this.func_241846_j();
-        if (!isWithinXZDist(blockpos, this.creature.getPositionVec(), this.getTargetDistanceSq())) {
+        BlockPos blockpos = this.getMoveToTarget();
+        if (!isWithinXZDist(blockpos, this.mob.position(), this.acceptedDistance())) {
             this.isAboveDestinationBear = false;
-            ++this.timeoutCounter;
-            this.creature.getMoveHelper().setMoveTo((double) ((float) blockpos.getX()) + 0.5D, blockpos.getY() - 0.5D, (double) ((float) blockpos.getZ()) + 0.5D, 1);
+            ++this.tryTicks;
+            this.mob.getMoveControl().setWantedPosition((double) ((float) blockpos.getX()) + 0.5D, blockpos.getY() - 0.5D, (double) ((float) blockpos.getZ()) + 0.5D, 1);
         } else {
             this.isAboveDestinationBear = true;
-            --this.timeoutCounter;
+            --this.tryTicks;
         }
 
-        if (this.getIsAboveDestination() && Math.abs(endergrade.getPosY() - destinationBlock.getY()) <= 2) {
-            endergrade.lookAt(EntityAnchorArgument.Type.EYES, new Vector3d(destinationBlock.getX() + 0.5D, destinationBlock.getY(), destinationBlock.getZ() + 0.5));
+        if (this.isReachedTarget() && Math.abs(endergrade.getY() - blockPos.getY()) <= 2) {
+            endergrade.lookAt(EntityAnchorArgument.Type.EYES, new Vector3d(blockPos.getX() + 0.5D, blockPos.getY(), blockPos.getZ() + 0.5));
             if (this.idleAtFlowerTime >= 20) {
                 endergrade.bite();
                 this.pollinate();
-                this.resetTask();
+                this.stop();
             } else {
                 ++this.idleAtFlowerTime;
             }
@@ -63,20 +63,20 @@ public class EndergradeAIBreakFlowers extends MoveToBlockGoal {
     }
 
     private boolean isWithinXZDist(BlockPos blockpos, Vector3d positionVec, double distance) {
-        return blockpos.distanceSq(positionVec.getX(), positionVec.getY(), positionVec.getZ(), true) < distance * distance;
+        return blockpos.distSqr(positionVec.x(), positionVec.y(), positionVec.z(), true) < distance * distance;
     }
 
-    protected boolean getIsAboveDestination() {
+    protected boolean isReachedTarget() {
         return this.isAboveDestinationBear;
     }
 
     private void pollinate() {
-        endergrade.world.destroyBlock(destinationBlock, true);
-        resetTask();
+        endergrade.level.destroyBlock(blockPos, true);
+        stop();
     }
 
     @Override
-    protected boolean shouldMoveTo(IWorldReader worldIn, BlockPos pos) {
+    protected boolean isValidTarget(IWorldReader worldIn, BlockPos pos) {
         return worldIn.getBlockState(pos).getBlock() == Blocks.CHORUS_FLOWER;
     }
 }

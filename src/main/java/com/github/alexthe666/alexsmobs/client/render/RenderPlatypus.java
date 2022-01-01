@@ -21,11 +21,11 @@ public class RenderPlatypus extends MobRenderer<EntityPlatypus, ModelPlatypus> {
         this.addLayer(new FedoraLayer(this));
     }
 
-    protected void preRenderCallback(EntityPlatypus entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityPlatypus entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
          matrixStackIn.scale(0.9F, 0.9F, 0.9F);
     }
 
-    public ResourceLocation getEntityTexture(EntityPlatypus entity) {
+    public ResourceLocation getTextureLocation(EntityPlatypus entity) {
         return entity.isPerry() ? TEXTURE_PERRY : TEXTURE;
     }
 
@@ -38,8 +38,8 @@ public class RenderPlatypus extends MobRenderer<EntityPlatypus, ModelPlatypus> {
 
         public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityPlatypus entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
             if(entitylivingbaseIn.hasFedora()){
-                IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.getEntityCutout(TEXTURE));
-                this.getEntityModel().render(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getPackedOverlay(entitylivingbaseIn, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
+                IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.entityCutout(TEXTURE));
+                this.getParentModel().renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getOverlayCoords(entitylivingbaseIn, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
             }
         }
     }

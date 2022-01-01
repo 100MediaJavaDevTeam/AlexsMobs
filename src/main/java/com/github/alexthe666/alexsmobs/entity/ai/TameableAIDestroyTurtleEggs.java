@@ -15,23 +15,23 @@ public class TameableAIDestroyTurtleEggs extends BreakBlockGoal {
         super(Blocks.TURTLE_EGG, creatureIn, speed, yMax);
     }
 
-    public boolean shouldExecute() {
-        return !((TameableEntity)creature).isTamed() && super.shouldExecute();
+    public boolean canUse() {
+        return !((TameableEntity)mob).isTame() && super.canUse();
     }
 
-    public boolean shouldContinueExecuting() {
-        return !((TameableEntity)creature).isTamed() && super.shouldContinueExecuting();
+    public boolean canContinueToUse() {
+        return !((TameableEntity)mob).isTame() && super.canContinueToUse();
     }
 
-        public void playBreakingSound(IWorld worldIn, BlockPos pos) {
-        worldIn.playSound(null, pos, SoundEvents.ENTITY_ZOMBIE_DESTROY_EGG, SoundCategory.HOSTILE, 0.5F, 0.9F + this.creature.getRNG().nextFloat() * 0.2F);
+        public void playDestroyProgressSound(IWorld worldIn, BlockPos pos) {
+        worldIn.playSound(null, pos, SoundEvents.ZOMBIE_DESTROY_EGG, SoundCategory.HOSTILE, 0.5F, 0.9F + this.mob.getRandom().nextFloat() * 0.2F);
     }
 
-    public void playBrokenSound(World worldIn, BlockPos pos) {
-        worldIn.playSound(null, pos, SoundEvents.ENTITY_TURTLE_EGG_BREAK, SoundCategory.BLOCKS, 0.7F, 0.9F + worldIn.rand.nextFloat() * 0.2F);
+    public void playBreakSound(World worldIn, BlockPos pos) {
+        worldIn.playSound(null, pos, SoundEvents.TURTLE_EGG_BREAK, SoundCategory.BLOCKS, 0.7F, 0.9F + worldIn.random.nextFloat() * 0.2F);
     }
 
-    public double getTargetDistanceSq() {
+    public double acceptedDistance() {
         return 1.14D;
     }
 }

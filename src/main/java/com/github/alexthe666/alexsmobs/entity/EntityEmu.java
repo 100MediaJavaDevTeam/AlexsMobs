@@ -48,29 +48,29 @@ public class EntityEmu extends AnimalEntity implements IAnimatedEntity, IHerdPan
     public static final Animation ANIMATION_PECK_GROUND = Animation.create(25);
     public static final Animation ANIMATION_SCRATCH = Animation.create(20);
     public static final Animation ANIMATION_PUZZLED = Animation.create(30);
-    private static final DataParameter<Integer> VARIANT = EntityDataManager.createKey(EntityEmu.class, DataSerializers.VARINT);
+    private static final DataParameter<Integer> VARIANT = EntityDataManager.defineId(EntityEmu.class, DataSerializers.INT);
     private int animationTick;
     private Animation currentAnimation;
     private int revengeCooldown = 0;
     private boolean emuAttackedDirectly = false;
-    public int timeUntilNextEgg = this.rand.nextInt(6000) + 6000;
+    public int timeUntilNextEgg = this.random.nextInt(6000) + 6000;
 
     protected EntityEmu(EntityType type, World world) {
         super(type, world);
     }
 
     public static AttributeModifierMap.MutableAttribute bakeAttributes() {
-        return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MAX_HEALTH, 20.0D).createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.35F).createMutableAttribute(Attributes.ATTACK_DAMAGE, 3F);
+        return MonsterEntity.createMonsterAttributes().add(Attributes.MAX_HEALTH, 20.0D).add(Attributes.MOVEMENT_SPEED, 0.35F).add(Attributes.ATTACK_DAMAGE, 3F);
     }
 
 
     public static <T extends MobEntity> boolean canEmuSpawn(EntityType<? extends AnimalEntity> animal, IWorld worldIn, SpawnReason reason, BlockPos pos, Random random) {
-        boolean spawnBlock = BlockTags.getCollection().get(AMTagRegistry.EMU_SPAWNS).contains(worldIn.getBlockState(pos.down()).getBlock());
-        return spawnBlock && worldIn.getLightSubtracted(pos, 0) > 8;
+        boolean spawnBlock = BlockTags.getAllTags().getTag(AMTagRegistry.EMU_SPAWNS).contains(worldIn.getBlockState(pos.below()).getBlock());
+        return spawnBlock && worldIn.getRawBrightness(pos, 0) > 8;
     }
 
-    public boolean canSpawn(IWorld worldIn, SpawnReason spawnReasonIn) {
-        return AMEntityRegistry.rollSpawn(AMConfig.emuSpawnRolls, this.getRNG(), spawnReasonIn);
+    public boolean checkSpawnRules(IWorld worldIn, SpawnReason spawnReasonIn) {
+        return AMEntityRegistry.rollSpawn(AMConfig.emuSpawnRolls, this.getRandom(), spawnReasonIn);
     }
 
 
@@ -87,17 +87,17 @@ public class EntityEmu extends AnimalEntity implements IAnimatedEntity, IHerdPan
     }
     
     public int getVariant() {
-        return this.dataManager.get(VARIANT).intValue();
+        return this.entityData.get(VARIANT).intValue();
     }
 
     public void setVariant(int variant) {
-        this.dataManager.set(VARIANT, Integer.valueOf(variant));
+        this.entityData.set(VARIANT, Integer.valueOf(variant));
     }
 
     @Override
-    protected void registerData() {
-        super.registerData();
-        this.dataManager.register(VARIANT, 0);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(VARIANT, 0);
     }
 
     protected void registerGoals() {
@@ -108,19 +108,19 @@ public class EntityEmu extends AnimalEntity implements IAnimatedEntity, IHerdPan
             }
 
             @Override
-            public boolean shouldExecute() {
-                return super.shouldExecute() && EntityEmu.this.revengeCooldown <= 0;
+            public boolean canUse() {
+                return super.canUse() && EntityEmu.this.revengeCooldown <= 0;
             }
 
             @Override
-            public boolean shouldContinueExecuting() {
-                return super.shouldContinueExecuting() && EntityEmu.this.revengeCooldown <= 0;
+            public boolean canContinueToUse() {
+                return super.canContinueToUse() && EntityEmu.this.revengeCooldown <= 0;
             }
         });
         this.goalSelector.addGoal(2, new AnimalAIHerdPanic(this, 1.5D));
         this.goalSelector.addGoal(3, new BreedGoal(this, 1.0D));
         this.goalSelector.addGoal(4, new FollowParentGoal(this, 1.1D));
-        this.goalSelector.addGoal(4, new TemptGoal(this, 1.1D, Ingredient.fromItems(Items.WHEAT), false));
+        this.goalSelector.addGoal(4, new TemptGoal(this, 1.1D, Ingredient.of(Items.WHEAT), false));
         this.goalSelector.addGoal(5, new AnimalAIWanderRanged(this, 110, 1.0D, 10, 7));
         this.goalSelector.addGoal(6, new LookAtGoal(this, PlayerEntity.class, 15.0F));
         this.goalSelector.addGoal(7, new LookRandomlyGoal(this));
@@ -132,40 +132,40 @@ public class EntityEmu extends AnimalEntity implements IAnimatedEntity, IHerdPan
     }
 
     public boolean canAttack(LivingEntity target) {
-        return !this.isChild() && super.canAttack(target);
+        return !this.isBaby() && super.canAttack(target);
     }
 
-    public boolean attackEntityFrom(DamageSource source, float amount) {
-        boolean prev = super.attackEntityFrom(source, amount);
+    public boolean hurt(DamageSource source, float amount) {
+        boolean prev = super.hurt(source, amount);
         if (prev) {
             double range = 15;
-            int fleeTime = 100 + getRNG().nextInt(5);
+            int fleeTime = 100 + getRandom().nextInt(5);
             this.revengeCooldown = fleeTime;
-            List<EntityEmu> list = this.world.getEntitiesWithinAABB(this.getClass(), this.getBoundingBox().grow(range, range / 2, range));
+            List<EntityEmu> list = this.level.getEntitiesOfClass(this.getClass(), this.getBoundingBox().inflate(range, range / 2, range));
             for (EntityEmu emu : list) {
                 emu.revengeCooldown = fleeTime;
-                if(emu.isChild() && rand.nextInt(2) == 0){
-                    emu.emuAttackedDirectly = this.getRevengeTarget() != null;
-                    emu.revengeCooldown = emu.emuAttackedDirectly ? 10 + getRNG().nextInt(30) : fleeTime;
+                if(emu.isBaby() && random.nextInt(2) == 0){
+                    emu.emuAttackedDirectly = this.getLastHurtByMob() != null;
+                    emu.revengeCooldown = emu.emuAttackedDirectly ? 10 + getRandom().nextInt(30) : fleeTime;
                 }
             }
-            emuAttackedDirectly = this.getRevengeTarget() != null;
-            this.revengeCooldown = emuAttackedDirectly ? 10 + getRNG().nextInt(30) : revengeCooldown;
+            emuAttackedDirectly = this.getLastHurtByMob() != null;
+            this.revengeCooldown = emuAttackedDirectly ? 10 + getRandom().nextInt(30) : revengeCooldown;
         }
         return prev;
     }
 
     public void travel(Vector3d travelVector) {
-        this.setAIMoveSpeed((float) this.getAttributeValue(Attributes.MOVEMENT_SPEED) * (this.getAnimation() == ANIMATION_PECK_GROUND || this.getAnimation() == ANIMATION_PUZZLED ? 0.15F : 1F) * (isInLava() ? 0.2F : 1F));
+        this.setSpeed((float) this.getAttributeValue(Attributes.MOVEMENT_SPEED) * (this.getAnimation() == ANIMATION_PECK_GROUND || this.getAnimation() == ANIMATION_PUZZLED ? 0.15F : 1F) * (isInLava() ? 0.2F : 1F));
         super.travel(travelVector);
     }
 
     public void tick() {
         super.tick();
-        if (!world.isRemote) {
-            if (this.getRevengeTarget() == null && this.getAttackTarget() == null) {
-                if (this.getMotion().lengthSquared() < 0.03D && this.getRNG().nextInt(190) == 0 && this.getAnimation() == NO_ANIMATION) {
-                    if (getRNG().nextInt(3) == 0) {
+        if (!level.isClientSide) {
+            if (this.getLastHurtByMob() == null && this.getTarget() == null) {
+                if (this.getDeltaMovement().lengthSqr() < 0.03D && this.getRandom().nextInt(190) == 0 && this.getAnimation() == NO_ANIMATION) {
+                    if (getRandom().nextInt(3) == 0) {
                         this.setAnimation(ANIMATION_PUZZLED);
                     } else if (this.onGround) {
                         this.setAnimation(ANIMATION_PECK_GROUND);
@@ -175,21 +175,21 @@ public class EntityEmu extends AnimalEntity implements IAnimatedEntity, IHerdPan
             if (revengeCooldown > 0) {
                 revengeCooldown--;
             }
-            if (revengeCooldown <= 0 && this.getRevengeTarget() != null && !emuAttackedDirectly) {
-                this.setRevengeTarget(null);
+            if (revengeCooldown <= 0 && this.getLastHurtByMob() != null && !emuAttackedDirectly) {
+                this.setLastHurtByMob(null);
                 revengeCooldown = 0;
             }
-            if (this.getAttackTarget() != null && this.getAnimation() == ANIMATION_SCRATCH && this.getDistance(this.getAttackTarget()) < 4F && (this.getAnimationTick() == 8 || this.getAnimationTick() == 15)) {
-                float f1 = this.rotationYaw * ((float) Math.PI / 180F);
-                this.setMotion(this.getMotion().add(-MathHelper.sin(f1) * 0.02F, 0.0D, MathHelper.cos(f1) * 0.02F));
-                getAttackTarget().applyKnockback(0.4F, getAttackTarget().getPosX() - this.getPosX(), getAttackTarget().getPosZ() - this.getPosZ());
-                this.getAttackTarget().attackEntityFrom(DamageSource.causeMobDamage(this), (float) this.getAttribute(Attributes.ATTACK_DAMAGE).getBaseValue());
+            if (this.getTarget() != null && this.getAnimation() == ANIMATION_SCRATCH && this.distanceTo(this.getTarget()) < 4F && (this.getAnimationTick() == 8 || this.getAnimationTick() == 15)) {
+                float f1 = this.yRot * ((float) Math.PI / 180F);
+                this.setDeltaMovement(this.getDeltaMovement().add(-MathHelper.sin(f1) * 0.02F, 0.0D, MathHelper.cos(f1) * 0.02F));
+                getTarget().knockback(0.4F, getTarget().getX() - this.getX(), getTarget().getZ() - this.getZ());
+                this.getTarget().hurt(DamageSource.mobAttack(this), (float) this.getAttribute(Attributes.ATTACK_DAMAGE).getBaseValue());
             }
         }
-        if (!this.world.isRemote && this.isAlive() && !this.isChild() && --this.timeUntilNextEgg <= 0) {
-            this.playSound(SoundEvents.ENTITY_CHICKEN_EGG, 1.0F, (this.rand.nextFloat() - this.rand.nextFloat()) * 0.2F + 1.0F);
-            this.entityDropItem(AMItemRegistry.EMU_EGG);
-            this.timeUntilNextEgg = this.rand.nextInt(6000) + 6000;
+        if (!this.level.isClientSide && this.isAlive() && !this.isBaby() && --this.timeUntilNextEgg <= 0) {
+            this.playSound(SoundEvents.CHICKEN_EGG, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+            this.spawnAtLocation(AMItemRegistry.EMU_EGG);
+            this.timeUntilNextEgg = this.random.nextInt(6000) + 6000;
         }
         AnimationHandler.INSTANCE.updateAnimations(this);
     }
@@ -222,41 +222,41 @@ public class EntityEmu extends AnimalEntity implements IAnimatedEntity, IHerdPan
 
     @Nullable
     @Override
-    public AgeableEntity createChild(ServerWorld serverWorld, AgeableEntity ageableEntity) {
+    public AgeableEntity getBreedOffspring(ServerWorld serverWorld, AgeableEntity ageableEntity) {
         EntityEmu emu = AMEntityRegistry.EMU.create(serverWorld);
         emu.setVariant(this.getVariant());
         return emu;
     }
 
-    public boolean attackEntityAsMob(Entity entityIn) {
+    public boolean doHurtTarget(Entity entityIn) {
         if (this.getAnimation() == NO_ANIMATION) {
             this.setAnimation(ANIMATION_SCRATCH);
         }
         return true;
     }
 
-    public void readAdditional(CompoundNBT compound) {
-        super.readAdditional(compound);
+    public void readAdditionalSaveData(CompoundNBT compound) {
+        super.readAdditionalSaveData(compound);
         this.setVariant(compound.getInt("Variant"));
         if (compound.contains("EggLayTime")) {
             this.timeUntilNextEgg = compound.getInt("EggLayTime");
         }
     }
 
-    public void writeAdditional(CompoundNBT compound) {
-        super.writeAdditional(compound);
+    public void addAdditionalSaveData(CompoundNBT compound) {
+        super.addAdditionalSaveData(compound);
         compound.putInt("Variant", this.getVariant());
         compound.putInt("EggLayTime", this.timeUntilNextEgg);
     }
 
     @Nullable
-    public ILivingEntityData onInitialSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason reason, @Nullable ILivingEntityData spawnDataIn, @Nullable CompoundNBT dataTag) {
-        if(this.rand.nextInt(200) == 0){
+    public ILivingEntityData finalizeSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason reason, @Nullable ILivingEntityData spawnDataIn, @Nullable CompoundNBT dataTag) {
+        if(this.random.nextInt(200) == 0){
             this.setVariant(2);
-        }else if(rand.nextInt(3) == 0){
+        }else if(random.nextInt(3) == 0){
             this.setVariant(1);
         }
-        return super.onInitialSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
+        return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
     }
 
     @Override
@@ -274,18 +274,18 @@ public class EntityEmu extends AnimalEntity implements IAnimatedEntity, IHerdPan
             super(EntityEmu.this);
         }
 
-        public void startExecuting() {
-            if (EntityEmu.this.isChild() || !emuAttackedDirectly) {
+        public void start() {
+            if (EntityEmu.this.isBaby() || !emuAttackedDirectly) {
                 this.alertOthers();
-                this.resetTask();
+                this.stop();
             } else {
-                super.startExecuting();
+                super.start();
             }
         }
 
-        protected void setAttackTarget(MobEntity mobIn, LivingEntity targetIn) {
-            if (mobIn instanceof EntityEmu && !mobIn.isChild() && !emuAttackedDirectly && ((EntityEmu) mobIn).revengeCooldown <= 0) {
-                super.setAttackTarget(mobIn, targetIn);
+        protected void alertOther(MobEntity mobIn, LivingEntity targetIn) {
+            if (mobIn instanceof EntityEmu && !mobIn.isBaby() && !emuAttackedDirectly && ((EntityEmu) mobIn).revengeCooldown <= 0) {
+                super.alertOther(mobIn, targetIn);
             }
 
         }

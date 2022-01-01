@@ -16,9 +16,9 @@ public class EffectSunbird extends Effect {
         this.curse = curse;
     }
 
-    public void performEffect(LivingEntity entity, int amplifier) {
+    public void applyEffectTick(LivingEntity entity, int amplifier) {
         if (curse) {
-            if (entity.isElytraFlying()) {
+            if (entity.isFallFlying()) {
                 if (entity instanceof PlayerEntity) {
                     ((PlayerEntity) entity).stopFallFlying();
                 }
@@ -26,35 +26,35 @@ public class EffectSunbird extends Effect {
             boolean forceFall = false;
             if (entity instanceof PlayerEntity) {
                 PlayerEntity player = (PlayerEntity) entity;
-                if (!player.isCreative() || !player.abilities.isFlying) {
+                if (!player.isCreative() || !player.abilities.flying) {
                     forceFall = true;
                 }
             }
             if ((forceFall || !(entity instanceof PlayerEntity)) && !entity.isOnGround()) {
-                entity.setMotion(entity.getMotion().add(0, -0.2F, 0));
+                entity.setDeltaMovement(entity.getDeltaMovement().add(0, -0.2F, 0));
             }
         } else {
             entity.fallDistance = 0.0F;
-            if (entity.isElytraFlying()) {
-                if (entity.rotationPitch < -10) {
-                    float pitchMulti = Math.abs(entity.rotationPitch) / 90F;
-                    entity.setMotion(entity.getMotion().add(0, 0.02 + pitchMulti * 0.02, 0));
+            if (entity.isFallFlying()) {
+                if (entity.xRot < -10) {
+                    float pitchMulti = Math.abs(entity.xRot) / 90F;
+                    entity.setDeltaMovement(entity.getDeltaMovement().add(0, 0.02 + pitchMulti * 0.02, 0));
                 }
             } else if (!entity.isOnGround() && !entity.isCrouching()) {
-                Vector3d vector3d = entity.getMotion();
+                Vector3d vector3d = entity.getDeltaMovement();
                 if (vector3d.y < 0.0D) {
-                    entity.setMotion(vector3d.mul(1.0D, 0.6D, 1.0D));
+                    entity.setDeltaMovement(vector3d.multiply(1.0D, 0.6D, 1.0D));
                 }
             }
 
         }
     }
 
-    public boolean isReady(int duration, int amplifier) {
+    public boolean isDurationEffectTick(int duration, int amplifier) {
         return duration > 0;
     }
 
-    public String getName() {
+    public String getDescriptionId() {
         return curse ? "alexsmobs.potion.sunbird_curse" : "alexsmobs.potion.sunbird_blessing";
     }
 

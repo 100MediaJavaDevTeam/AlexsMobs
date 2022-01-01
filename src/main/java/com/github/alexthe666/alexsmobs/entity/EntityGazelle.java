@@ -43,7 +43,7 @@ public class EntityGazelle extends AnimalEntity implements IAnimatedEntity, IHer
     public static final Animation ANIMATION_EAT_GRASS = Animation.create(30);
     private boolean hasSpedUp = false;
     private int revengeCooldown = 0;
-    private static final DataParameter<Boolean> RUNNING = EntityDataManager.createKey(EntityGazelle.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> RUNNING = EntityDataManager.defineId(EntityGazelle.class, DataSerializers.BOOLEAN);
 
     protected EntityGazelle(EntityType type, World worldIn) {
         super(type, worldIn);
@@ -54,7 +54,7 @@ public class EntityGazelle extends AnimalEntity implements IAnimatedEntity, IHer
         this.goalSelector.addGoal(1, new AnimalAIHerdPanic(this, 1.1D));
         this.goalSelector.addGoal(2, new BreedGoal(this, 1.0D));
         this.goalSelector.addGoal(4, new FollowParentGoal(this, 1.1D));
-        this.goalSelector.addGoal(4, new TemptGoal(this, 1.1D, Ingredient.fromItems(Items.WHEAT), false));
+        this.goalSelector.addGoal(4, new TemptGoal(this, 1.1D, Ingredient.of(Items.WHEAT), false));
         this.goalSelector.addGoal(5, new AnimalAIWanderRanged(this, 100, 1.0D, 25, 7));
         this.goalSelector.addGoal(6, new LookAtGoal(this, PlayerEntity.class, 15.0F));
         this.goalSelector.addGoal(7, new LookRandomlyGoal(this));
@@ -68,25 +68,25 @@ public class EntityGazelle extends AnimalEntity implements IAnimatedEntity, IHer
         return AMSoundRegistry.GAZELLE_HURT;
     }
 
-    public boolean canSpawn(IWorld worldIn, SpawnReason spawnReasonIn) {
-        return AMEntityRegistry.rollSpawn(AMConfig.gazelleSpawnRolls, this.getRNG(), spawnReasonIn) && super.canSpawn(worldIn, spawnReasonIn);
+    public boolean checkSpawnRules(IWorld worldIn, SpawnReason spawnReasonIn) {
+        return AMEntityRegistry.rollSpawn(AMConfig.gazelleSpawnRolls, this.getRandom(), spawnReasonIn) && super.checkSpawnRules(worldIn, spawnReasonIn);
     }
 
-    public int getMaxSpawnedInChunk() {
+    public int getMaxSpawnClusterSize() {
         return 8;
     }
 
-    public boolean isMaxGroupSize(int sizeIn) {
+    public boolean isMaxGroupSizeReached(int sizeIn) {
         return false;
     }
 
-    public boolean attackEntityFrom(DamageSource source, float amount) {
-        boolean prev = super.attackEntityFrom(source, amount);
+    public boolean hurt(DamageSource source, float amount) {
+        boolean prev = super.hurt(source, amount);
         if(prev){
             double range = 15;
-            int fleeTime = 100 + getRNG().nextInt(150);
+            int fleeTime = 100 + getRandom().nextInt(150);
             this.revengeCooldown = fleeTime;
-            List<EntityGazelle> list = this.world.getEntitiesWithinAABB(this.getClass(), this.getBoundingBox().grow(range, range/2, range));
+            List<EntityGazelle> list = this.level.getEntitiesOfClass(this.getClass(), this.getBoundingBox().inflate(range, range/2, range));
             for(EntityGazelle gaz : list){
                 gaz.revengeCooldown = fleeTime;
 
@@ -96,20 +96,20 @@ public class EntityGazelle extends AnimalEntity implements IAnimatedEntity, IHer
     }
 
     @Override
-    protected void registerData() {
-        super.registerData();
-        this.dataManager.register(RUNNING, Boolean.valueOf(false));
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(RUNNING, Boolean.valueOf(false));
     }
 
     public boolean isRunning() {
-        return this.dataManager.get(RUNNING).booleanValue();
+        return this.entityData.get(RUNNING).booleanValue();
     }
 
     public void setRunning(boolean running) {
-        this.dataManager.set(RUNNING, Boolean.valueOf(running));
+        this.entityData.set(RUNNING, Boolean.valueOf(running));
     }
 
-    public boolean isBreedingItem(ItemStack stack) {
+    public boolean isFood(ItemStack stack) {
         return stack.getItem() == Items.WHEAT || stack.getItem() == AMItemRegistry.ACACIA_BLOSSOM;
     }
 
@@ -125,19 +125,19 @@ public class EntityGazelle extends AnimalEntity implements IAnimatedEntity, IHer
 
     public void tick() {
         super.tick();
-        if(!world.isRemote && this.getAnimation() == NO_ANIMATION && getRNG().nextInt(70) == 0 && (this.getRevengeTarget() == null || this.getDistance(this.getRevengeTarget()) > 30)){
-            if(world.getBlockState(this.getPosition().down()).matchesBlock(Blocks.GRASS_BLOCK) && getRNG().nextInt(3) == 0){
+        if(!level.isClientSide && this.getAnimation() == NO_ANIMATION && getRandom().nextInt(70) == 0 && (this.getLastHurtByMob() == null || this.distanceTo(this.getLastHurtByMob()) > 30)){
+            if(level.getBlockState(this.blockPosition().below()).is(Blocks.GRASS_BLOCK) && getRandom().nextInt(3) == 0){
                 this.setAnimation(ANIMATION_EAT_GRASS);
             }else{
-                this.setAnimation(getRNG().nextBoolean()  ? ANIMATION_FLICK_EARS : ANIMATION_FLICK_TAIL);
+                this.setAnimation(getRandom().nextBoolean()  ? ANIMATION_FLICK_EARS : ANIMATION_FLICK_TAIL);
             }
         }
-        if(!this.world.isRemote){
+        if(!this.level.isClientSide){
             if(revengeCooldown >= 0){
                 revengeCooldown--;
             }
-            if(revengeCooldown == 0 && this.getRevengeTarget() != null){
-                this.setRevengeTarget(null);
+            if(revengeCooldown == 0 && this.getLastHurtByMob() != null){
+                this.setLastHurtByMob(null);
             }
             this.setRunning(revengeCooldown > 0);
             if(isRunning() && !hasSpedUp){
@@ -154,13 +154,13 @@ public class EntityGazelle extends AnimalEntity implements IAnimatedEntity, IHer
         AnimationHandler.INSTANCE.updateAnimations(this);
     }
 
-    public void writeAdditional(CompoundNBT compound) {
-        super.writeAdditional(compound);
+    public void addAdditionalSaveData(CompoundNBT compound) {
+        super.addAdditionalSaveData(compound);
         compound.putBoolean("GazelleRunning", this.isRunning());
     }
 
-    public void readAdditional(CompoundNBT compound) {
-        super.readAdditional(compound);
+    public void readAdditionalSaveData(CompoundNBT compound) {
+        super.readAdditionalSaveData(compound);
         this.setRunning(compound.getBoolean("GazelleRunning"));
     }
 
@@ -180,12 +180,12 @@ public class EntityGazelle extends AnimalEntity implements IAnimatedEntity, IHer
     }
 
     public static AttributeModifierMap.MutableAttribute bakeAttributes() {
-        return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MAX_HEALTH, 8.0D).createMutableAttribute(Attributes.ATTACK_DAMAGE, 2.0D).createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.25F);
+        return MonsterEntity.createMonsterAttributes().add(Attributes.MAX_HEALTH, 8.0D).add(Attributes.ATTACK_DAMAGE, 2.0D).add(Attributes.MOVEMENT_SPEED, 0.25F);
     }
 
     @Nullable
     @Override
-    public AgeableEntity createChild(ServerWorld p_241840_1_, AgeableEntity p_241840_2_) {
+    public AgeableEntity getBreedOffspring(ServerWorld p_241840_1_, AgeableEntity p_241840_2_) {
         return AMEntityRegistry.GAZELLE.create(p_241840_1_);
     }
 

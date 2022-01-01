@@ -11,6 +11,8 @@ import net.minecraft.util.math.vector.Vector3d;
 
 import java.util.EnumSet;
 
+import net.minecraft.entity.ai.goal.Goal.Flag;
+
 public class AnimalAILeaveWater extends Goal {
     private final CreatureEntity creature;
     private BlockPos targetPos;
@@ -18,11 +20,11 @@ public class AnimalAILeaveWater extends Goal {
 
     public AnimalAILeaveWater(CreatureEntity creature) {
         this.creature = creature;
-        this.setMutexFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
+        this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
     }
 
-    public boolean shouldExecute() {
-        if (this.creature.world.getFluidState(this.creature.getPosition()).isTagged(FluidTags.WATER) && (this.creature.getAttackTarget() != null || this.creature.getRNG().nextInt(executionChance) == 0)){
+    public boolean canUse() {
+        if (this.creature.level.getFluidState(this.creature.blockPosition()).is(FluidTags.WATER) && (this.creature.getTarget() != null || this.creature.getRandom().nextInt(executionChance) == 0)){
             if(this.creature instanceof ISemiAquatic && ((ISemiAquatic) this.creature).shouldLeaveWater()){
                 targetPos = generateTarget();
                 return targetPos != null;
@@ -31,29 +33,29 @@ public class AnimalAILeaveWater extends Goal {
         return false;
     }
 
-    public void startExecuting() {
+    public void start() {
         if(targetPos != null){
-            this.creature.getNavigator().tryMoveToXYZ(targetPos.getX(), targetPos.getY(), targetPos.getZ(), 1D);
+            this.creature.getNavigation().moveTo(targetPos.getX(), targetPos.getY(), targetPos.getZ(), 1D);
         }
     }
 
     public void tick() {
         if(targetPos != null){
-            this.creature.getNavigator().tryMoveToXYZ(targetPos.getX(), targetPos.getY(), targetPos.getZ(), 1D);
+            this.creature.getNavigation().moveTo(targetPos.getX(), targetPos.getY(), targetPos.getZ(), 1D);
         }
-        if(this.creature.collidedHorizontally && this.creature.isInWater()){
-            float f1 = creature.rotationYaw * ((float)Math.PI / 180F);
-            creature.setMotion(creature.getMotion().add((double)(-MathHelper.sin(f1) * 0.2F), 0.1D, (double)(MathHelper.cos(f1) * 0.2F)));
+        if(this.creature.horizontalCollision && this.creature.isInWater()){
+            float f1 = creature.yRot * ((float)Math.PI / 180F);
+            creature.setDeltaMovement(creature.getDeltaMovement().add((double)(-MathHelper.sin(f1) * 0.2F), 0.1D, (double)(MathHelper.cos(f1) * 0.2F)));
 
         }
     }
 
-    public boolean shouldContinueExecuting() {
+    public boolean canContinueToUse() {
         if(this.creature instanceof ISemiAquatic && !((ISemiAquatic) this.creature).shouldLeaveWater()){
-            this.creature.getNavigator().clearPath();
+            this.creature.getNavigation().stop();
             return false;
         }
-        return !this.creature.getNavigator().noPath() && targetPos != null && !this.creature.world.getFluidState(targetPos).isTagged(FluidTags.WATER);
+        return !this.creature.getNavigation().isDone() && targetPos != null && !this.creature.level.getFluidState(targetPos).is(FluidTags.WATER);
     }
 
     public BlockPos generateTarget() {
@@ -61,8 +63,8 @@ public class AnimalAILeaveWater extends Goal {
         int tries = 0;
         while(vector3d != null && tries < 8){
             boolean waterDetected = false;
-            for(BlockPos blockpos1 : BlockPos.getAllInBoxMutable(MathHelper.floor(vector3d.x - 2.0D), MathHelper.floor(vector3d.y - 1.0D), MathHelper.floor(vector3d.z - 2.0D), MathHelper.floor(vector3d.x + 2.0D), MathHelper.floor(vector3d.y), MathHelper.floor(vector3d.z + 2.0D))) {
-                if (this.creature.world.getFluidState(blockpos1).isTagged(FluidTags.WATER)) {
+            for(BlockPos blockpos1 : BlockPos.betweenClosed(MathHelper.floor(vector3d.x - 2.0D), MathHelper.floor(vector3d.y - 1.0D), MathHelper.floor(vector3d.z - 2.0D), MathHelper.floor(vector3d.x + 2.0D), MathHelper.floor(vector3d.y), MathHelper.floor(vector3d.z + 2.0D))) {
+                if (this.creature.level.getFluidState(blockpos1).is(FluidTags.WATER)) {
                     waterDetected = true;
                     break;
                 }

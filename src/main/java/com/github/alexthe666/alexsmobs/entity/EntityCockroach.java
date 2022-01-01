@@ -46,12 +46,12 @@ public class EntityCockroach extends AnimalEntity implements IShearable, net.min
     public static final ResourceLocation MARACA_LOOT = new ResourceLocation("alexsmobs", "entities/cockroach_maracas");
     public static final ResourceLocation MARACA_HEADLESS_LOOT = new ResourceLocation("alexsmobs", "entities/cockroach_maracas_headless");
     protected static final EntitySize STAND_SIZE = EntitySize.fixed(0.7F, 0.9F);
-    private static final DataParameter<Boolean> DANCING = EntityDataManager.createKey(EntityCockroach.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Boolean> HEADLESS = EntityDataManager.createKey(EntityCockroach.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Boolean> MARACAS = EntityDataManager.createKey(EntityCockroach.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Optional<UUID>> NEAREST_MUSICIAN = EntityDataManager.createKey(EntityCockroach.class, DataSerializers.OPTIONAL_UNIQUE_ID);
-    private static final DataParameter<Boolean> RAINBOW = EntityDataManager.createKey(EntityCockroach.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Boolean> BREADED = EntityDataManager.createKey(EntityCockroach.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> DANCING = EntityDataManager.defineId(EntityCockroach.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> HEADLESS = EntityDataManager.defineId(EntityCockroach.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> MARACAS = EntityDataManager.defineId(EntityCockroach.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Optional<UUID>> NEAREST_MUSICIAN = EntityDataManager.defineId(EntityCockroach.class, DataSerializers.OPTIONAL_UUID);
+    private static final DataParameter<Boolean> RAINBOW = EntityDataManager.defineId(EntityCockroach.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> BREADED = EntityDataManager.defineId(EntityCockroach.class, DataSerializers.BOOLEAN);
     public int randomWingFlapTick = 0;
     public float prevDanceProgress;
     public float danceProgress;
@@ -59,39 +59,39 @@ public class EntityCockroach extends AnimalEntity implements IShearable, net.min
     private boolean isJukeboxing;
     private BlockPos jukeboxPosition;
     private int laCucarachaTimer = 0;
-    public int timeUntilNextEgg = this.rand.nextInt(24000) + 24000;
+    public int timeUntilNextEgg = this.random.nextInt(24000) + 24000;
 
     public EntityCockroach(EntityType type, World world) {
         super(type, world);
     }
 
     public static AttributeModifierMap.MutableAttribute bakeAttributes() {
-        return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MAX_HEALTH, 6.0D).createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.35F);
+        return MonsterEntity.createMonsterAttributes().add(Attributes.MAX_HEALTH, 6.0D).add(Attributes.MOVEMENT_SPEED, 0.35F);
     }
 
     public static boolean isValidLightLevel(IServerWorld p_223323_0_, BlockPos p_223323_1_, Random p_223323_2_) {
-        if (p_223323_0_.getLightFor(LightType.SKY, p_223323_1_) > p_223323_2_.nextInt(32)) {
+        if (p_223323_0_.getBrightness(LightType.SKY, p_223323_1_) > p_223323_2_.nextInt(32)) {
             return false;
         } else {
-            int lvt_3_1_ = p_223323_0_.getWorld().isThundering() ? p_223323_0_.getNeighborAwareLightSubtracted(p_223323_1_, 10) : p_223323_0_.getLight(p_223323_1_);
+            int lvt_3_1_ = p_223323_0_.getLevel().isThundering() ? p_223323_0_.getMaxLocalRawBrightness(p_223323_1_, 10) : p_223323_0_.getMaxLocalRawBrightness(p_223323_1_);
             return lvt_3_1_ <= p_223323_2_.nextInt(8);
         }
     }
 
     public static boolean canMonsterSpawnInLight(EntityType<? extends EntityCockroach> p_223325_0_, IServerWorld p_223325_1_, SpawnReason p_223325_2_, BlockPos p_223325_3_, Random p_223325_4_) {
-        return isValidLightLevel(p_223325_1_, p_223325_3_, p_223325_4_) && canSpawnOn(p_223325_0_, p_223325_1_, p_223325_2_, p_223325_3_, p_223325_4_);
+        return isValidLightLevel(p_223325_1_, p_223325_3_, p_223325_4_) && checkMobSpawnRules(p_223325_0_, p_223325_1_, p_223325_2_, p_223325_3_, p_223325_4_);
     }
 
     public static <T extends MobEntity> boolean canCockroachSpawn(EntityType<EntityCockroach> entityType, IServerWorld iServerWorld, SpawnReason reason, BlockPos pos, Random random) {
         return reason == SpawnReason.SPAWNER || !iServerWorld.canSeeSky(pos) && pos.getY() <= 64 && canMonsterSpawnInLight(entityType, iServerWorld, reason, pos, random);
     }
 
-    public boolean canDespawn(double distanceToClosestPlayer) {
-        return !preventDespawn();
+    public boolean removeWhenFarAway(double distanceToClosestPlayer) {
+        return !requiresCustomPersistence();
     }
 
-    public boolean preventDespawn() {
-        return super.preventDespawn() || this.isBreaded() || this.isRainbow() || this.isDancing() || this.hasMaracas() || this.isHeadless();
+    public boolean requiresCustomPersistence() {
+        return super.requiresCustomPersistence() || this.isBreaded() || this.isRainbow() || this.isDancing() || this.hasMaracas() || this.isHeadless();
     }
 
     protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
@@ -106,16 +106,16 @@ public class EntityCockroach extends AnimalEntity implements IShearable, net.min
         this.goalSelector.addGoal(0, new SwimGoal(this));
         this.goalSelector.addGoal(1, new PanicGoal(this, 1.1D));
         this.goalSelector.addGoal(2, new BreedGoal(this, 1.0D));
-        this.goalSelector.addGoal(3, new TemptGoal(this, 1.0D, false, Ingredient.fromItems(AMItemRegistry.MARACA, Items.SUGAR)));
+        this.goalSelector.addGoal(3, new TemptGoal(this, 1.0D, false, Ingredient.of(AMItemRegistry.MARACA, Items.SUGAR)));
         this.goalSelector.addGoal(4, new AvoidEntityGoal(this, EntityCentipedeHead.class, 16, 1.3D, 1.0D));
         this.goalSelector.addGoal(4, new AvoidEntityGoal(this, PlayerEntity.class, 8, 1.3D, 1.0D) {
-            public boolean shouldExecute() {
-                return !EntityCockroach.this.isBreaded() && super.shouldExecute();
+            public boolean canUse() {
+                return !EntityCockroach.this.isBreaded() && super.canUse();
             }
         });
         this.goalSelector.addGoal(5, new AnimalAIFleeLight(this, 1.0D) {
-            public boolean shouldExecute() {
-                return !EntityCockroach.this.isBreaded() && super.shouldExecute();
+            public boolean canUse() {
+                return !EntityCockroach.this.isBreaded() && super.canUse();
             }
         });
         this.goalSelector.addGoal(6, new RandomWalkingGoal(this, 1.0D, 80));
@@ -124,15 +124,15 @@ public class EntityCockroach extends AnimalEntity implements IShearable, net.min
         this.targetSelector.addGoal(1, new CreatureAITargetItems(this, false));
     }
 
-    public boolean attackEntityFrom(DamageSource source, float amount) {
-        boolean prev = super.attackEntityFrom(source, amount);
+    public boolean hurt(DamageSource source, float amount) {
+        boolean prev = super.hurt(source, amount);
         if(prev){
-            randomWingFlapTick = 5 + rand.nextInt(15);
-            if (this.getHealth() <= 1.0F && amount > 0 && !this.isHeadless() && this.getRNG().nextInt(3) == 0) {
+            randomWingFlapTick = 5 + random.nextInt(15);
+            if (this.getHealth() <= 1.0F && amount > 0 && !this.isHeadless() && this.getRandom().nextInt(3) == 0) {
                 this.setHeadless(true);
-                if (!world.isRemote) {
+                if (!level.isClientSide) {
                     for (int i = 0; i < 3; i++) {
-                        ((ServerWorld) this.world).spawnParticle(ParticleTypes.SNEEZE, this.getPosXRandom(0.52F), this.getPosYHeight(1D), this.getPosZRandom(0.52F), 1, 0.0D, 0.0D, 0.0D, 0.0D);
+                        ((ServerWorld) this.level).sendParticles(ParticleTypes.SNEEZE, this.getRandomX(0.52F), this.getY(1D), this.getRandomZ(0.52F), 1, 0.0D, 0.0D, 0.0D, 0.0D);
                     }
                 }
             }
@@ -140,12 +140,12 @@ public class EntityCockroach extends AnimalEntity implements IShearable, net.min
         return prev;
     }
 
-    public boolean isBreedingItem(ItemStack stack) {
+    public boolean isFood(ItemStack stack) {
         return stack.getItem() == Items.SUGAR;
     }
 
-    public void writeAdditional(CompoundNBT compound) {
-        super.writeAdditional(compound);
+    public void addAdditionalSaveData(CompoundNBT compound) {
+        super.addAdditionalSaveData(compound);
         compound.putBoolean("Maracas", this.hasMaracas());
         compound.putBoolean("Rainbow", this.isRainbow());
         compound.putBoolean("Dancing", this.isDancing());
@@ -153,8 +153,8 @@ public class EntityCockroach extends AnimalEntity implements IShearable, net.min
         compound.putInt("EggTime", this.timeUntilNextEgg);
     }
 
-    public void readAdditional(CompoundNBT compound) {
-        super.readAdditional(compound);
+    public void readAdditionalSaveData(CompoundNBT compound) {
+        super.readAdditionalSaveData(compound);
         this.setMaracas(compound.getBoolean("Maracas"));
         this.setRainbow(compound.getBoolean("Rainbow"));
         this.setDancing(compound.getBoolean("Dancing"));
@@ -165,20 +165,20 @@ public class EntityCockroach extends AnimalEntity implements IShearable, net.min
     }
 
     @Nullable
-    protected ResourceLocation getLootTable() {
-        return this.hasMaracas() ? this.isHeadless() ? MARACA_HEADLESS_LOOT : MARACA_LOOT : super.getLootTable();
+    protected ResourceLocation getDefaultLootTable() {
+        return this.hasMaracas() ? this.isHeadless() ? MARACA_HEADLESS_LOOT : MARACA_LOOT : super.getDefaultLootTable();
     }
 
-    public float getBlockPathWeight(BlockPos pos, IWorldReader worldIn) {
+    public float getWalkTargetValue(BlockPos pos, IWorldReader worldIn) {
         return 0.5F - worldIn.getBrightness(pos);
     }
 
-    public CreatureAttribute getCreatureAttribute() {
+    public CreatureAttribute getMobType() {
         return CreatureAttribute.ARTHROPOD;
     }
 
-    public EntitySize getSize(Pose poseIn) {
-        return isDancing() ? STAND_SIZE.scale(this.getRenderScale()) : super.getSize(poseIn);
+    public EntitySize getDimensions(Pose poseIn) {
+        return isDancing() ? STAND_SIZE.scale(this.getScale()) : super.getDimensions(poseIn);
     }
 
     @Override
@@ -186,107 +186,107 @@ public class EntityCockroach extends AnimalEntity implements IShearable, net.min
         return source == DamageSource.FALL || source == DamageSource.DROWN || source == DamageSource.IN_WALL || source == DamageSource.FALLING_BLOCK || super.isInvulnerableTo(source);
     }
 
-    public ActionResultType getEntityInteractionResult(PlayerEntity p_230254_1_, Hand p_230254_2_) {
-        ItemStack lvt_3_1_ = p_230254_1_.getHeldItem(p_230254_2_);
+    public ActionResultType mobInteract(PlayerEntity p_230254_1_, Hand p_230254_2_) {
+        ItemStack lvt_3_1_ = p_230254_1_.getItemInHand(p_230254_2_);
         if ((lvt_3_1_.getItem() == Items.SPONGE || lvt_3_1_.getItem() == Items.WET_SPONGE) && this.isAlive() && this.isRainbow()) {
             this.setRainbow(false);
-            for (int i = 0; i < 6 + rand.nextInt(3); i++) {
-                double d2 = this.rand.nextGaussian() * 0.02D;
-                double d0 = this.rand.nextGaussian() * 0.02D;
-                double d1 = this.rand.nextGaussian() * 0.02D;
-                this.world.addParticle(new ItemParticleData(ParticleTypes.ITEM, new ItemStack(AMItemRegistry.MIMICREAM)), this.getPosX() + (double) (this.rand.nextFloat() * this.getWidth()) - (double) this.getWidth() * 0.5F, this.getPosY() + this.getHeight() * 0.5F + (double) (this.rand.nextFloat() * this.getHeight() * 0.5F), this.getPosZ() + (double) (this.rand.nextFloat() * this.getWidth()) - (double) this.getWidth() * 0.5F, d0, d1, d2);
+            for (int i = 0; i < 6 + random.nextInt(3); i++) {
+                double d2 = this.random.nextGaussian() * 0.02D;
+                double d0 = this.random.nextGaussian() * 0.02D;
+                double d1 = this.random.nextGaussian() * 0.02D;
+                this.level.addParticle(new ItemParticleData(ParticleTypes.ITEM, new ItemStack(AMItemRegistry.MIMICREAM)), this.getX() + (double) (this.random.nextFloat() * this.getBbWidth()) - (double) this.getBbWidth() * 0.5F, this.getY() + this.getBbHeight() * 0.5F + (double) (this.random.nextFloat() * this.getBbHeight() * 0.5F), this.getZ() + (double) (this.random.nextFloat() * this.getBbWidth()) - (double) this.getBbWidth() * 0.5F, d0, d1, d2);
             }
             return ActionResultType.SUCCESS;
         } else if (lvt_3_1_.getItem() == AMItemRegistry.MIMICREAM && this.isAlive() && !this.isRainbow()) {
             this.setRainbow(true);
-            for (int i = 0; i < 6 + rand.nextInt(3); i++) {
-                double d2 = this.rand.nextGaussian() * 0.02D;
-                double d0 = this.rand.nextGaussian() * 0.02D;
-                double d1 = this.rand.nextGaussian() * 0.02D;
-                this.world.addParticle(new ItemParticleData(ParticleTypes.ITEM, lvt_3_1_), this.getPosX() + (double) (this.rand.nextFloat() * this.getWidth()) - (double) this.getWidth() * 0.5F, this.getPosY() + this.getHeight() * 0.5F + (double) (this.rand.nextFloat() * this.getHeight() * 0.5F), this.getPosZ() + (double) (this.rand.nextFloat() * this.getWidth()) - (double) this.getWidth() * 0.5F, d0, d1, d2);
+            for (int i = 0; i < 6 + random.nextInt(3); i++) {
+                double d2 = this.random.nextGaussian() * 0.02D;
+                double d0 = this.random.nextGaussian() * 0.02D;
+                double d1 = this.random.nextGaussian() * 0.02D;
+                this.level.addParticle(new ItemParticleData(ParticleTypes.ITEM, lvt_3_1_), this.getX() + (double) (this.random.nextFloat() * this.getBbWidth()) - (double) this.getBbWidth() * 0.5F, this.getY() + this.getBbHeight() * 0.5F + (double) (this.random.nextFloat() * this.getBbHeight() * 0.5F), this.getZ() + (double) (this.random.nextFloat() * this.getBbWidth()) - (double) this.getBbWidth() * 0.5F, d0, d1, d2);
             }
             lvt_3_1_.shrink(1);
-            return ActionResultType.func_233537_a_(this.world.isRemote);
+            return ActionResultType.sidedSuccess(this.level.isClientSide);
         } else if (lvt_3_1_.getItem() == AMItemRegistry.MARACA && this.isAlive() && !this.hasMaracas()) {
             this.setMaracas(true);
             lvt_3_1_.shrink(1);
-            return ActionResultType.func_233537_a_(this.world.isRemote);
+            return ActionResultType.sidedSuccess(this.level.isClientSide);
         } else if (lvt_3_1_.getItem() != AMItemRegistry.MARACA && this.isAlive() && this.hasMaracas()) {
             this.setMaracas(false);
             this.setDancing(false);
-            this.entityDropItem(new ItemStack(AMItemRegistry.MARACA));
+            this.spawnAtLocation(new ItemStack(AMItemRegistry.MARACA));
             return ActionResultType.SUCCESS;
         } else {
-            return super.getEntityInteractionResult(p_230254_1_, p_230254_2_);
+            return super.mobInteract(p_230254_1_, p_230254_2_);
         }
     }
 
     @Override
-    protected void registerData() {
-        super.registerData();
-        this.dataManager.register(DANCING, Boolean.valueOf(false));
-        this.dataManager.register(HEADLESS, Boolean.valueOf(false));
-        this.dataManager.register(MARACAS, Boolean.valueOf(false));
-        this.dataManager.register(NEAREST_MUSICIAN, Optional.empty());
-        this.dataManager.register(RAINBOW, Boolean.valueOf(false));
-        this.dataManager.register(BREADED, Boolean.valueOf(false));
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(DANCING, Boolean.valueOf(false));
+        this.entityData.define(HEADLESS, Boolean.valueOf(false));
+        this.entityData.define(MARACAS, Boolean.valueOf(false));
+        this.entityData.define(NEAREST_MUSICIAN, Optional.empty());
+        this.entityData.define(RAINBOW, Boolean.valueOf(false));
+        this.entityData.define(BREADED, Boolean.valueOf(false));
     }
 
     public boolean isDancing() {
-        return this.dataManager.get(DANCING).booleanValue();
+        return this.entityData.get(DANCING).booleanValue();
     }
 
     public void setDancing(boolean dancing) {
-        this.dataManager.set(DANCING, dancing);
+        this.entityData.set(DANCING, dancing);
     }
 
     public boolean isHeadless() {
-        return this.dataManager.get(HEADLESS).booleanValue();
+        return this.entityData.get(HEADLESS).booleanValue();
     }
 
     public void setHeadless(boolean head) {
-        this.dataManager.set(HEADLESS, head);
+        this.entityData.set(HEADLESS, head);
     }
 
     public boolean hasMaracas() {
-        return this.dataManager.get(MARACAS).booleanValue();
+        return this.entityData.get(MARACAS).booleanValue();
     }
 
     public void setMaracas(boolean head) {
-        this.dataManager.set(MARACAS, head);
+        this.entityData.set(MARACAS, head);
     }
 
     public boolean isBreaded() {
-        return this.dataManager.get(BREADED).booleanValue();
+        return this.entityData.get(BREADED).booleanValue();
     }
 
     public void setBreaded(boolean breaded) {
-        this.dataManager.set(BREADED, breaded);
+        this.entityData.set(BREADED, breaded);
     }
 
     @Nullable
     public UUID getNearestMusicianId() {
-        return this.dataManager.get(NEAREST_MUSICIAN).orElse(null);
+        return this.entityData.get(NEAREST_MUSICIAN).orElse(null);
     }
 
     public boolean isRainbow() {
-        return this.dataManager.get(RAINBOW).booleanValue();
+        return this.entityData.get(RAINBOW).booleanValue();
     }
 
     public void setRainbow(boolean head) {
-        this.dataManager.set(RAINBOW, head);
+        this.entityData.set(RAINBOW, head);
     }
 
     public void tick() {
         super.tick();
         prevDanceProgress = danceProgress;
         boolean dance = this.isJukeboxing || isDancing();
-        if (this.jukeboxPosition == null || !this.jukeboxPosition.withinDistance(this.getPositionVec(), 3.46D) || !this.world.getBlockState(this.jukeboxPosition).matchesBlock(Blocks.JUKEBOX)) {
+        if (this.jukeboxPosition == null || !this.jukeboxPosition.closerThan(this.position(), 3.46D) || !this.level.getBlockState(this.jukeboxPosition).is(Blocks.JUKEBOX)) {
             this.isJukeboxing = false;
             this.jukeboxPosition = null;
         }
-        if (this.getEyeHeight() > this.getHeight()) {
-            this.recalculateSize();
+        if (this.getEyeHeight() > this.getBbHeight()) {
+            this.refreshDimensions();
         }
         if (dance && danceProgress < 5F) {
             danceProgress++;
@@ -294,8 +294,8 @@ public class EntityCockroach extends AnimalEntity implements IShearable, net.min
         if (!dance && danceProgress > 0F) {
             danceProgress--;
         }
-        if (!this.onGround || rand.nextInt(200) == 0) {
-            randomWingFlapTick = 5 + rand.nextInt(15);
+        if (!this.onGround || random.nextInt(200) == 0) {
+            randomWingFlapTick = 5 + random.nextInt(15);
         }
         if (randomWingFlapTick > 0) {
             randomWingFlapTick--;
@@ -304,12 +304,12 @@ public class EntityCockroach extends AnimalEntity implements IShearable, net.min
             if (hasMaracas()) {
                 tellOthersImPlayingLaCucaracha();
             }
-            this.recalculateSize();
+            this.refreshDimensions();
         }
         if (!hasMaracas()) {
             Entity musician = this.getNearestMusician();
             if (musician != null) {
-                if (!musician.isAlive() || this.getDistance(musician) > 10 || musician instanceof EntityCockroach && !((EntityCockroach) musician).hasMaracas()) {
+                if (!musician.isAlive() || this.distanceTo(musician) > 10 || musician instanceof EntityCockroach && !((EntityCockroach) musician).hasMaracas()) {
                     this.setNearestMusician(null);
                     this.setDancing(false);
                 } else {
@@ -319,97 +319,97 @@ public class EntityCockroach extends AnimalEntity implements IShearable, net.min
         }
         if (hasMaracas()) {
             laCucarachaTimer++;
-            if (laCucarachaTimer % 20 == 0 && rand.nextFloat() < 0.3F) {
+            if (laCucarachaTimer % 20 == 0 && random.nextFloat() < 0.3F) {
                 tellOthersImPlayingLaCucaracha();
             }
             this.setDancing(true);
             if (!this.isSilent()) {
-                this.world.setEntityState(this, (byte) 67);
+                this.level.broadcastEntityEvent(this, (byte) 67);
             }
         } else {
             laCucarachaTimer = 0;
         }
-        if (!this.world.isRemote && this.isAlive() && !this.isChild() && --this.timeUntilNextEgg <= 0) {
-           ItemEntity dropped = this.entityDropItem(AMItemRegistry.COCKROACH_OOTHECA);
-            dropped.setDefaultPickupDelay();
-            this.timeUntilNextEgg = this.rand.nextInt(24000) + 24000;
+        if (!this.level.isClientSide && this.isAlive() && !this.isBaby() && --this.timeUntilNextEgg <= 0) {
+           ItemEntity dropped = this.spawnAtLocation(AMItemRegistry.COCKROACH_OOTHECA);
+            dropped.setDefaultPickUpDelay();
+            this.timeUntilNextEgg = this.random.nextInt(24000) + 24000;
 
         }
         prevStand = dance;
     }
 
     private void tellOthersImPlayingLaCucaracha() {
-        List<EntityCockroach> list = this.world.getEntitiesWithinAABB(EntityCockroach.class, this.getMusicianDistance(), null);
+        List<EntityCockroach> list = this.level.getEntitiesOfClass(EntityCockroach.class, this.getMusicianDistance(), null);
         for (EntityCockroach roach : list) {
             if (!roach.hasMaracas()) {
-                roach.setNearestMusician(this.getUniqueID());
+                roach.setNearestMusician(this.getUUID());
             }
         }
     }
 
     private AxisAlignedBB getMusicianDistance() {
-        return this.getBoundingBox().grow(10, 10, 10);
+        return this.getBoundingBox().inflate(10, 10, 10);
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void handleStatusUpdate(byte id) {
+    public void handleEntityEvent(byte id) {
         if (id == 67) {
             AlexsMobs.PROXY.onEntityStatus(this, id);
         } else {
-            super.handleStatusUpdate(id);
+            super.handleEntityEvent(id);
         }
     }
 
     public Entity getNearestMusician() {
         UUID id = getNearestMusicianId();
-        if (id != null && !world.isRemote) {
-            return ((ServerWorld) world).getEntityByUuid(id);
+        if (id != null && !level.isClientSide) {
+            return ((ServerWorld) level).getEntity(id);
         }
         return null;
     }
 
     public void setNearestMusician(@Nullable UUID uniqueId) {
-        this.dataManager.set(NEAREST_MUSICIAN, Optional.ofNullable(uniqueId));
+        this.entityData.set(NEAREST_MUSICIAN, Optional.ofNullable(uniqueId));
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void setPartying(BlockPos pos, boolean isPartying) {
+    public void setRecordPlayingNearby(BlockPos pos, boolean isPartying) {
         this.jukeboxPosition = pos;
         this.isJukeboxing = isPartying;
     }
 
     @Nullable
     @Override
-    public AgeableEntity createChild(ServerWorld serverWorld, AgeableEntity ageableEntity) {
+    public AgeableEntity getBreedOffspring(ServerWorld serverWorld, AgeableEntity ageableEntity) {
         EntityCockroach roach = AMEntityRegistry.COCKROACH.create(serverWorld);
         roach.setBreaded(true);
         return roach;
     }
 
-    public boolean isShearable() {
-        return this.isAlive() && !this.isChild() && !isHeadless();
+    public boolean readyForShearing() {
+        return this.isAlive() && !this.isBaby() && !isHeadless();
     }
 
     @Override
     public boolean isShearable(@javax.annotation.Nonnull ItemStack item, World world, BlockPos pos) {
-        return isShearable();
+        return readyForShearing();
     }
 
     @Override
     public void shear(SoundCategory category) {
-        this.attackEntityFrom(DamageSource.GENERIC, 0F);
-        world.playMovingSound(null, this, SoundEvents.ENTITY_SHEEP_SHEAR, category, 1.0F, 1.0F);
+        this.hurt(DamageSource.GENERIC, 0F);
+        level.playSound(null, this, SoundEvents.SHEEP_SHEAR, category, 1.0F, 1.0F);
         this.setHeadless(true);
     }
 
     @javax.annotation.Nonnull
     @Override
     public java.util.List<ItemStack> onSheared(@javax.annotation.Nullable PlayerEntity player, @javax.annotation.Nonnull ItemStack item, World world, BlockPos pos, int fortune) {
-        world.playMovingSound(null, this, SoundEvents.ENTITY_SHEEP_SHEAR, player == null ? SoundCategory.BLOCKS : SoundCategory.PLAYERS, 1.0F, 1.0F);
-        this.attackEntityFrom(DamageSource.GENERIC, 0F);
-        if (!world.isRemote) {
+        world.playSound(null, this, SoundEvents.SHEEP_SHEAR, player == null ? SoundCategory.BLOCKS : SoundCategory.PLAYERS, 1.0F, 1.0F);
+        this.hurt(DamageSource.GENERIC, 0F);
+        if (!world.isClientSide) {
             for (int i = 0; i < 3; i++) {
-                ((ServerWorld) this.world).spawnParticle(ParticleTypes.SNEEZE, this.getPosXRandom(0.52F), this.getPosYHeight(1D), this.getPosZRandom(0.52F), 1, 0.0D, 0.0D, 0.0D, 0.0D);
+                ((ServerWorld) this.level).sendParticles(ParticleTypes.SNEEZE, this.getRandomX(0.52F), this.getY(1D), this.getRandomZ(0.52F), 1, 0.0D, 0.0D, 0.0D, 0.0D);
             }
         }
         this.setHeadless(true);
@@ -418,13 +418,13 @@ public class EntityCockroach extends AnimalEntity implements IShearable, net.min
 
     @Override
     public boolean canTargetItem(ItemStack stack) {
-        return stack.getItem().isFood() || stack.getItem() == Items.SUGAR;
+        return stack.getItem().isEdible() || stack.getItem() == Items.SUGAR;
     }
 
     public void travel(Vector3d vec3d) {
         if (this.isDancing() || danceProgress > 0) {
-            if (this.getNavigator().getPath() != null) {
-                this.getNavigator().clearPath();
+            if (this.getNavigation().getPath() != null) {
+                this.getNavigation().stop();
             }
             vec3d = Vector3d.ZERO;
         }
@@ -438,7 +438,7 @@ public class EntityCockroach extends AnimalEntity implements IShearable, net.min
             this.setMaracas(true);
         } else {
             if (e.getItem().hasContainerItem()) {
-                this.entityDropItem(e.getItem().getContainerItem().copy());
+                this.spawnAtLocation(e.getItem().getContainerItem().copy());
             }
             this.heal(5);
             if (e.getItem().getItem() == Items.BREAD || e.getItem().getItem() == Items.SUGAR) {

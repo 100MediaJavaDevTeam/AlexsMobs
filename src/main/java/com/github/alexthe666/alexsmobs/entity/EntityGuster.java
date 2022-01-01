@@ -41,8 +41,8 @@ import java.util.Random;
 
 public class EntityGuster extends MonsterEntity {
 
-    private static final DataParameter<Integer> LIFT_ENTITY = EntityDataManager.createKey(EntityGuster.class, DataSerializers.VARINT);
-    private static final DataParameter<Integer> VARIANT = EntityDataManager.createKey(EntityGuster.class, DataSerializers.VARINT);
+    private static final DataParameter<Integer> LIFT_ENTITY = EntityDataManager.defineId(EntityGuster.class, DataSerializers.INT);
+    private static final DataParameter<Integer> VARIANT = EntityDataManager.defineId(EntityGuster.class, DataSerializers.INT);
     private LivingEntity liftedEntity;
     private int liftingTime = 0;
     private int maxLiftTime = 40;
@@ -52,11 +52,11 @@ public class EntityGuster extends MonsterEntity {
 
     protected EntityGuster(EntityType type, World worldIn) {
         super(type, worldIn);
-        this.stepHeight = 1;
-        this.setPathPriority(PathNodeType.WATER, -1.0F);
+        this.maxUpStep = 1;
+        this.setPathfindingMalus(PathNodeType.WATER, -1.0F);
     }
 
-    public int getTalkInterval() {
+    public int getAmbientSoundInterval() {
         return 80;
     }
 
@@ -74,21 +74,21 @@ public class EntityGuster extends MonsterEntity {
 
 
     @Nullable
-    protected ResourceLocation getLootTable() {
-        return this.getVariant() == 2 ? SOUL_LOOT : this.getVariant() == 1 ? RED_LOOT : super.getLootTable();
+    protected ResourceLocation getDefaultLootTable() {
+        return this.getVariant() == 2 ? SOUL_LOOT : this.getVariant() == 1 ? RED_LOOT : super.getDefaultLootTable();
     }
 
     public static AttributeModifierMap.MutableAttribute bakeAttributes() {
-        return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MAX_HEALTH, 16.0D).createMutableAttribute(Attributes.FOLLOW_RANGE, 32.0D).createMutableAttribute(Attributes.ATTACK_DAMAGE, 1.0D).createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.2D);
+        return MonsterEntity.createMonsterAttributes().add(Attributes.MAX_HEALTH, 16.0D).add(Attributes.FOLLOW_RANGE, 32.0D).add(Attributes.ATTACK_DAMAGE, 1.0D).add(Attributes.MOVEMENT_SPEED, 0.2D);
     }
 
     public static boolean canGusterSpawn(EntityType animal, IWorld worldIn, SpawnReason reason, BlockPos pos, Random random) {
-        boolean spawnBlock = BlockTags.SAND.contains(worldIn.getBlockState(pos.down()).getBlock()) || BlockTags.SOUL_FIRE_BASE_BLOCKS.contains(worldIn.getBlockState(pos.down()).getBlock());
-        return spawnBlock && (!AMConfig.limitGusterSpawnsToWeather || worldIn.getWorldInfo() != null && (worldIn.getWorldInfo().isThundering() || worldIn.getWorldInfo().isRaining()) || isBiomeNether(worldIn, pos));
+        boolean spawnBlock = BlockTags.SAND.contains(worldIn.getBlockState(pos.below()).getBlock()) || BlockTags.SOUL_FIRE_BASE_BLOCKS.contains(worldIn.getBlockState(pos.below()).getBlock());
+        return spawnBlock && (!AMConfig.limitGusterSpawnsToWeather || worldIn.getLevelData() != null && (worldIn.getLevelData().isThundering() || worldIn.getLevelData().isRaining()) || isBiomeNether(worldIn, pos));
     }
 
-    public boolean canSpawn(IWorld worldIn, SpawnReason spawnReasonIn) {
-        return AMEntityRegistry.rollSpawn(AMConfig.gusterSpawnRolls, this.getRNG(), spawnReasonIn);
+    public boolean checkSpawnRules(IWorld worldIn, SpawnReason spawnReasonIn) {
+        return AMEntityRegistry.rollSpawn(AMConfig.gusterSpawnRolls, this.getRandom(), spawnReasonIn);
     }
 
     protected void registerGoals() {
@@ -101,11 +101,11 @@ public class EntityGuster extends MonsterEntity {
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillagerEntity.class, true));
     }
 
-    protected PathNavigator createNavigator(World worldIn) {
+    protected PathNavigator createNavigation(World worldIn) {
         return new GroundPathNavigatorWide(this, worldIn);
     }
 
-    public boolean onLivingFall(float distance, float damageMultiplier) {
+    public boolean causeFallDamage(float distance, float damageMultiplier) {
         return false;
     }
 
@@ -113,52 +113,52 @@ public class EntityGuster extends MonsterEntity {
     }
 
 
-    public void collideWithEntity(Entity entityIn) {
+    public void doPush(Entity entityIn) {
         if (this.getLiftedEntity() == null && liftingTime >= 0 && !(entityIn instanceof EntityGuster)) {
-            this.setLiftedEntity(entityIn.getEntityId());
-            maxLiftTime = 30 + rand.nextInt(30);
+            this.setLiftedEntity(entityIn.getId());
+            maxLiftTime = 30 + random.nextInt(30);
         }
     }
 
     public boolean hasLiftedEntity() {
-        return this.dataManager.get(LIFT_ENTITY) != 0;
+        return this.entityData.get(LIFT_ENTITY) != 0;
     }
 
-    protected void registerData() {
-        super.registerData();
-        this.dataManager.register(LIFT_ENTITY, 0);
-        this.dataManager.register(VARIANT, 0);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(LIFT_ENTITY, 0);
+        this.entityData.define(VARIANT, 0);
     }
 
 
-    public boolean attackEntityFrom(DamageSource source, float amount) {
+    public boolean hurt(DamageSource source, float amount) {
         if (this.isInvulnerableTo(source)) {
             return false;
         } else {
             if (source.isProjectile()) {
                 amount = (amount + 1.0F) / 3.0F;
             }
-            return super.attackEntityFrom(source, amount);
+            return super.hurt(source, amount);
         }
     }
 
 
     private void spit(LivingEntity target) {
-        EntitySandShot sghot = new EntitySandShot(this.world, this);
-        double d0 = target.getPosX() - this.getPosX();
-        double d1 = target.getPosYHeight(0.3333333333333333D) - sghot.getPosY();
-        double d2 = target.getPosZ() - this.getPosZ();
+        EntitySandShot sghot = new EntitySandShot(this.level, this);
+        double d0 = target.getX() - this.getX();
+        double d1 = target.getY(0.3333333333333333D) - sghot.getY();
+        double d2 = target.getZ() - this.getZ();
         float f = MathHelper.sqrt(d0 * d0 + d2 * d2) * 0.35F;
         sghot.shoot(d0, d1 + (double) f, d2, 1F, 10.0F);
         sghot.setVariant(this.getVariant());
         if (!this.isSilent()) {
-            this.world.playSound(null, this.getPosX(), this.getPosY(), this.getPosZ(), SoundEvents.BLOCK_SAND_BREAK, this.getSoundCategory(), 1.0F, 1.0F + (this.rand.nextFloat() - this.rand.nextFloat()) * 0.2F);
+            this.level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SAND_BREAK, this.getSoundSource(), 1.0F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
         }
-        this.world.addEntity(sghot);
+        this.level.addFreshEntity(sghot);
     }
 
-    public double getPosYEye() {
-        return this.getPosY() + 1.0F;
+    public double getEyeY() {
+        return this.getY() + 1.0F;
     }
 
 
@@ -167,64 +167,64 @@ public class EntityGuster extends MonsterEntity {
         if (!this.hasLiftedEntity()) {
             return null;
         } else {
-            return this.world.getEntityByID(this.dataManager.get(LIFT_ENTITY));
+            return this.level.getEntity(this.entityData.get(LIFT_ENTITY));
         }
     }
 
     @Nullable
-    public ILivingEntityData onInitialSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason
+    public ILivingEntityData finalizeSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason
             reason, @Nullable ILivingEntityData spawnDataIn, @Nullable CompoundNBT dataTag) {
-        if(this.isBiomeNether(worldIn, this.getPosition())){
+        if(this.isBiomeNether(worldIn, this.blockPosition())){
             this.setVariant(2);
-        }else if(this.isBiomeRed(worldIn, this.getPosition())){
+        }else if(this.isBiomeRed(worldIn, this.blockPosition())){
             this.setVariant(1);
         }else{
             this.setVariant(0);
         }
-        this.setAir(this.getMaxAir());
-        this.rotationPitch = 0.0F;
-        return super.onInitialSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
+        this.setAirSupply(this.getMaxAirSupply());
+        this.xRot = 0.0F;
+        return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
     }
 
     private void setLiftedEntity(int p_175463_1_) {
-        this.dataManager.set(LIFT_ENTITY, p_175463_1_);
+        this.entityData.set(LIFT_ENTITY, p_175463_1_);
     }
 
     public int getVariant() {
-        return this.dataManager.get(VARIANT).intValue();
+        return this.entityData.get(VARIANT).intValue();
     }
 
     public void setVariant(int variant) {
-        this.dataManager.set(VARIANT, Integer.valueOf(variant));
+        this.entityData.set(VARIANT, Integer.valueOf(variant));
     }
 
-    public void livingTick() {
-        super.livingTick();
+    public void aiStep() {
+        super.aiStep();
         Entity lifted = this.getLiftedEntity();
-        if (lifted == null && !world.isRemote && ticksExisted % 15 == 0) {
-            List<ItemEntity> list = this.world.getEntitiesWithinAABB(ItemEntity.class, this.getBoundingBox().grow(0.8F));
+        if (lifted == null && !level.isClientSide && tickCount % 15 == 0) {
+            List<ItemEntity> list = this.level.getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(0.8F));
             ItemEntity closestItem = null;
             for (int i = 0; i < list.size(); ++i) {
                 ItemEntity entity = list.get(i);
-                if (entity.isOnGround() && (closestItem == null || this.getDistance(closestItem) > this.getDistance(entity))) {
+                if (entity.isOnGround() && (closestItem == null || this.distanceTo(closestItem) > this.distanceTo(entity))) {
                     closestItem = entity;
                 }
             }
             if (closestItem != null) {
-                this.setLiftedEntity(closestItem.getEntityId());
-                maxLiftTime = 30 + rand.nextInt(30);
+                this.setLiftedEntity(closestItem.getId());
+                maxLiftTime = 30 + random.nextInt(30);
             }
         }
-        if (this.isInWaterOrBubbleColumn()) {
-            this.attackEntityFrom(DamageSource.DROWN, 0.5F);
+        if (this.isInWaterOrBubble()) {
+            this.hurt(DamageSource.DROWN, 0.5F);
         }
-        float f = (float) this.getPosY();
+        float f = (float) this.getY();
         if (this.isAlive()) {
             IParticleData type = this.getVariant() == 2 ? AMParticleRegistry.GUSTER_SAND_SPIN_SOUL : this.getVariant() == 1 ? AMParticleRegistry.GUSTER_SAND_SPIN_RED : AMParticleRegistry.GUSTER_SAND_SPIN;
             for (int j = 0; j < 4; ++j) {
-                float f1 = (this.rand.nextFloat() * 2.0F - 1.0F) * this.getWidth() * 0.95F;
-                float f2 = (this.rand.nextFloat() * 2.0F - 1.0F) * this.getWidth() * 0.95F;
-                this.world.addParticle(type, this.getPosX() + (double) f1, f, this.getPosZ() + (double) f2, this.getPosX(), this.getPosY() + rand.nextFloat() * this.getHeight() + 0.2F, this.getPosZ());
+                float f1 = (this.random.nextFloat() * 2.0F - 1.0F) * this.getBbWidth() * 0.95F;
+                float f2 = (this.random.nextFloat() * 2.0F - 1.0F) * this.getBbWidth() * 0.95F;
+                this.level.addParticle(type, this.getX() + (double) f1, f, this.getZ() + (double) f2, this.getX(), this.getY() + random.nextFloat() * this.getBbHeight() + 0.2F, this.getZ());
             }
         }
         if (lifted != null && liftingTime >= 0) {
@@ -238,61 +238,61 @@ public class EntityGuster extends MonsterEntity {
                 radius = 0.2F + (liftingTime * 0.025F);
             }
             float angle = liftingTime * -0.25F;
-            double extraX = this.getPosX() + radius * MathHelper.sin((float) (Math.PI + angle));
-            double extraZ = this.getPosZ() + radius * MathHelper.cos(angle);
-            double d0 = (extraX - lifted.getPosX()) * resist;
-            double d1 = (extraZ - lifted.getPosZ()) * resist;
-            lifted.setMotion(d0, 0.1 * resist, d1);
-            lifted.isAirBorne = true;
+            double extraX = this.getX() + radius * MathHelper.sin((float) (Math.PI + angle));
+            double extraZ = this.getZ() + radius * MathHelper.cos(angle);
+            double d0 = (extraX - lifted.getX()) * resist;
+            double d1 = (extraZ - lifted.getZ()) * resist;
+            lifted.setDeltaMovement(d0, 0.1 * resist, d1);
+            lifted.hasImpulse = true;
             if (liftingTime > maxLiftTime) {
                 this.setLiftedEntity(0);
                 liftingTime = -20;
-                maxLiftTime = 30 + rand.nextInt(30);
+                maxLiftTime = 30 + random.nextInt(30);
             }
         } else if (liftingTime < 0) {
             liftingTime++;
-        } else if (this.getAttackTarget() != null && this.getDistance(this.getAttackTarget()) < this.getWidth() + 1F && !(this.getAttackTarget() instanceof EntityGuster)) {
-            this.setLiftedEntity(this.getAttackTarget().getEntityId());
-            maxLiftTime = 30 + rand.nextInt(30);
+        } else if (this.getTarget() != null && this.distanceTo(this.getTarget()) < this.getBbWidth() + 1F && !(this.getTarget() instanceof EntityGuster)) {
+            this.setLiftedEntity(this.getTarget().getId());
+            maxLiftTime = 30 + random.nextInt(30);
         }
-        if (!world.isRemote && shootingTicks >= 0) {
+        if (!level.isClientSide && shootingTicks >= 0) {
             if (shootingTicks <= 0) {
-                if (this.getAttackTarget() != null && (lifted == null || lifted.getEntityId() != this.getAttackTarget().getEntityId()) && this.isAlive()) {
-                    this.spit(this.getAttackTarget());
+                if (this.getTarget() != null && (lifted == null || lifted.getId() != this.getTarget().getId()) && this.isAlive()) {
+                    this.spit(this.getTarget());
                 }
-                shootingTicks = 40 + rand.nextInt(40);
+                shootingTicks = 40 + random.nextInt(40);
             } else {
                 shootingTicks--;
             }
         }
-        Vector3d vector3d = this.getMotion();
+        Vector3d vector3d = this.getDeltaMovement();
         if (!this.onGround && vector3d.y < 0.0D) {
-            this.setMotion(vector3d.mul(1.0D, 0.6D, 1.0D));
+            this.setDeltaMovement(vector3d.multiply(1.0D, 0.6D, 1.0D));
         }
     }
 
     public boolean isGooglyEyes() {
-        String s = TextFormatting.getTextWithoutFormattingCodes(this.getName().getString());
+        String s = TextFormatting.stripFormatting(this.getName().getString());
         return s != null && s.toLowerCase().contains("tweester");
     }
 
-    public void writeAdditional(CompoundNBT compound) {
-        super.writeAdditional(compound);
+    public void addAdditionalSaveData(CompoundNBT compound) {
+        super.addAdditionalSaveData(compound);
         compound.putInt("Variant", this.getVariant());
     }
 
-    public void readAdditional(CompoundNBT compound) {
-        super.readAdditional(compound);
+    public void readAdditionalSaveData(CompoundNBT compound) {
+        super.readAdditionalSaveData(compound);
         this.setVariant(compound.getInt("Variant"));
     }
 
     private static boolean isBiomeRed(IWorld worldIn, BlockPos position) {
-        RegistryKey<Biome> biomeKey = RegistryKey.getOrCreateKey(Registry.BIOME_KEY, worldIn.getBiome(position).getRegistryName());
+        RegistryKey<Biome> biomeKey = RegistryKey.create(Registry.BIOME_REGISTRY, worldIn.getBiome(position).getRegistryName());
         return BiomeDictionary.hasType(biomeKey, BiomeDictionary.Type.MESA);
     }
 
     private static boolean isBiomeNether(IWorld worldIn, BlockPos position) {
-        RegistryKey<Biome> biomeKey = RegistryKey.getOrCreateKey(Registry.BIOME_KEY, worldIn.getBiome(position).getRegistryName());
+        RegistryKey<Biome> biomeKey = RegistryKey.create(Registry.BIOME_REGISTRY, worldIn.getBiome(position).getRegistryName());
         return BiomeDictionary.hasType(biomeKey, BiomeDictionary.Type.NETHER);
     }
 
@@ -311,18 +311,18 @@ public class EntityGuster extends MonsterEntity {
         public MeleeGoal() {
         }
 
-        public boolean shouldExecute() {
-            return EntityGuster.this.getAttackTarget() != null;
+        public boolean canUse() {
+            return EntityGuster.this.getTarget() != null;
         }
 
         public void tick() {
             Entity thrownEntity = EntityGuster.this.getLiftedEntity();
 
-            if (EntityGuster.this.getAttackTarget() != null) {
-                if (thrownEntity != null && thrownEntity.getEntityId() == EntityGuster.this.getAttackTarget().getEntityId()) {
-                    EntityGuster.this.getNavigator().clearPath();
+            if (EntityGuster.this.getTarget() != null) {
+                if (thrownEntity != null && thrownEntity.getId() == EntityGuster.this.getTarget().getId()) {
+                    EntityGuster.this.getNavigation().stop();
                 } else {
-                    EntityGuster.this.getNavigator().tryMoveToEntityLiving(EntityGuster.this.getAttackTarget(), 1.25F);
+                    EntityGuster.this.getNavigation().moveTo(EntityGuster.this.getTarget(), 1.25F);
                 }
             }
         }

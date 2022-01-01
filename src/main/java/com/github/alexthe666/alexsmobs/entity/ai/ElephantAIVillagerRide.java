@@ -16,7 +16,7 @@ public class ElephantAIVillagerRide  extends Goal {
     }
 
     @Override
-    public boolean shouldExecute() {
+    public boolean canUse() {
         if(elephant.getControllingVillager() != null){
            villager = elephant.getControllingVillager();
             return true;
@@ -25,13 +25,13 @@ public class ElephantAIVillagerRide  extends Goal {
     }
 
     @Override
-    public void startExecuting() {
+    public void start() {
     }
 
     @Override
     public void tick() {
-        if(this.villager.getNavigator().hasPath()){
-            this.elephant.getNavigator().setPath(this.villager.getNavigator().getPath(), 1.6D);
+        if(this.villager.getNavigation().isInProgress()){
+            this.elephant.getNavigation().moveTo(this.villager.getNavigation().getPath(), 1.6D);
         }
     }
 }

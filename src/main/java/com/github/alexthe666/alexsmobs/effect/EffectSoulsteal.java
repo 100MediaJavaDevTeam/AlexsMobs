@@ -12,14 +12,14 @@ public class EffectSoulsteal extends Effect {
         this.setRegistryName(AlexsMobs.MODID, "soulsteal");
     }
 
-    public void performEffect(LivingEntity entity, int amplifier) {
+    public void applyEffectTick(LivingEntity entity, int amplifier) {
     }
 
-    public boolean isReady(int duration, int amplifier) {
+    public boolean isDurationEffectTick(int duration, int amplifier) {
         return duration > 0;
     }
 
-    public String getName() {
+    public String getDescriptionId() {
         return "alexsmobs.potion.soulsteal";
     }
 

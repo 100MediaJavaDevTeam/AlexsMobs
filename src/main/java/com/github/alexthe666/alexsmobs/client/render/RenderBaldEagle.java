@@ -38,38 +38,38 @@ public class RenderBaldEagle extends MobRenderer<EntityBaldEagle, ModelBaldEagle
     }
 
     public boolean shouldRender(EntityBaldEagle baldEagle, ClippingHelper p_225626_2_, double p_225626_3_, double p_225626_5_, double p_225626_7_) {
-        if( baldEagle.isPassenger() && baldEagle.getRidingEntity() instanceof PlayerEntity && Minecraft.getInstance().player == baldEagle.getRidingEntity() && Minecraft.getInstance().gameSettings.getPointOfView() == PointOfView.FIRST_PERSON){
+        if( baldEagle.isPassenger() && baldEagle.getVehicle() instanceof PlayerEntity && Minecraft.getInstance().player == baldEagle.getVehicle() && Minecraft.getInstance().options.getCameraType() == PointOfView.FIRST_PERSON){
             return false;
         }
         return super.shouldRender(baldEagle, p_225626_2_, p_225626_3_, p_225626_5_, p_225626_7_);
     }
 
-    protected void preRenderCallback(EntityBaldEagle eagle, MatrixStack matrixStackIn, float partialTickTime) {
-        if(eagle.isPassenger() && eagle.getRidingEntity() != null) {
-            if (eagle.getRidingEntity() instanceof PlayerEntity) {
-                PlayerEntity mount = (PlayerEntity)eagle.getRidingEntity();
+    protected void scale(EntityBaldEagle eagle, MatrixStack matrixStackIn, float partialTickTime) {
+        if(eagle.isPassenger() && eagle.getVehicle() != null) {
+            if (eagle.getVehicle() instanceof PlayerEntity) {
+                PlayerEntity mount = (PlayerEntity)eagle.getVehicle();
                 boolean leftHand = false;
-                if(mount.getHeldItem(Hand.MAIN_HAND).getItem() == AMItemRegistry.FALCONRY_GLOVE){
-                    leftHand = mount.getPrimaryHand() == HandSide.LEFT;
-                }else if(mount.getHeldItem(Hand.OFF_HAND).getItem() == AMItemRegistry.FALCONRY_GLOVE){
-                    leftHand = mount.getPrimaryHand() != HandSide.LEFT;
+                if(mount.getItemInHand(Hand.MAIN_HAND).getItem() == AMItemRegistry.FALCONRY_GLOVE){
+                    leftHand = mount.getMainArm() == HandSide.LEFT;
+                }else if(mount.getItemInHand(Hand.OFF_HAND).getItem() == AMItemRegistry.FALCONRY_GLOVE){
+                    leftHand = mount.getMainArm() != HandSide.LEFT;
                 }
-                EntityRenderer playerRender = Minecraft.getInstance().getRenderManager().getRenderer(mount);
-                if(Minecraft.getInstance().player == mount && Minecraft.getInstance().gameSettings.getPointOfView() == PointOfView.FIRST_PERSON){
+                EntityRenderer playerRender = Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(mount);
+                if(Minecraft.getInstance().player == mount && Minecraft.getInstance().options.getCameraType() == PointOfView.FIRST_PERSON){
                     //handled via event
-                }else if (playerRender instanceof LivingRenderer && ((LivingRenderer) playerRender).getEntityModel() instanceof BipedModel) {
+                }else if (playerRender instanceof LivingRenderer && ((LivingRenderer) playerRender).getModel() instanceof BipedModel) {
                     if(leftHand){
                         matrixStackIn.translate(-0.3F, -0.7F, 0.5F);
-                        ((BipedModel) ((LivingRenderer) playerRender).getEntityModel()).bipedLeftArm.translateRotate(matrixStackIn);
+                        ((BipedModel) ((LivingRenderer) playerRender).getModel()).leftArm.translateAndRotate(matrixStackIn);
                         matrixStackIn.translate(-0.2F, 0.5F, -0.18F);
-                        matrixStackIn.rotate(Vector3f.XP.rotationDegrees(40F));
-                        matrixStackIn.rotate(Vector3f.YP.rotationDegrees(70F));
+                        matrixStackIn.mulPose(Vector3f.XP.rotationDegrees(40F));
+                        matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(70F));
                     }else{
                         matrixStackIn.translate(0.3F, -0.7F, 0.5F);
-                        ((BipedModel) ((LivingRenderer) playerRender).getEntityModel()).bipedRightArm.translateRotate(matrixStackIn);
+                        ((BipedModel) ((LivingRenderer) playerRender).getModel()).rightArm.translateAndRotate(matrixStackIn);
                         matrixStackIn.translate(0.2F, 0.5F, -0.18F);
-                        matrixStackIn.rotate(Vector3f.XP.rotationDegrees(40F));
-                        matrixStackIn.rotate(Vector3f.YP.rotationDegrees(-70F));
+                        matrixStackIn.mulPose(Vector3f.XP.rotationDegrees(40F));
+                        matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(-70F));
                     }
                 }
             }
@@ -77,7 +77,7 @@ public class RenderBaldEagle extends MobRenderer<EntityBaldEagle, ModelBaldEagle
     }
 
 
-    public ResourceLocation getEntityTexture(EntityBaldEagle entity) {
+    public ResourceLocation getTextureLocation(EntityBaldEagle entity) {
         return TEXTURE;
     }
 
@@ -89,8 +89,8 @@ public class RenderBaldEagle extends MobRenderer<EntityBaldEagle, ModelBaldEagle
 
         public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityBaldEagle entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
             if (entitylivingbaseIn.hasCap()) {
-                IVertexBuilder lead = bufferIn.getBuffer(RenderType.getEntityTranslucent(TEXTURE_CAP));
-                this.getEntityModel().render(matrixStackIn, lead, packedLightIn, LivingRenderer.getPackedOverlay(entitylivingbaseIn, 0), 1.0F, 1.0F, 1.0F, 1.0F);
+                IVertexBuilder lead = bufferIn.getBuffer(RenderType.entityTranslucent(TEXTURE_CAP));
+                this.getParentModel().renderToBuffer(matrixStackIn, lead, packedLightIn, LivingRenderer.getOverlayCoords(entitylivingbaseIn, 0), 1.0F, 1.0F, 1.0F, 1.0F);
             }
         }
     }

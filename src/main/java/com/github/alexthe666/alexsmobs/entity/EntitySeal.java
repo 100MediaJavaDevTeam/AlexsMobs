@@ -48,10 +48,10 @@ import java.util.*;
 
 public class EntitySeal extends AnimalEntity implements ISemiAquatic, IHerdPanic, ITargetsDroppedItems {
 
-    private static final DataParameter<Float> SWIM_ANGLE = EntityDataManager.createKey(EntitySeal.class, DataSerializers.FLOAT);
-    private static final DataParameter<Boolean> BASKING = EntityDataManager.createKey(EntitySeal.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Boolean> DIGGING = EntityDataManager.createKey(EntitySeal.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Boolean> ARCTIC = EntityDataManager.createKey(EntitySeal.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Float> SWIM_ANGLE = EntityDataManager.defineId(EntitySeal.class, DataSerializers.FLOAT);
+    private static final DataParameter<Boolean> BASKING = EntityDataManager.defineId(EntitySeal.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> DIGGING = EntityDataManager.defineId(EntitySeal.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> ARCTIC = EntityDataManager.defineId(EntitySeal.class, DataSerializers.BOOLEAN);
     public float prevSwimAngle;
     public float prevBaskProgress;
     public float baskProgress;
@@ -67,8 +67,8 @@ public class EntitySeal extends AnimalEntity implements ISemiAquatic, IHerdPanic
 
     protected EntitySeal(EntityType type, World worldIn) {
         super(type, worldIn);
-        this.setPathPriority(PathNodeType.WATER, 0.0F);
-        this.setPathPriority(PathNodeType.WATER_BORDER, 0.0F);
+        this.setPathfindingMalus(PathNodeType.WATER, 0.0F);
+        this.setPathfindingMalus(PathNodeType.WATER_BORDER, 0.0F);
         switchNavigator(false);
     }
 
@@ -86,16 +86,16 @@ public class EntitySeal extends AnimalEntity implements ISemiAquatic, IHerdPanic
 
 
     public static AttributeModifierMap.MutableAttribute bakeAttributes() {
-        return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MAX_HEALTH, 10.0D).createMutableAttribute(Attributes.ATTACK_DAMAGE, 2.0D).createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.18F);
+        return MonsterEntity.createMonsterAttributes().add(Attributes.MAX_HEALTH, 10.0D).add(Attributes.ATTACK_DAMAGE, 2.0D).add(Attributes.MOVEMENT_SPEED, 0.18F);
     }
 
     public static boolean canSealSpawn(EntityType<? extends AnimalEntity> animal, IWorld worldIn, SpawnReason reason, BlockPos pos, Random random) {
-        Optional<RegistryKey<Biome>> optional = worldIn.func_242406_i(pos);
+        Optional<RegistryKey<Biome>> optional = worldIn.getBiomeName(pos);
         if (!Objects.equals(optional, Optional.of(Biomes.FROZEN_OCEAN)) && !Objects.equals(optional, Optional.of(Biomes.DEEP_FROZEN_OCEAN))) {
-            boolean spawnBlock = BlockTags.getCollection().get(AMTagRegistry.SEAL_SPAWNS).contains(worldIn.getBlockState(pos.down()).getBlock());
-            return spawnBlock && worldIn.getLightSubtracted(pos, 0) > 8;
+            boolean spawnBlock = BlockTags.getAllTags().getTag(AMTagRegistry.SEAL_SPAWNS).contains(worldIn.getBlockState(pos.below()).getBlock());
+            return spawnBlock && worldIn.getRawBrightness(pos, 0) > 8;
         } else {
-            return worldIn.getLightSubtracted(pos, 0) > 8 && worldIn.getBlockState(pos.down()).matchesBlock(Blocks.ICE);
+            return worldIn.getRawBrightness(pos, 0) > 8 && worldIn.getBlockState(pos.below()).is(Blocks.ICE);
         }
     }
 
@@ -112,29 +112,29 @@ public class EntitySeal extends AnimalEntity implements ISemiAquatic, IHerdPanic
         this.goalSelector.addGoal(8, new LookRandomlyGoal(this));
         this.goalSelector.addGoal(8, new LookAtGoal(this, PlayerEntity.class, 6.0F));
         this.goalSelector.addGoal(9, new AvoidEntityGoal(this, EntityOrca.class, 20F, 1.3D, 1.0D));
-        this.goalSelector.addGoal(10, new TemptGoal(this, 1.1D, Ingredient.fromTag(ItemTags.getCollection().get(AMTagRegistry.SEAL_FOODSTUFFS)), false));
+        this.goalSelector.addGoal(10, new TemptGoal(this, 1.1D, Ingredient.of(ItemTags.getAllTags().getTag(AMTagRegistry.SEAL_FOODSTUFFS)), false));
         this.targetSelector.addGoal(1, new CreatureAITargetItems(this, false));
     }
 
     private void switchNavigator(boolean onLand) {
         if (onLand) {
-            this.moveController = new MovementController(this);
-            this.navigator = new GroundPathNavigatorWide(this, world);
+            this.moveControl = new MovementController(this);
+            this.navigation = new GroundPathNavigatorWide(this, level);
             this.isLandNavigator = true;
         } else {
-            this.moveController = new AquaticMoveController(this, 1.5F);
-            this.navigator = new SemiAquaticPathNavigator(this, world);
+            this.moveControl = new AquaticMoveController(this, 1.5F);
+            this.navigation = new SemiAquaticPathNavigator(this, level);
             this.isLandNavigator = false;
         }
     }
 
-    public boolean attackEntityFrom(DamageSource source, float amount) {
-        boolean prev = super.attackEntityFrom(source, amount);
+    public boolean hurt(DamageSource source, float amount) {
+        boolean prev = super.hurt(source, amount);
         if (prev) {
             double range = 15;
-            int fleeTime = 100 + getRNG().nextInt(150);
+            int fleeTime = 100 + getRandom().nextInt(150);
             this.revengeCooldown = fleeTime;
-            List<EntitySeal> list = this.world.getEntitiesWithinAABB(this.getClass(), this.getBoundingBox().grow(range, range / 2, range));
+            List<EntitySeal> list = this.level.getEntitiesOfClass(this.getClass(), this.getBoundingBox().inflate(range, range / 2, range));
             for (EntitySeal gaz : list) {
                 gaz.revengeCooldown = fleeTime;
                 gaz.setBasking(false);
@@ -145,20 +145,20 @@ public class EntitySeal extends AnimalEntity implements ISemiAquatic, IHerdPanic
     }
 
     @Override
-    protected void registerData() {
-        super.registerData();
-        this.dataManager.register(SWIM_ANGLE, 0F);
-        this.dataManager.register(BASKING, false);
-        this.dataManager.register(DIGGING, false);
-        this.dataManager.register(ARCTIC, false);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(SWIM_ANGLE, 0F);
+        this.entityData.define(BASKING, false);
+        this.entityData.define(DIGGING, false);
+        this.entityData.define(ARCTIC, false);
     }
 
     public float getSwimAngle() {
-        return this.dataManager.get(SWIM_ANGLE);
+        return this.entityData.get(SWIM_ANGLE);
     }
 
     public void setSwimAngle(float progress) {
-        this.dataManager.set(SWIM_ANGLE, progress);
+        this.entityData.set(SWIM_ANGLE, progress);
     }
 
     public void tick() {
@@ -166,10 +166,10 @@ public class EntitySeal extends AnimalEntity implements ISemiAquatic, IHerdPanic
         prevBaskProgress = baskProgress;
         prevDigProgress = digProgress;
         prevSwimAngle = this.getSwimAngle();
-        boolean dig = isDigging() && isInWaterOrBubbleColumn();
-        float f2 = (float) -((float) this.getMotion().y * (double) (180F / (float) Math.PI));
+        boolean dig = isDigging() && isInWaterOrBubble();
+        float f2 = (float) -((float) this.getDeltaMovement().y * (double) (180F / (float) Math.PI));
         if (isInWater()) {
-            this.rotationPitch = f2 * 2.5F;
+            this.xRot = f2 * 2.5F;
         }
 
         if (isInWater() && this.isLandNavigator) {
@@ -190,27 +190,27 @@ public class EntitySeal extends AnimalEntity implements ISemiAquatic, IHerdPanic
         if (!dig && digProgress > 0F) {
             digProgress--;
         }
-        if (dig && world.getBlockState(this.getPositionUnderneath()).isSolid()) {
-            BlockPos posit = this.getPositionUnderneath();
-            BlockState understate = world.getBlockState(posit);
-            for (int i = 0; i < 4 + rand.nextInt(2); i++) {
-                double particleX = posit.getX() + rand.nextFloat();
+        if (dig && level.getBlockState(this.getBlockPosBelowThatAffectsMyMovement()).canOcclude()) {
+            BlockPos posit = this.getBlockPosBelowThatAffectsMyMovement();
+            BlockState understate = level.getBlockState(posit);
+            for (int i = 0; i < 4 + random.nextInt(2); i++) {
+                double particleX = posit.getX() + random.nextFloat();
                 double particleY = posit.getY() + 1F;
-                double particleZ = posit.getZ() + rand.nextFloat();
-                double motX = this.rand.nextGaussian() * 0.02D;
-                double motY = 0.1F + rand.nextFloat() * 0.2F;
-                double motZ = this.rand.nextGaussian() * 0.02D;
-                world.addParticle(new BlockParticleData(ParticleTypes.BLOCK, understate), particleX, particleY, particleZ, motX, motY, motZ);
+                double particleZ = posit.getZ() + random.nextFloat();
+                double motX = this.random.nextGaussian() * 0.02D;
+                double motY = 0.1F + random.nextFloat() * 0.2F;
+                double motZ = this.random.nextGaussian() * 0.02D;
+                level.addParticle(new BlockParticleData(ParticleTypes.BLOCK, understate), particleX, particleY, particleZ, motX, motY, motZ);
             }
         }
-        if (!this.world.isRemote) {
+        if (!this.level.isClientSide) {
             if (isBasking()) {
-                if (this.getRevengeTarget() != null || isInLove() || revengeCooldown > 0 || this.isInWaterOrBubbleColumn() || this.getAttackTarget() != null || baskingTimer > 1000 && this.getRNG().nextInt(100) == 0) {
+                if (this.getLastHurtByMob() != null || isInLove() || revengeCooldown > 0 || this.isInWaterOrBubble() || this.getTarget() != null || baskingTimer > 1000 && this.getRandom().nextInt(100) == 0) {
                     this.setBasking(false);
                 }
             } else {
-                if (this.getAttackTarget() == null && !isInLove() && this.getRevengeTarget() == null && revengeCooldown == 0 && !isBasking() && baskingTimer == 0 && this.getRNG().nextInt(15) == 0) {
-                    if (!isInWaterOrBubbleColumn()) {
+                if (this.getTarget() == null && !isInLove() && this.getLastHurtByMob() == null && revengeCooldown == 0 && !isBasking() && baskingTimer == 0 && this.getRandom().nextInt(15) == 0) {
+                    if (!isInWaterOrBubble()) {
                         this.setBasking(true);
                     }
                 }
@@ -218,13 +218,13 @@ public class EntitySeal extends AnimalEntity implements ISemiAquatic, IHerdPanic
             if (revengeCooldown > 0) {
                 revengeCooldown--;
             }
-            if (revengeCooldown == 0 && this.getRevengeTarget() != null) {
-                this.setRevengeTarget(null);
+            if (revengeCooldown == 0 && this.getLastHurtByMob() != null) {
+                this.setLastHurtByMob(null);
             }
             float threshold = 0.05F;
-            if (isInWater() && this.prevRotationYaw - this.rotationYaw > threshold) {
+            if (isInWater() && this.yRotO - this.yRot > threshold) {
                 this.setSwimAngle(this.getSwimAngle() + 2);
-            } else if (isInWater() && this.prevRotationYaw - this.rotationYaw < -threshold) {
+            } else if (isInWater() && this.yRotO - this.yRot < -threshold) {
                 this.setSwimAngle(this.getSwimAngle() - 2);
             } else if (this.getSwimAngle() > 0) {
                 this.setSwimAngle(Math.max(this.getSwimAngle() - 10, 0));
@@ -248,93 +248,93 @@ public class EntitySeal extends AnimalEntity implements ISemiAquatic, IHerdPanic
     }
 
     public boolean isBasking() {
-        return this.dataManager.get(BASKING);
+        return this.entityData.get(BASKING);
     }
 
     public void setBasking(boolean basking) {
-        this.dataManager.set(BASKING, basking);
+        this.entityData.set(BASKING, basking);
     }
 
     public boolean isDigging() {
-        return this.dataManager.get(DIGGING);
+        return this.entityData.get(DIGGING);
     }
 
     public void setDigging(boolean digging) {
-        this.dataManager.set(DIGGING, digging);
+        this.entityData.set(DIGGING, digging);
     }
 
     public boolean isArctic() {
-        return this.dataManager.get(ARCTIC);
+        return this.entityData.get(ARCTIC);
     }
 
     public void setArctic(boolean arctic) {
-        this.dataManager.set(ARCTIC, arctic);
+        this.entityData.set(ARCTIC, arctic);
     }
 
-    public int getMaxAir() {
+    public int getMaxAirSupply() {
         return 4800;
     }
 
-    protected int determineNextAir(int currentAir) {
-        return this.getMaxAir();
+    protected int increaseAirSupply(int currentAir) {
+        return this.getMaxAirSupply();
     }
 
-    public int getVerticalFaceSpeed() {
+    public int getMaxHeadXRot() {
         return 1;
     }
 
-    public int getHorizontalFaceSpeed() {
+    public int getMaxHeadYRot() {
         return 1;
     }
 
     @Nullable
-    public ILivingEntityData onInitialSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason
+    public ILivingEntityData finalizeSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason
             reason, @Nullable ILivingEntityData spawnDataIn, @Nullable CompoundNBT dataTag) {
-        this.setArctic(this.isBiomeArctic(worldIn, this.getPosition()));
-        this.setAir(this.getMaxAir());
-        this.rotationPitch = 0.0F;
-        return super.onInitialSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
+        this.setArctic(this.isBiomeArctic(worldIn, this.blockPosition()));
+        this.setAirSupply(this.getMaxAirSupply());
+        this.xRot = 0.0F;
+        return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
     }
 
-    public void writeAdditional(CompoundNBT compound) {
-        super.writeAdditional(compound);
+    public void addAdditionalSaveData(CompoundNBT compound) {
+        super.addAdditionalSaveData(compound);
         compound.putBoolean("Arctic", this.isArctic());
         compound.putBoolean("Basking", this.isBasking());
         compound.putInt("BaskingTimer", this.baskingTimer);
         compound.putInt("SwimTimer", this.swimTimer);
         compound.putInt("FishFeedings", this.fishFeedings);
         if(feederUUID != null){
-            compound.putUniqueId("FeederUUID", feederUUID);
+            compound.putUUID("FeederUUID", feederUUID);
         }
     }
 
-    public void readAdditional(CompoundNBT compound) {
-        super.readAdditional(compound);
+    public void readAdditionalSaveData(CompoundNBT compound) {
+        super.readAdditionalSaveData(compound);
         this.setArctic(compound.getBoolean("Arctic"));
         this.setBasking(compound.getBoolean("Basking"));
         this.baskingTimer = compound.getInt("BaskingTimer");
         this.swimTimer = compound.getInt("SwimTimer");
         this.fishFeedings = compound.getInt("FishFeedings");
-        if(compound.hasUniqueId("FeederUUID")){
-            this.feederUUID = compound.getUniqueId("FeederUUID");
+        if(compound.hasUUID("FeederUUID")){
+            this.feederUUID = compound.getUUID("FeederUUID");
         }
     }
 
     private boolean isBiomeArctic(IWorld worldIn, BlockPos position) {
-        RegistryKey<Biome> biomeKey = RegistryKey.getOrCreateKey(Registry.BIOME_KEY, worldIn.getBiome(position).getRegistryName());
+        RegistryKey<Biome> biomeKey = RegistryKey.create(Registry.BIOME_REGISTRY, worldIn.getBiome(position).getRegistryName());
         return BiomeDictionary.hasType(biomeKey, BiomeDictionary.Type.COLD);
     }
 
     public void travel(Vector3d travelVector) {
-        if (this.isServerWorld() && this.isInWater()) {
-            this.moveRelative(this.getAIMoveSpeed(), travelVector);
-            this.move(MoverType.SELF, this.getMotion());
-            this.setMotion(this.getMotion().scale(0.9D));
-            if (this.getAttackTarget() == null) {
-                this.setMotion(this.getMotion().add(0.0D, -0.005D, 0.0D));
+        if (this.isEffectiveAi() && this.isInWater()) {
+            this.moveRelative(this.getSpeed(), travelVector);
+            this.move(MoverType.SELF, this.getDeltaMovement());
+            this.setDeltaMovement(this.getDeltaMovement().scale(0.9D));
+            if (this.getTarget() == null) {
+                this.setDeltaMovement(this.getDeltaMovement().add(0.0D, -0.005D, 0.0D));
             }
             if (this.isDigging()) {
-                this.setMotion(this.getMotion().add(0.0D, -0.02D, 0.0D));
+                this.setDeltaMovement(this.getDeltaMovement().add(0.0D, -0.02D, 0.0D));
 
             }
         } else {
@@ -343,15 +343,15 @@ public class EntitySeal extends AnimalEntity implements ISemiAquatic, IHerdPanic
 
     }
 
-    public boolean isBreedingItem(ItemStack stack) {
+    public boolean isFood(ItemStack stack) {
         return stack.getItem() == AMItemRegistry.LOBSTER_TAIL;
     }
 
     @Nullable
     @Override
-    public AgeableEntity createChild(ServerWorld serverWorld, AgeableEntity ageableEntity) {
+    public AgeableEntity getBreedOffspring(ServerWorld serverWorld, AgeableEntity ageableEntity) {
         EntitySeal seal = AMEntityRegistry.SEAL.create(serverWorld);
-        seal.setArctic(this.isBiomeArctic(serverWorld, this.getPosition()));
+        seal.setArctic(this.isBiomeArctic(serverWorld, this.blockPosition()));
         return seal;
     }
 
@@ -365,7 +365,7 @@ public class EntitySeal extends AnimalEntity implements ISemiAquatic, IHerdPanic
         if (!this.getPassengers().isEmpty()) {
             return false;
         }
-        if (this.getAttackTarget() != null && !this.getAttackTarget().isInWater()) {
+        if (this.getTarget() != null && !this.getTarget().isInWater()) {
             return true;
         }
         return swimTimer > 600;
@@ -383,16 +383,16 @@ public class EntitySeal extends AnimalEntity implements ISemiAquatic, IHerdPanic
 
     @Override
     public boolean canTargetItem(ItemStack stack) {
-        return ItemTags.getCollection().get(AMTagRegistry.SEAL_FOODSTUFFS).contains(stack.getItem());
+        return ItemTags.getAllTags().getTag(AMTagRegistry.SEAL_FOODSTUFFS).contains(stack.getItem());
     }
 
     @Override
     public void onGetItem(ItemEntity e) {
-        if (ItemTags.getCollection().get(AMTagRegistry.SEAL_FOODSTUFFS).contains(e.getItem().getItem())) {
+        if (ItemTags.getAllTags().getTag(AMTagRegistry.SEAL_FOODSTUFFS).contains(e.getItem().getItem())) {
             fishFeedings++;
-            this.playSound(SoundEvents.ENTITY_CAT_EAT, this.getSoundVolume(), this.getSoundPitch());
+            this.playSound(SoundEvents.CAT_EAT, this.getSoundVolume(), this.getVoicePitch());
             if (fishFeedings >= 3) {
-                feederUUID = e.getThrowerId();
+                feederUUID = e.getThrower();
                 fishFeedings = 0;
             }
         } else {

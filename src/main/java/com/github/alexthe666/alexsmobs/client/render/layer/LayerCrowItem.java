@@ -19,27 +19,27 @@ public class LayerCrowItem extends LayerRenderer<EntityCrow, ModelCrow> {
     }
 
     public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityCrow entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
-        ItemStack itemstack = entitylivingbaseIn.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
-        matrixStackIn.push();
-        if(entitylivingbaseIn.isChild()){
+        ItemStack itemstack = entitylivingbaseIn.getItemBySlot(EquipmentSlotType.MAINHAND);
+        matrixStackIn.pushPose();
+        if(entitylivingbaseIn.isBaby()){
             matrixStackIn.scale(0.5F, 0.5F, 0.5F);
             matrixStackIn.translate(0.0D, 1.5D, 0D);
         }
-        matrixStackIn.push();
+        matrixStackIn.pushPose();
         translateToHand(matrixStackIn);
         matrixStackIn.translate(0, -0.09F, -0.125F);
-        matrixStackIn.rotate(Vector3f.YP.rotationDegrees(-2.5F));
-        matrixStackIn.rotate(Vector3f.XP.rotationDegrees(-90F));
+        matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(-2.5F));
+        matrixStackIn.mulPose(Vector3f.XP.rotationDegrees(-90F));
         matrixStackIn.scale(0.75F, 0.75F, 0.75F);
-        Minecraft.getInstance().getFirstPersonRenderer().renderItemSide(entitylivingbaseIn, itemstack, ItemCameraTransforms.TransformType.GROUND, false, matrixStackIn, bufferIn, packedLightIn);
-        matrixStackIn.pop();
-        matrixStackIn.pop();
+        Minecraft.getInstance().getItemInHandRenderer().renderItem(entitylivingbaseIn, itemstack, ItemCameraTransforms.TransformType.GROUND, false, matrixStackIn, bufferIn, packedLightIn);
+        matrixStackIn.popPose();
+        matrixStackIn.popPose();
     }
 
     protected void translateToHand(MatrixStack matrixStack) {
-        this.getEntityModel().root.translateRotate(matrixStack);
-        this.getEntityModel().body.translateRotate(matrixStack);
-        this.getEntityModel().head.translateRotate(matrixStack);
+        this.getParentModel().root.translateAndRotate(matrixStack);
+        this.getParentModel().body.translateAndRotate(matrixStack);
+        this.getParentModel().head.translateAndRotate(matrixStack);
 
     }
 }

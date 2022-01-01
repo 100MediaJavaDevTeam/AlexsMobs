@@ -17,23 +17,23 @@ public class AnimalAISwimBottom extends RandomWalkingGoal {
 
     @Nullable
     protected Vector3d getPosition() {
-        Vector3d vec = RandomPositionGenerator.findRandomTarget(this.creature, 10, 7);
+        Vector3d vec = RandomPositionGenerator.getPos(this.mob, 10, 7);
 
-        for(int var2 = 0; vec != null && !this.creature.world.getBlockState(new BlockPos(vec)).allowsMovement(this.creature.world, new BlockPos(vec), PathType.WATER) && var2++ < 10; vec = RandomPositionGenerator.findRandomTarget(this.creature, 10, 7)) {
+        for(int var2 = 0; vec != null && !this.mob.level.getBlockState(new BlockPos(vec)).isPathfindable(this.mob.level, new BlockPos(vec), PathType.WATER) && var2++ < 10; vec = RandomPositionGenerator.getPos(this.mob, 10, 7)) {
         }
-        int yDrop = 1 + this.creature.getRNG().nextInt(3);
+        int yDrop = 1 + this.mob.getRandom().nextInt(3);
         if(vec != null){
             BlockPos pos = new BlockPos(vec);
-            while(this.creature.world.getFluidState(pos).isTagged(FluidTags.WATER) && this.creature.world.getBlockState(pos).allowsMovement(this.creature.world, new BlockPos(vec), PathType.WATER) && pos.getY() > 1){
-                pos = pos.down();
+            while(this.mob.level.getFluidState(pos).is(FluidTags.WATER) && this.mob.level.getBlockState(pos).isPathfindable(this.mob.level, new BlockPos(vec), PathType.WATER) && pos.getY() > 1){
+                pos = pos.below();
             }
-            pos = pos.up();
+            pos = pos.above();
             int yUp = 0;
-            while(this.creature.world.getFluidState(pos).isTagged(FluidTags.WATER) && this.creature.world.getBlockState(pos).allowsMovement(this.creature.world, new BlockPos(vec), PathType.WATER) && yUp < yDrop){
-                pos = pos.up();
+            while(this.mob.level.getFluidState(pos).is(FluidTags.WATER) && this.mob.level.getBlockState(pos).isPathfindable(this.mob.level, new BlockPos(vec), PathType.WATER) && yUp < yDrop){
+                pos = pos.above();
                 yUp++;
             }
-            return Vector3d.copyCentered(pos);
+            return Vector3d.atCenterOf(pos);
         }
 
         return vec;

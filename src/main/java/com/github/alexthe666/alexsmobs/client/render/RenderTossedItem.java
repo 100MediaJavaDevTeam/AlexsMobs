@@ -28,34 +28,34 @@ public class RenderTossedItem  extends EntityRenderer<EntityTossedItem> {
     }
 
     @Override
-    public ResourceLocation getEntityTexture(EntityTossedItem entity) {
-        return AtlasTexture.LOCATION_BLOCKS_TEXTURE;
+    public ResourceLocation getTextureLocation(EntityTossedItem entity) {
+        return AtlasTexture.LOCATION_BLOCKS;
     }
 
     @Override
     public void render(EntityTossedItem entityIn, float entityYaw, float partialTicks, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn) {
-        matrixStackIn.push();
+        matrixStackIn.pushPose();
         if(entityIn.isDart()){
             matrixStackIn.translate(0.0D, (double)-0.15F, 0.0D);
-            matrixStackIn.rotate(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.prevRotationYaw, entityIn.rotationYaw) - 180F));
-            matrixStackIn.push();
-            matrixStackIn.rotate(Vector3f.XP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.prevRotationPitch, entityIn.rotationPitch)));
+            matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.yRotO, entityIn.yRot) - 180F));
+            matrixStackIn.pushPose();
+            matrixStackIn.mulPose(Vector3f.XP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.xRotO, entityIn.xRot)));
             matrixStackIn.translate(0, 0.5F, 0);
             matrixStackIn.scale(1F, 1F, 1F);
-            IVertexBuilder ivertexbuilder = bufferIn.getBuffer(DART_MODEL.getRenderType(DART_TEXTURE));
-            DART_MODEL.render(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
-            matrixStackIn.pop();
+            IVertexBuilder ivertexbuilder = bufferIn.getBuffer(DART_MODEL.renderType(DART_TEXTURE));
+            DART_MODEL.renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
+            matrixStackIn.popPose();
         }else{
-            matrixStackIn.rotate(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.prevRotationYaw, entityIn.rotationYaw) - 90.0F));
-            matrixStackIn.rotate(Vector3f.ZP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.prevRotationPitch, entityIn.rotationPitch)));
+            matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.yRotO, entityIn.yRot) - 90.0F));
+            matrixStackIn.mulPose(Vector3f.ZP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.xRotO, entityIn.xRot)));
             matrixStackIn.translate(0, 0.5F, 0);
             matrixStackIn.scale(1F, 1F, 1F);
-            matrixStackIn.rotate(new Quaternion(Vector3f.YP, 0F, true));
-            matrixStackIn.rotate(new Quaternion(Vector3f.ZN, (entityIn.ticksExisted + partialTicks) * 30F, true));
+            matrixStackIn.mulPose(new Quaternion(Vector3f.YP, 0F, true));
+            matrixStackIn.mulPose(new Quaternion(Vector3f.ZN, (entityIn.tickCount + partialTicks) * 30F, true));
             matrixStackIn.translate(0, -0.15F, 0);
-            Minecraft.getInstance().getItemRenderer().renderItem(entityIn.getItem(), ItemCameraTransforms.TransformType.GROUND, packedLightIn, OverlayTexture.NO_OVERLAY, matrixStackIn, bufferIn);
+            Minecraft.getInstance().getItemRenderer().renderStatic(entityIn.getItem(), ItemCameraTransforms.TransformType.GROUND, packedLightIn, OverlayTexture.NO_OVERLAY, matrixStackIn, bufferIn);
         }
-        matrixStackIn.pop();
+        matrixStackIn.popPose();
     }
 
 }

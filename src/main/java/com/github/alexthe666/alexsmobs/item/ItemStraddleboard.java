@@ -24,14 +24,14 @@ import java.util.function.Predicate;
 
 public class ItemStraddleboard extends Item implements IDyeableArmorItem {
 
-    private static final Predicate<Entity> field_219989_a = EntityPredicates.NOT_SPECTATING.and(Entity::canBeCollidedWith);
+    private static final Predicate<Entity> ENTITY_PREDICATE = EntityPredicates.NO_SPECTATORS.and(Entity::isPickable);
 
     public ItemStraddleboard(Item.Properties properties) {
         super(properties);
     }
 
     public int getColor(ItemStack p_200886_1_) {
-        CompoundNBT lvt_2_1_ = p_200886_1_.getChildTag("display");
+        CompoundNBT lvt_2_1_ = p_200886_1_.getTagElement("display");
         return lvt_2_1_ != null && lvt_2_1_.contains("color", 99) ? lvt_2_1_.getInt("color") : 0XADC3D7;
     }
 
@@ -39,51 +39,51 @@ public class ItemStraddleboard extends Item implements IDyeableArmorItem {
         return super.canApplyAtEnchantingTable(stack, enchantment) && enchantment != Enchantments.UNBREAKING && enchantment != Enchantments.MENDING;
     }
 
-    public int getItemEnchantability() {
+    public int getEnchantmentValue() {
         return 1;
     }
 
-    public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn) {
-        ItemStack itemstack = playerIn.getHeldItem(handIn);
-        RayTraceResult raytraceresult = rayTrace(worldIn, playerIn, RayTraceContext.FluidMode.ANY);
+    public ActionResult<ItemStack> use(World worldIn, PlayerEntity playerIn, Hand handIn) {
+        ItemStack itemstack = playerIn.getItemInHand(handIn);
+        RayTraceResult raytraceresult = getPlayerPOVHitResult(worldIn, playerIn, RayTraceContext.FluidMode.ANY);
         if (raytraceresult.getType() == RayTraceResult.Type.MISS) {
-            return ActionResult.resultPass(itemstack);
+            return ActionResult.pass(itemstack);
         } else {
-            Vector3d vector3d = playerIn.getLook(1.0F);
+            Vector3d vector3d = playerIn.getViewVector(1.0F);
             double d0 = 5.0D;
-            List<Entity> list = worldIn.getEntitiesInAABBexcluding(playerIn, playerIn.getBoundingBox().expand(vector3d.scale(5.0D)).grow(1.0D), field_219989_a);
+            List<Entity> list = worldIn.getEntities(playerIn, playerIn.getBoundingBox().expandTowards(vector3d.scale(5.0D)).inflate(1.0D), ENTITY_PREDICATE);
             if (!list.isEmpty()) {
                 Vector3d vector3d1 = playerIn.getEyePosition(1.0F);
 
                 for (Entity entity : list) {
-                    AxisAlignedBB axisalignedbb = entity.getBoundingBox().grow(entity.getCollisionBorderSize());
+                    AxisAlignedBB axisalignedbb = entity.getBoundingBox().inflate(entity.getPickRadius());
                     if (axisalignedbb.contains(vector3d1)) {
-                        return ActionResult.resultPass(itemstack);
+                        return ActionResult.pass(itemstack);
                     }
                 }
             }
 
             if (raytraceresult.getType() == RayTraceResult.Type.BLOCK) {
-                EntityStraddleboard boatentity = new EntityStraddleboard(worldIn, raytraceresult.getHitVec().x, raytraceresult.getHitVec().y, raytraceresult.getHitVec().z);
-                boatentity.setDefaultColor(!this.hasColor(itemstack));
+                EntityStraddleboard boatentity = new EntityStraddleboard(worldIn, raytraceresult.getLocation().x, raytraceresult.getLocation().y, raytraceresult.getLocation().z);
+                boatentity.setDefaultColor(!this.hasCustomColor(itemstack));
                 boatentity.setItemStack(itemstack.copy());
                 boatentity.setColor(this.getColor(itemstack));
-                boatentity.rotationYaw = playerIn.rotationYaw;
-                if (!worldIn.hasNoCollisions(boatentity, boatentity.getBoundingBox().grow(-0.1D))) {
-                    return ActionResult.resultFail(itemstack);
+                boatentity.yRot = playerIn.yRot;
+                if (!worldIn.noCollision(boatentity, boatentity.getBoundingBox().inflate(-0.1D))) {
+                    return ActionResult.fail(itemstack);
                 } else {
-                    if (!worldIn.isRemote) {
-                        worldIn.addEntity(boatentity);
-                        if (!playerIn.abilities.isCreativeMode) {
+                    if (!worldIn.isClientSide) {
+                        worldIn.addFreshEntity(boatentity);
+                        if (!playerIn.abilities.instabuild) {
                             itemstack.shrink(1);
                         }
                     }
 
-                    playerIn.addStat(Stats.ITEM_USED.get(this));
-                    return ActionResult.func_233538_a_(itemstack, worldIn.isRemote());
+                    playerIn.awardStat(Stats.ITEM_USED.get(this));
+                    return ActionResult.sidedSuccess(itemstack, worldIn.isClientSide());
                 }
             } else {
-                return ActionResult.resultPass(itemstack);
+                return ActionResult.pass(itemstack);
             }
         }
     }

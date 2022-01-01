@@ -17,29 +17,29 @@ public class EffectEnderFlu extends Effect {
         this.setRegistryName(AlexsMobs.MODID, "ender_flu");
     }
 
-    public void performEffect(LivingEntity entity, int amplifier) {
+    public void applyEffectTick(LivingEntity entity, int amplifier) {
         if (lastDuration == 1) {
             int phages = amplifier + 1;
-            entity.attackEntityFrom(DamageSource.MAGIC, phages * 10);
+            entity.hurt(DamageSource.MAGIC, phages * 10);
             for (int i = 0; i < phages; i++) {
-                EntityEnderiophage phage = AMEntityRegistry.ENDERIOPHAGE.create(entity.world);
-                phage.copyLocationAndAnglesFrom(entity);
+                EntityEnderiophage phage = AMEntityRegistry.ENDERIOPHAGE.create(entity.level);
+                phage.copyPosition(entity);
                 phage.onSpawnFromEffect();
                 phage.setSkinForDimension();
-                if (!entity.world.isRemote) {
+                if (!entity.level.isClientSide) {
                     phage.setStandardFleeTime();
-                    entity.world.addEntity(phage);
+                    entity.level.addFreshEntity(phage);
                 }
             }
         }
     }
 
-    public boolean isReady(int duration, int amplifier) {
+    public boolean isDurationEffectTick(int duration, int amplifier) {
         lastDuration = duration;
         return duration > 0;
     }
 
-    public String getName() {
+    public String getDescriptionId() {
         return "alexsmobs.potion.ender_flu";
     }
 

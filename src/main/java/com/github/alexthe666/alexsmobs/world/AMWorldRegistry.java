@@ -30,7 +30,7 @@ public class AMWorldRegistry {
 
     @SubscribeEvent
     public static void registerFeature(final RegistryEvent.Register<Feature<?>> event) {
-         Registry.register(WorldGenRegistries.CONFIGURED_FEATURE, "alexsmobs:leafcutter_hill", LEAFCUTTER_ANTHILL_CF = LEAFCUTTER_ANTHILL.withConfiguration(IFeatureConfig.NO_FEATURE_CONFIG));
+         Registry.register(WorldGenRegistries.CONFIGURED_FEATURE, "alexsmobs:leafcutter_hill", LEAFCUTTER_ANTHILL_CF = LEAFCUTTER_ANTHILL.configured(IFeatureConfig.NONE));
         event.getRegistry().register(LEAFCUTTER_ANTHILL.setRegistryName("alexsmobs:leafcutter_hill"));
     }
 
@@ -170,7 +170,7 @@ public class AMWorldRegistry {
             event.getSpawns().getSpawner(EntityClassification.WATER_CREATURE).add(new MobSpawnInfo.Spawners(AMEntityRegistry.CACHALOT_WHALE, AMConfig.cachalotWhaleSpawnWeight, 1, 2));
         }
         if(testBiome(BiomeConfig.leafcutter_anthill_spawns, biome) && AMConfig.leafcutterAnthillSpawnChance > 0){
-            event.getGeneration().withFeature(GenerationStage.Decoration.SURFACE_STRUCTURES, LEAFCUTTER_ANTHILL_CF);
+            event.getGeneration().addFeature(GenerationStage.Decoration.SURFACE_STRUCTURES, LEAFCUTTER_ANTHILL_CF);
         }
         if (testBiome(BiomeConfig.enderiophage_spawns, biome) && AMConfig.enderiophageSpawnWeight > 0) {
             event.getSpawns().getSpawner(EntityClassification.CREATURE).add(new MobSpawnInfo.Spawners(AMEntityRegistry.ENDERIOPHAGE, AMConfig.enderiophageSpawnWeight, 2, 2));

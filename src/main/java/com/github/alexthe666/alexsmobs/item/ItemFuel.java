@@ -3,6 +3,8 @@ package com.github.alexthe666.alexsmobs.item;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
+import net.minecraft.item.Item.Properties;
+
 public class ItemFuel extends Item {
 
     private int burnTime;

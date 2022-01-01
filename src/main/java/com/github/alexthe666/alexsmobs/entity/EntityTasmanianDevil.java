@@ -42,8 +42,8 @@ public class EntityTasmanianDevil extends AnimalEntity implements IAnimatedEntit
     private Animation currentAnimation;
     public static final Animation ANIMATION_HOWL = Animation.create(40);
     public static final Animation ANIMATION_ATTACK = Animation.create(8);
-    private static final DataParameter<Boolean> BASKING = EntityDataManager.createKey(EntityTasmanianDevil.class, DataSerializers.BOOLEAN);
-    private static final DataParameter<Boolean> SITTING = EntityDataManager.createKey(EntityTasmanianDevil.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> BASKING = EntityDataManager.defineId(EntityTasmanianDevil.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Boolean> SITTING = EntityDataManager.defineId(EntityTasmanianDevil.class, DataSerializers.BOOLEAN);
     public float prevBaskProgress;
     public float prevSitProgress;
     public float baskProgress;
@@ -77,7 +77,7 @@ public class EntityTasmanianDevil extends AnimalEntity implements IAnimatedEntit
         super.registerGoals();
         this.goalSelector.addGoal(0, new SwimGoal(this));
         this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.5D, true));
-        this.goalSelector.addGoal(2, new TemptGoal(this, 1.1D, Ingredient.fromItems(Items.ROTTEN_FLESH), false){
+        this.goalSelector.addGoal(2, new TemptGoal(this, 1.1D, Ingredient.of(Items.ROTTEN_FLESH), false){
             public void tick(){
                 super.tick();
                 if(EntityTasmanianDevil.this.getAnimation() == NO_ANIMATION){
@@ -90,24 +90,24 @@ public class EntityTasmanianDevil extends AnimalEntity implements IAnimatedEntit
         this.goalSelector.addGoal(4, new BreedGoal(this, 1.0D));
         this.goalSelector.addGoal(5, new LookAtGoal(this, PlayerEntity.class, 6.0F));
         this.goalSelector.addGoal(6, new LookRandomlyGoal(this));
-        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, EntityTasmanianDevil.class)).setCallsForHelp());
+        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, EntityTasmanianDevil.class)).setAlertOthers());
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, AnimalEntity.class, 120, false, false, (p_213487_0_) -> {
             return p_213487_0_ instanceof ChickenEntity || p_213487_0_ instanceof RabbitEntity;
         }));
         this.targetSelector.addGoal(3, new CreatureAITargetItems(this, false, 30));
     }
 
-    public void func_241847_a(ServerWorld world, LivingEntity entity) {
-        if(this.getRNG().nextBoolean() && (entity instanceof AnimalEntity || entity.getCreatureAttribute() == CreatureAttribute.UNDEAD)){
-            entity.entityDropItem(new ItemStack(Items.BONE));
+    public void killed(ServerWorld world, LivingEntity entity) {
+        if(this.getRandom().nextBoolean() && (entity instanceof AnimalEntity || entity.getMobType() == CreatureAttribute.UNDEAD)){
+            entity.spawnAtLocation(new ItemStack(Items.BONE));
         }
     }
 
 
     public void travel(Vector3d vec3d) {
         if (!this.shouldMove()) {
-            if (this.getNavigator().getPath() != null) {
-                this.getNavigator().clearPath();
+            if (this.getNavigation().getPath() != null) {
+                this.getNavigation().stop();
             }
             vec3d = Vector3d.ZERO;
         }
@@ -116,36 +116,36 @@ public class EntityTasmanianDevil extends AnimalEntity implements IAnimatedEntit
 
 
     public void setSitting(boolean sit) {
-        this.dataManager.set(SITTING, Boolean.valueOf(sit));
+        this.entityData.set(SITTING, Boolean.valueOf(sit));
     }
 
     public boolean isSitting() {
-        return this.dataManager.get(SITTING).booleanValue();
+        return this.entityData.get(SITTING).booleanValue();
     }
 
     @Override
-    protected void registerData() {
-        super.registerData();
-        this.dataManager.register(BASKING, Boolean.valueOf(false));
-        this.dataManager.register(SITTING, Boolean.valueOf(false));
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(BASKING, Boolean.valueOf(false));
+        this.entityData.define(SITTING, Boolean.valueOf(false));
     }
 
 
     public boolean isBasking() {
-        return this.dataManager.get(BASKING).booleanValue();
+        return this.entityData.get(BASKING).booleanValue();
     }
 
     public void setBasking(boolean basking) {
-        this.dataManager.set(BASKING, Boolean.valueOf(basking));
+        this.entityData.set(BASKING, Boolean.valueOf(basking));
     }
 
 
     public static AttributeModifierMap.MutableAttribute bakeAttributes() {
-        return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MAX_HEALTH, 14.0D).createMutableAttribute(Attributes.FOLLOW_RANGE, 32.0D).createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.3F).createMutableAttribute(Attributes.ATTACK_DAMAGE, 2F);
+        return MonsterEntity.createMonsterAttributes().add(Attributes.MAX_HEALTH, 14.0D).add(Attributes.FOLLOW_RANGE, 32.0D).add(Attributes.MOVEMENT_SPEED, 0.3F).add(Attributes.ATTACK_DAMAGE, 2F);
     }
 
-    public boolean isBreedingItem(ItemStack stack) {
-        return stack.getItem().isFood() && stack.getItem().getFood() != null && stack.getItem().getFood().isMeat() && stack.getItem() != Items.ROTTEN_FLESH;
+    public boolean isFood(ItemStack stack) {
+        return stack.getItem().isEdible() && stack.getItem().getFoodProperties() != null && stack.getItem().getFoodProperties().isMeat() && stack.getItem() != Items.ROTTEN_FLESH;
     }
 
     public void tick(){
@@ -164,22 +164,22 @@ public class EntityTasmanianDevil extends AnimalEntity implements IAnimatedEntit
         if (!this.isBasking() && baskProgress > 0) {
             baskProgress -= 1;
         }
-        if (!world.isRemote && this.getAttackTarget() != null && this.getAnimation() == ANIMATION_ATTACK && this.getAnimationTick() == 5 && this.canEntityBeSeen(this.getAttackTarget())) {
-            float f1 = this.rotationYaw * ((float) Math.PI / 180F);
-            this.setMotion(this.getMotion().add(-MathHelper.sin(f1) * 0.02F, 0.0D, MathHelper.cos(f1) * 0.02F));
-            getAttackTarget().applyKnockback(1F, getAttackTarget().getPosX() - this.getPosX(), getAttackTarget().getPosZ() - this.getPosZ());
-            this.getAttackTarget().attackEntityFrom(DamageSource.causeMobDamage(this), (float) this.getAttribute(Attributes.ATTACK_DAMAGE).getBaseValue());
+        if (!level.isClientSide && this.getTarget() != null && this.getAnimation() == ANIMATION_ATTACK && this.getAnimationTick() == 5 && this.canSee(this.getTarget())) {
+            float f1 = this.yRot * ((float) Math.PI / 180F);
+            this.setDeltaMovement(this.getDeltaMovement().add(-MathHelper.sin(f1) * 0.02F, 0.0D, MathHelper.cos(f1) * 0.02F));
+            getTarget().knockback(1F, getTarget().getX() - this.getX(), getTarget().getZ() - this.getZ());
+            this.getTarget().hurt(DamageSource.mobAttack(this), (float) this.getAttribute(Attributes.ATTACK_DAMAGE).getBaseValue());
         }
-        if (!world.isRemote && (isSitting() || isBasking()) && ++sittingTime > maxSitTime) {
+        if (!level.isClientSide && (isSitting() || isBasking()) && ++sittingTime > maxSitTime) {
             this.setSitting(false);
             this.setBasking(false);
             sittingTime = 0;
-            maxSitTime = 75 + rand.nextInt(50);
+            maxSitTime = 75 + random.nextInt(50);
         }
-        if (!world.isRemote && this.getMotion().lengthSquared() < 0.03D && this.getAnimation() == NO_ANIMATION && !this.isBasking() && !this.isSitting() && rand.nextInt(100) == 0) {
+        if (!level.isClientSide && this.getDeltaMovement().lengthSqr() < 0.03D && this.getAnimation() == NO_ANIMATION && !this.isBasking() && !this.isSitting() && random.nextInt(100) == 0) {
             sittingTime = 0;
-            maxSitTime = 100 + rand.nextInt(550);
-            if(this.getRNG().nextBoolean()){
+            maxSitTime = 100 + random.nextInt(550);
+            if(this.getRandom().nextBoolean()){
                 this.setSitting(true);
                 this.setBasking(false);
             }else{
@@ -188,44 +188,44 @@ public class EntityTasmanianDevil extends AnimalEntity implements IAnimatedEntit
             }
         }
         if(this.getAnimation() == ANIMATION_HOWL && this.getAnimationTick() == 1){
-            this.playSound(AMSoundRegistry.TASMANIAN_DEVIL_ROAR, this.getSoundVolume() * 2F, this.getSoundPitch());
+            this.playSound(AMSoundRegistry.TASMANIAN_DEVIL_ROAR, this.getSoundVolume() * 2F, this.getVoicePitch());
         }
         if(this.getAnimation() == ANIMATION_HOWL && this.getAnimationTick() > 3){
             scareMobsTime = 40;
 
         }
         if(scareMobsTime > 0) {
-            List<MonsterEntity> list = this.world.getEntitiesWithinAABB(MonsterEntity.class, this.getBoundingBox().grow(16, 8, 16));
+            List<MonsterEntity> list = this.level.getEntitiesOfClass(MonsterEntity.class, this.getBoundingBox().inflate(16, 8, 16));
             for (MonsterEntity e : list) {
-                e.setAttackTarget(null);
-                e.setRevengeTarget(null);
+                e.setTarget(null);
+                e.setLastHurtByMob(null);
                 if(scareMobsTime % 5 == 0){
-                    Vector3d vec = RandomPositionGenerator.findRandomTargetBlockAwayFrom(e, 20, 7, this.getPositionVec());
+                    Vector3d vec = RandomPositionGenerator.getPosAvoid(e, 20, 7, this.position());
                     if(vec != null){
-                        e.getNavigator().tryMoveToXYZ(vec.x, vec.y, vec.z, 1.5D);
+                        e.getNavigation().moveTo(vec.x, vec.y, vec.z, 1.5D);
                     }
                 }
 
             }
             scareMobsTime--;
         }
-        if(this.getAttackTarget() != null && this.getAttackTarget().isAlive() && (this.getRevengeTarget() == null || !this.getRevengeTarget().isAlive()) ){
-            this.setRevengeTarget(this.getAttackTarget());
+        if(this.getTarget() != null && this.getTarget().isAlive() && (this.getLastHurtByMob() == null || !this.getLastHurtByMob().isAlive()) ){
+            this.setLastHurtByMob(this.getTarget());
         }
-        if((this.isSitting() || this.isBasking()) && (this.getAttackTarget() != null || this.isInLove())) {
+        if((this.isSitting() || this.isBasking()) && (this.getTarget() != null || this.isInLove())) {
             this.setSitting(false);
             this.setBasking(false);
         }
         AnimationHandler.INSTANCE.updateAnimations(this);
     }
 
-    public ActionResultType getEntityInteractionResult(PlayerEntity player, Hand hand) {
-        ItemStack itemstack = player.getHeldItem(hand);
+    public ActionResultType mobInteract(PlayerEntity player, Hand hand) {
+        ItemStack itemstack = player.getItemInHand(hand);
         Item item = itemstack.getItem();
-        ActionResultType type = super.getEntityInteractionResult(player, hand);
+        ActionResultType type = super.mobInteract(player, hand);
         if (item == Items.ROTTEN_FLESH && this.getAnimation() != ANIMATION_HOWL) {
-            this.playSound(SoundEvents.ENTITY_FOX_EAT, this.getSoundVolume(), this.getSoundPitch());
-            this.entityDropItem(item.getContainerItem(itemstack));
+            this.playSound(SoundEvents.FOX_EAT, this.getSoundVolume(), this.getVoicePitch());
+            this.spawnAtLocation(item.getContainerItem(itemstack));
             if (!player.isCreative()) {
                 itemstack.shrink(1);
             }
@@ -235,7 +235,7 @@ public class EntityTasmanianDevil extends AnimalEntity implements IAnimatedEntit
         return type;
     }
 
-    public boolean attackEntityAsMob(Entity entityIn) {
+    public boolean doHurtTarget(Entity entityIn) {
         if (this.getAnimation() == NO_ANIMATION) {
             this.setAnimation(ANIMATION_ATTACK);
         }
@@ -275,30 +275,30 @@ public class EntityTasmanianDevil extends AnimalEntity implements IAnimatedEntit
 
     @Nullable
     @Override
-    public AgeableEntity createChild(ServerWorld serverWorld, AgeableEntity ageableEntity) {
+    public AgeableEntity getBreedOffspring(ServerWorld serverWorld, AgeableEntity ageableEntity) {
         return AMEntityRegistry.TASMANIAN_DEVIL.create(serverWorld);
     }
 
     @Override
     public boolean canTargetItem(ItemStack stack) {
-        return stack.getItem().isFood() && stack.getItem().getFood() != null && stack.getItem().getFood().isMeat() || stack.getItem() == Items.BONE;
+        return stack.getItem().isEdible() && stack.getItem().getFoodProperties() != null && stack.getItem().getFoodProperties().isMeat() || stack.getItem() == Items.BONE;
     }
 
     @Override
     public void onGetItem(ItemEntity e) {
         if(e.getItem().getItem() == Items.BONE){
             dropBonemeal();
-            this.playSound(SoundEvents.ENTITY_SKELETON_STEP, this.getSoundVolume(), this.getSoundPitch());
+            this.playSound(SoundEvents.SKELETON_STEP, this.getSoundVolume(), this.getVoicePitch());
         }else{
-            this.playSound(SoundEvents.ENTITY_FOX_EAT, this.getSoundVolume(), this.getSoundPitch());
+            this.playSound(SoundEvents.FOX_EAT, this.getSoundVolume(), this.getVoicePitch());
             this.heal(5);
         }
     }
 
     public void dropBonemeal(){
         ItemStack stack = new ItemStack(Items.BONE_MEAL);
-        for(int i = 0; i < 3 + rand.nextInt(1); i++){
-            this.entityDropItem(stack);
+        for(int i = 0; i < 3 + random.nextInt(1); i++){
+            this.spawnAtLocation(stack);
         }
     }
 }

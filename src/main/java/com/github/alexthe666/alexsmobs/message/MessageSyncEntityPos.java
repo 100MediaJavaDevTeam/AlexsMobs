@@ -51,11 +51,11 @@ public class MessageSyncEntityPos {
                     player = AlexsMobs.PROXY.getClientSidePlayer();
                 }
                 if (player != null) {
-                    if (player.world != null) {
-                        Entity entity = player.world.getEntityByID(message.eagleId);
+                    if (player.level != null) {
+                        Entity entity = player.level.getEntity(message.eagleId);
                         if (entity instanceof EntityBaldEagle || entity instanceof EntityStraddleboard) {
-                            entity.setPosition(message.posX, message.posY, message.posZ);
-                            entity.teleportKeepLoaded(message.posX, message.posY, message.posZ);
+                            entity.setPos(message.posX, message.posY, message.posZ);
+                            entity.teleportToWithTicket(message.posX, message.posY, message.posZ);
                         }
                     }
                 }

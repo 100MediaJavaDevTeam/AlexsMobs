@@ -21,8 +21,8 @@ public class EntityAINearestTarget3D<T extends LivingEntity> extends NearestAtta
         super(goalOwnerIn, targetClassIn, targetChanceIn, checkSight, nearbyOnlyIn, targetPredicate);
     }
 
-    protected AxisAlignedBB getTargetableArea(double targetDistance) {
-        return this.goalOwner.getBoundingBox().grow(targetDistance, targetDistance, targetDistance);
+    protected AxisAlignedBB getTargetSearchArea(double targetDistance) {
+        return this.mob.getBoundingBox().inflate(targetDistance, targetDistance, targetDistance);
     }
 
 }

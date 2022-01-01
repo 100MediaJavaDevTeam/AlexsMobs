@@ -26,15 +26,15 @@ public class BlossomLootModifier extends LootModifier {
     @Override
     public List<ItemStack> doApply(List<ItemStack> generatedLoot, LootContext context) {
         if (AMConfig.acaciaBlossomsDropFromLeaves){
-            ItemStack ctxTool = context.get(LootParameters.TOOL);
+            ItemStack ctxTool = context.getParamOrNull(LootParameters.TOOL);
             Random random = context.getRandom();
             if(ctxTool != null){
-                int silkTouch = EnchantmentHelper.getEnchantmentLevel(Enchantments.SILK_TOUCH, ctxTool);
+                int silkTouch = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, ctxTool);
                 if(silkTouch > 0 || ctxTool.getItem() instanceof ShearsItem){
                     return generatedLoot;
                 }
             }
-            int bonusLevel = ctxTool != null ? EnchantmentHelper.getEnchantmentLevel(Enchantments.FORTUNE, ctxTool) : 0;
+            int bonusLevel = ctxTool != null ? EnchantmentHelper.getItemEnchantmentLevel(Enchantments.BLOCK_FORTUNE, ctxTool) : 0;
             int bananaStep = (int)Math.min(AMConfig.blossomChance * 0.1F, 0);
             int bananaRarity = AMConfig.blossomChance - (bonusLevel * bananaStep);
             if (bananaRarity < 1 || random.nextInt(bananaRarity) == 0) {

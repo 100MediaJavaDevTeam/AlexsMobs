@@ -63,15 +63,15 @@ public class TileEntityCapsid extends LockableTileEntity implements ITickableTil
         prevYawSwitchProgress = yawSwitchProgress;
         ticksExisted++;
         vibrating = false;
-        if (!this.getStackInSlot(0).isEmpty()) {
-            TileEntity up = world.getTileEntity(this.pos.up());
+        if (!this.getItem(0).isEmpty()) {
+            TileEntity up = level.getBlockEntity(this.worldPosition.above());
             if (up instanceof IInventory) {
                 if (floatUpProgress >= 1) {
-                    LazyOptional<IItemHandler> handler = world.getTileEntity(this.pos.up()).getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, Direction.UP);
+                    LazyOptional<IItemHandler> handler = level.getBlockEntity(this.worldPosition.above()).getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, Direction.UP);
                     if (handler.orElse(null) != null) {
-                        if (ItemHandlerHelper.insertItem(handler.orElse(null), this.getStackInSlot(0), true).isEmpty()) {
-                            ItemHandlerHelper.insertItem(handler.orElse(null), this.getStackInSlot(0).copy(), false);
-                            this.setInventorySlotContents(0, ItemStack.EMPTY);
+                        if (ItemHandlerHelper.insertItem(handler.orElse(null), this.getItem(0), true).isEmpty()) {
+                            ItemHandlerHelper.insertItem(handler.orElse(null), this.getItem(0).copy(), false);
+                            this.setItem(0, ItemStack.EMPTY);
                         }
                     }
                     yawTarget = 0F;
@@ -92,46 +92,46 @@ public class TileEntityCapsid extends LockableTileEntity implements ITickableTil
             } else {
                 floatUpProgress = 0F;
             }
-            if(this.getStackInSlot(0).getItem() == Items.ENDER_EYE && world.getBlockState(this.getPos().down()).getBlock() == Blocks.END_ROD && world.getBlockState(this.getPos().down()).get(EndRodBlock.FACING).getAxis() == Direction.Axis.Y){
+            if(this.getItem(0).getItem() == Items.ENDER_EYE && level.getBlockState(this.getBlockPos().below()).getBlock() == Blocks.END_ROD && level.getBlockState(this.getBlockPos().below()).getValue(EndRodBlock.FACING).getAxis() == Direction.Axis.Y){
                 vibrating = true;
                 if(transformProg > 20){
-                    this.setInventorySlotContents(0, ItemStack.EMPTY);
-                    this.world.destroyBlock(this.getPos(), false);
-                    this.world.destroyBlock(this.getPos().down(), false);
-                    EntityEnderiophage phage = AMEntityRegistry.ENDERIOPHAGE.create(world);
-                    phage.setPosition(this.getPos().getX() + 0.5F, this.getPos().getY() - 1.0F, this.getPos().getZ() + 0.5F);
+                    this.setItem(0, ItemStack.EMPTY);
+                    this.level.destroyBlock(this.getBlockPos(), false);
+                    this.level.destroyBlock(this.getBlockPos().below(), false);
+                    EntityEnderiophage phage = AMEntityRegistry.ENDERIOPHAGE.create(level);
+                    phage.setPos(this.getBlockPos().getX() + 0.5F, this.getBlockPos().getY() - 1.0F, this.getBlockPos().getZ() + 0.5F);
                     phage.setVariant(0);
-                    if(!world.isRemote){
-                        world.addEntity(phage);
+                    if(!level.isClientSide){
+                        level.addFreshEntity(phage);
                     }
                 }
             }
-            if(this.getStackInSlot(0).getItem() == AMItemRegistry.MOSQUITO_LARVA && world.getBlockState(this.getPos().up()).getBlock() != this.getBlockState().getBlock()) {
+            if(this.getItem(0).getItem() == AMItemRegistry.MOSQUITO_LARVA && level.getBlockState(this.getBlockPos().above()).getBlock() != this.getBlockState().getBlock()) {
                 vibrating = true;
                 if(transformProg > 60) {
-                    ItemStack current = this.getStackInSlot(0).copy();
+                    ItemStack current = this.getItem(0).copy();
                     current.shrink(1);
                     if(!current.isEmpty()){
-                        ItemEntity itemEntity = new ItemEntity(this.world, this.getPos().getX() + 0.5F, this.getPos().getY() + 0.5F, this.getPos().getZ() + 0.5F, current);
-                        if(!world.isRemote){
-                            world.addEntity(itemEntity);
+                        ItemEntity itemEntity = new ItemEntity(this.level, this.getBlockPos().getX() + 0.5F, this.getBlockPos().getY() + 0.5F, this.getBlockPos().getZ() + 0.5F, current);
+                        if(!level.isClientSide){
+                            level.addFreshEntity(itemEntity);
                         }
                     }
-                    this.setInventorySlotContents(0, new ItemStack(AMItemRegistry.MYSTERIOUS_WORM));
+                    this.setItem(0, new ItemStack(AMItemRegistry.MYSTERIOUS_WORM));
                 }
             }
-            if(this.getStackInSlot(0).getItem().isIn(ItemTags.MUSIC_DISCS) && this.getStackInSlot(0).getItem() != AMItemRegistry.MUSIC_DISC_DAZE && world.getBlockState(this.getPos().up()).getBlock() != this.getBlockState().getBlock()) {
+            if(this.getItem(0).getItem().is(ItemTags.MUSIC_DISCS) && this.getItem(0).getItem() != AMItemRegistry.MUSIC_DISC_DAZE && level.getBlockState(this.getBlockPos().above()).getBlock() != this.getBlockState().getBlock()) {
                 vibrating = true;
                 if(transformProg > 120) {
-                    ItemStack current = this.getStackInSlot(0).copy();
+                    ItemStack current = this.getItem(0).copy();
                     current.shrink(1);
                     if(!current.isEmpty()){
-                        ItemEntity itemEntity = new ItemEntity(this.world, this.getPos().getX() + 0.5F, this.getPos().getY() + 0.5F, this.getPos().getZ() + 0.5F, current);
-                        if(!world.isRemote){
-                            world.addEntity(itemEntity);
+                        ItemEntity itemEntity = new ItemEntity(this.level, this.getBlockPos().getX() + 0.5F, this.getBlockPos().getY() + 0.5F, this.getBlockPos().getZ() + 0.5F, current);
+                        if(!level.isClientSide){
+                            level.addFreshEntity(itemEntity);
                         }
                     }
-                    this.setInventorySlotContents(0, new ItemStack(AMItemRegistry.MUSIC_DISC_DAZE));
+                    this.setItem(0, new ItemStack(AMItemRegistry.MUSIC_DISC_DAZE));
                 }
             }
             } else {
@@ -146,21 +146,21 @@ public class TileEntityCapsid extends LockableTileEntity implements ITickableTil
 
     @OnlyIn(Dist.CLIENT)
     public net.minecraft.util.math.AxisAlignedBB getRenderBoundingBox() {
-        return new net.minecraft.util.math.AxisAlignedBB(pos, pos.add(1, 2, 1));
+        return new net.minecraft.util.math.AxisAlignedBB(worldPosition, worldPosition.offset(1, 2, 1));
     }
 
     @Override
-    public int getSizeInventory() {
+    public int getContainerSize() {
         return this.stacks.size();
     }
 
     @Override
-    public ItemStack getStackInSlot(int index) {
+    public ItemStack getItem(int index) {
         return this.stacks.get(index);
     }
 
     @Override
-    public ItemStack decrStackSize(int index, int count) {
+    public ItemStack removeItem(int index, int count) {
         if (!this.stacks.get(index).isEmpty()) {
             ItemStack itemstack;
 
@@ -193,58 +193,58 @@ public class TileEntityCapsid extends LockableTileEntity implements ITickableTil
     }
 
     @Override
-    public void setInventorySlotContents(int index, ItemStack stack) {
-        boolean flag = !stack.isEmpty() && stack.isItemEqual(this.stacks.get(index)) && ItemStack.areItemStackTagsEqual(stack, this.stacks.get(index));
+    public void setItem(int index, ItemStack stack) {
+        boolean flag = !stack.isEmpty() && stack.sameItem(this.stacks.get(index)) && ItemStack.tagMatches(stack, this.stacks.get(index));
         this.stacks.set(index, stack);
 
-        if (!stack.isEmpty() && stack.getCount() > this.getInventoryStackLimit()) {
-            stack.setCount(this.getInventoryStackLimit());
+        if (!stack.isEmpty() && stack.getCount() > this.getMaxStackSize()) {
+            stack.setCount(this.getMaxStackSize());
         }
-        this.write(this.getUpdateTag());
-        if (!world.isRemote) {
-            AlexsMobs.sendMSGToAll(new MessageUpdateCapsid(this.getPos().toLong(), stacks.get(0)));
+        this.save(this.getUpdateTag());
+        if (!level.isClientSide) {
+            AlexsMobs.sendMSGToAll(new MessageUpdateCapsid(this.getBlockPos().asLong(), stacks.get(0)));
         }
     }
 
     @Override
-    public void read(BlockState state, CompoundNBT compound) {
-        super.read(state, compound);
-        this.stacks = NonNullList.withSize(this.getSizeInventory(), ItemStack.EMPTY);
+    public void load(BlockState state, CompoundNBT compound) {
+        super.load(state, compound);
+        this.stacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
         ItemStackHelper.loadAllItems(compound, this.stacks);
     }
 
     @Override
-    public CompoundNBT write(CompoundNBT compound) {
-        super.write(compound);
+    public CompoundNBT save(CompoundNBT compound) {
+        super.save(compound);
         ItemStackHelper.saveAllItems(compound, this.stacks);
         return compound;
     }
 
     @Override
-    public void openInventory(PlayerEntity player) {
+    public void startOpen(PlayerEntity player) {
     }
 
     @Override
-    public void closeInventory(PlayerEntity player) {
+    public void stopOpen(PlayerEntity player) {
     }
 
     @Override
-    public boolean canInsertItem(int index, ItemStack stack, Direction direction) {
+    public boolean canPlaceItemThroughFace(int index, ItemStack stack, Direction direction) {
         return true;
     }
 
     @Override
-    public int getInventoryStackLimit() {
+    public int getMaxStackSize() {
         return 64;
     }
 
     @Override
-    public boolean isUsableByPlayer(PlayerEntity player) {
+    public boolean stillValid(PlayerEntity player) {
         return true;
     }
 
     @Override
-    public void clear() {
+    public void clearContent() {
         this.stacks.clear();
     }
 
@@ -254,7 +254,7 @@ public class TileEntityCapsid extends LockableTileEntity implements ITickableTil
     }
 
     @Override
-    public boolean canExtractItem(int index, ItemStack stack, Direction direction) {
+    public boolean canTakeItemThroughFace(int index, ItemStack stack, Direction direction) {
         return false;
     }
 
@@ -264,26 +264,26 @@ public class TileEntityCapsid extends LockableTileEntity implements ITickableTil
     }
 
     @Override
-    public boolean isItemValidForSlot(int index, ItemStack stack) {
+    public boolean canPlaceItem(int index, ItemStack stack) {
         return true;
     }
 
     @Override
     public SUpdateTileEntityPacket getUpdatePacket() {
-        return new SUpdateTileEntityPacket(pos, -1, getUpdateTag());
+        return new SUpdateTileEntityPacket(worldPosition, -1, getUpdateTag());
     }
 
     @Override
     public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket packet) {
-        read(this.getBlockState(), packet.getNbtCompound());
+        load(this.getBlockState(), packet.getTag());
     }
 
     public CompoundNBT getUpdateTag() {
-        return this.write(new CompoundNBT());
+        return this.save(new CompoundNBT());
     }
 
     @Override
-    public ItemStack removeStackFromSlot(int index) {
+    public ItemStack removeItemNoUpdate(int index) {
         ItemStack lvt_2_1_ = this.stacks.get(index);
         if (lvt_2_1_.isEmpty()) {
             return ItemStack.EMPTY;
@@ -310,8 +310,8 @@ public class TileEntityCapsid extends LockableTileEntity implements ITickableTil
 
     @Override
     public boolean isEmpty() {
-        for (int i = 0; i < this.getSizeInventory(); i++) {
-            if (!this.getStackInSlot(i).isEmpty()) {
+        for (int i = 0; i < this.getContainerSize(); i++) {
+            if (!this.getItem(i).isEmpty()) {
                 return false;
             }
         }
@@ -320,15 +320,15 @@ public class TileEntityCapsid extends LockableTileEntity implements ITickableTil
 
     public float getBlockAngle() {
         if (this.getBlockState().getBlock() instanceof BlockCapsid) {
-            Direction dir = this.getBlockState().get(BlockCapsid.HORIZONTAL_FACING);
-            return dir.getHorizontalAngle();
+            Direction dir = this.getBlockState().getValue(BlockCapsid.HORIZONTAL_FACING);
+            return dir.toYRot();
         }
         return 0.0F;
     }
 
     @Override
     public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> capability, @Nullable Direction facing) {
-        if (!this.removed && facing != null && capability == net.minecraftforge.items.CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
+        if (!this.remove && facing != null && capability == net.minecraftforge.items.CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
             if (facing == Direction.DOWN)
                 return handlers[0].cast();
             else

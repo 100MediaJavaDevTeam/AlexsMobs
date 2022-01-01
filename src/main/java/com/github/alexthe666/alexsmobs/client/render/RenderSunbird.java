@@ -15,15 +15,15 @@ public class RenderSunbird extends MobRenderer<EntitySunbird, ModelSunbird> {
         super(renderManagerIn, new ModelSunbird(), 0.5F);
     }
 
-    protected void preRenderCallback(EntitySunbird entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntitySunbird entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(1.25F, 1.25F, 1.25F);
     }
 
-    protected int getBlockLight(EntitySunbird entityIn, BlockPos partialTicks) {
+    protected int getBlockLightLevel(EntitySunbird entityIn, BlockPos partialTicks) {
         return 15;
     }
 
-    public ResourceLocation getEntityTexture(EntitySunbird entity) {
+    public ResourceLocation getTextureLocation(EntitySunbird entity) {
         return TEXTURE;
     }
 }

@@ -35,7 +35,7 @@ public class LayerMimicubeHelmet extends LayerRenderer<EntityMimicube, ModelMimi
 
     public static ResourceLocation getArmorResource(net.minecraft.entity.Entity entity, ItemStack stack, EquipmentSlotType slot, @javax.annotation.Nullable String type) {
         ArmorItem item = (ArmorItem) stack.getItem();
-        String texture = item.getArmorMaterial().getName();
+        String texture = item.getMaterial().getName();
         String domain = "minecraft";
         int idx = texture.indexOf(':');
         if (idx != -1) {
@@ -56,25 +56,25 @@ public class LayerMimicubeHelmet extends LayerRenderer<EntityMimicube, ModelMimi
     }
 
     public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityMimicube cube, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
-        matrixStackIn.push();
-        ItemStack itemstack = cube.getItemStackFromSlot(EquipmentSlotType.HEAD);
+        matrixStackIn.pushPose();
+        ItemStack itemstack = cube.getItemBySlot(EquipmentSlotType.HEAD);
         float helmetSwap = MathHelper.lerp(partialTicks, cube.prevHelmetSwapProgress, cube.helmetSwapProgress) * 0.2F;
         if (itemstack.getItem() instanceof ArmorItem) {
             ArmorItem armoritem = (ArmorItem) itemstack.getItem();
-            if (armoritem.getEquipmentSlot() == EquipmentSlotType.HEAD) {
+            if (armoritem.getSlot() == EquipmentSlotType.HEAD) {
                 BipedModel a = defaultBipedModel;
                 a = getArmorModelHook(cube, itemstack, EquipmentSlotType.HEAD, a);
                 boolean notAVanillaModel = a != defaultBipedModel;
 
                 this.setModelSlotVisible(a, EquipmentSlotType.HEAD);
                 boolean flag = false;
-                this.renderer.getEntityModel().root.translateRotate(matrixStackIn);
-                this.renderer.getEntityModel().innerbody.translateRotate(matrixStackIn);
+                this.renderer.getModel().root.translateAndRotate(matrixStackIn);
+                this.renderer.getModel().innerbody.translateAndRotate(matrixStackIn);
                 matrixStackIn.translate(0,  notAVanillaModel ? 0.25F : -0.75F, 0F);
                 matrixStackIn.scale(1F + 0.3F * (1 - helmetSwap), 1F + 0.3F * (1 - helmetSwap), 1F + 0.3F * (1 - helmetSwap));
-                boolean flag1 = itemstack.hasEffect();
+                boolean flag1 = itemstack.hasFoil();
                 int clampedLight = helmetSwap > 0 ? (int) (-100 * helmetSwap) : packedLightIn;
-                matrixStackIn.rotate(Vector3f.YP.rotationDegrees(360 * helmetSwap));
+                matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(360 * helmetSwap));
                 if (armoritem instanceof net.minecraft.item.IDyeableArmorItem) { // Allow this for anything, not only cloth
                     int i = ((net.minecraft.item.IDyeableArmorItem) armoritem).getColor(itemstack);
                     float f = (float) (i >> 16 & 255) / 255.0F;
@@ -88,48 +88,48 @@ public class LayerMimicubeHelmet extends LayerRenderer<EntityMimicube, ModelMimi
 
             }
         }
-        matrixStackIn.pop();
+        matrixStackIn.popPose();
     }
 
     private void renderArmor(EntityMimicube entity, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, boolean glintIn, BipedModel modelIn, float red, float green, float blue, ResourceLocation armorResource, boolean notAVanillaModel) {
-        IVertexBuilder ivertexbuilder = ItemRenderer.getBuffer(bufferIn, RenderType.getEntityCutoutNoCull(armorResource), false, glintIn);
+        IVertexBuilder ivertexbuilder = ItemRenderer.getFoilBuffer(bufferIn, RenderType.entityCutoutNoCull(armorResource), false, glintIn);
         if(notAVanillaModel){
-            renderer.getEntityModel().copyModelAttributesTo(modelIn);
-            modelIn.bipedBody.rotationPointY = 0;
-            modelIn.bipedHead.setRotationPoint(0.0F, 1.0F, 0.0F);
-            modelIn.bipedHeadwear.rotationPointY = 0;
-            modelIn.bipedHead.copyModelAngles(renderer.getEntityModel().body);
-            modelIn.bipedHeadwear.copyModelAngles(renderer.getEntityModel().body);
-            modelIn.bipedBody.copyModelAngles(renderer.getEntityModel().body);
+            renderer.getModel().copyPropertiesTo(modelIn);
+            modelIn.body.y = 0;
+            modelIn.head.setPos(0.0F, 1.0F, 0.0F);
+            modelIn.hat.y = 0;
+            modelIn.head.copyFrom(renderer.getModel().body);
+            modelIn.hat.copyFrom(renderer.getModel().body);
+            modelIn.body.copyFrom(renderer.getModel().body);
         }
-        modelIn.render(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, red, green, blue, 1.0F);
+        modelIn.renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, red, green, blue, 1.0F);
     }
 
     protected void setModelSlotVisible(BipedModel p_188359_1_, EquipmentSlotType slotIn) {
         this.setModelVisible(p_188359_1_);
         switch (slotIn) {
             case HEAD:
-                p_188359_1_.bipedHead.showModel = true;
-                p_188359_1_.bipedHeadwear.showModel = true;
+                p_188359_1_.head.visible = true;
+                p_188359_1_.hat.visible = true;
                 break;
             case CHEST:
-                p_188359_1_.bipedBody.showModel = true;
-                p_188359_1_.bipedRightArm.showModel = true;
-                p_188359_1_.bipedLeftArm.showModel = true;
+                p_188359_1_.body.visible = true;
+                p_188359_1_.rightArm.visible = true;
+                p_188359_1_.leftArm.visible = true;
                 break;
             case LEGS:
-                p_188359_1_.bipedBody.showModel = true;
-                p_188359_1_.bipedRightLeg.showModel = true;
-                p_188359_1_.bipedLeftLeg.showModel = true;
+                p_188359_1_.body.visible = true;
+                p_188359_1_.rightLeg.visible = true;
+                p_188359_1_.leftLeg.visible = true;
                 break;
             case FEET:
-                p_188359_1_.bipedRightLeg.showModel = true;
-                p_188359_1_.bipedLeftLeg.showModel = true;
+                p_188359_1_.rightLeg.visible = true;
+                p_188359_1_.leftLeg.visible = true;
         }
     }
 
     protected void setModelVisible(BipedModel model) {
-        model.setVisible(false);
+        model.setAllVisible(false);
 
     }
 

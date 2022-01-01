@@ -48,9 +48,9 @@ public class MessageHurtMultipart {
             }
 
             if (player != null) {
-                if (player.world != null) {
-                    Entity part = player.world.getEntityByID(message.part);
-                    Entity parent = player.world.getEntityByID(message.parent);
+                if (player.level != null) {
+                    Entity part = player.level.getEntity(message.part);
+                    Entity parent = player.level.getEntity(message.parent);
                     if(part instanceof IHurtableMultipart && parent instanceof LivingEntity){
                         ((IHurtableMultipart) part).onAttackedFromServer((LivingEntity)parent, message.damage);
                     }

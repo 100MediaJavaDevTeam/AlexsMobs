@@ -8,10 +8,10 @@ public class OrcaAIMelee extends MeleeAttackGoal {
         super(orca, v, b);
     }
 
-    public boolean shouldExecute(){
-        if(this.attacker.getAttackTarget() == null || ((EntityOrca)this.attacker).shouldUseJumpAttack(this.attacker.getAttackTarget())){
+    public boolean canUse(){
+        if(this.mob.getTarget() == null || ((EntityOrca)this.mob).shouldUseJumpAttack(this.mob.getTarget())){
             return false;
         }
-        return super.shouldExecute();
+        return super.canUse();
     }
 }

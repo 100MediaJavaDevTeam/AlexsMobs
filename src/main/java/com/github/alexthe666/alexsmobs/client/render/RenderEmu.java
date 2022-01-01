@@ -18,18 +18,18 @@ public class RenderEmu extends MobRenderer<EntityEmu, ModelEmu> {
         super(renderManagerIn, new ModelEmu(), 0.45F);
     }
 
-    protected void preRenderCallback(EntityEmu entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityEmu entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(0.85F, 0.85F, 0.85F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntityEmu entity) {
+    public ResourceLocation getTextureLocation(EntityEmu entity) {
         if(entity.getVariant() == 2){
-            return entity.isChild() ? TEXTURE_BLONDE_BABY : TEXTURE_BLONDE;
+            return entity.isBaby() ? TEXTURE_BLONDE_BABY : TEXTURE_BLONDE;
         }
-        if(entity.getVariant() == 1 && !entity.isChild()){
+        if(entity.getVariant() == 1 && !entity.isBaby()){
             return  TEXTURE_BLUE;
         }
-        return entity.isChild() ? TEXTURE_BABY : TEXTURE;
+        return entity.isBaby() ? TEXTURE_BABY : TEXTURE;
     }
 }

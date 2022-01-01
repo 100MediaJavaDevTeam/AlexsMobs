@@ -12,23 +12,23 @@ public class ParticleHemolymph extends SpriteTexturedParticle {
 
     private ParticleHemolymph(ClientWorld world, double x, double y, double z, double motionX, double motionY, double motionZ) {
         super(world, x, y, z);
-        int color = POSSIBLE_COLORS[rand.nextInt(POSSIBLE_COLORS.length - 1)];
+        int color = POSSIBLE_COLORS[random.nextInt(POSSIBLE_COLORS.length - 1)];
         float lvt_18_1_ = (float)(color >> 16 & 255) / 255.0F;
         float lvt_19_1_ = (float)(color >> 8 & 255) / 255.0F;
         float lvt_20_1_ = (float)(color & 255) / 255.0F;
         setColor(lvt_18_1_, lvt_19_1_, lvt_20_1_);
-        this.motionX = (float) motionX;
-        this.motionY = (float) motionY;
-        this.motionZ = (float) motionZ;
-        this.particleScale *= 0.6F + this.rand.nextFloat() * 1.4F;
-        this.maxAge = 10 + this.rand.nextInt(15);
-        this.particleGravity = 0.5F;
+        this.xd = (float) motionX;
+        this.yd = (float) motionY;
+        this.zd = (float) motionZ;
+        this.quadSize *= 0.6F + this.random.nextFloat() * 1.4F;
+        this.lifetime = 10 + this.random.nextInt(15);
+        this.gravity = 0.5F;
 
     }
 
     public void tick() {
         super.tick();
-        this.motionY -= 0.004D + 0.04D * (double)this.particleGravity;
+        this.yd -= 0.004D + 0.04D * (double)this.gravity;
     }
 
     @Override
@@ -44,9 +44,9 @@ public class ParticleHemolymph extends SpriteTexturedParticle {
             this.spriteSet = spriteSet;
         }
 
-        public Particle makeParticle(BasicParticleType typeIn, ClientWorld worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+        public Particle createParticle(BasicParticleType typeIn, ClientWorld worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
             ParticleHemolymph p = new ParticleHemolymph(worldIn, x, y, z, xSpeed, ySpeed, zSpeed);
-            p.selectSpriteRandomly(spriteSet);
+            p.pickSprite(spriteSet);
             return p;
         }
     }

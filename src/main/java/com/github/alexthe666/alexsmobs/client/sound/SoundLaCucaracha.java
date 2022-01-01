@@ -8,29 +8,31 @@ import net.minecraft.util.SoundCategory;
 
 import java.util.Map;
 
+import net.minecraft.client.audio.ISound.AttenuationType;
+
 public class SoundLaCucaracha extends TickableSound {
     private final EntityCockroach cockroach;
 
     public SoundLaCucaracha(EntityCockroach cockroach) {
         super(AMSoundRegistry.LA_CUCARACHA, SoundCategory.RECORDS);
         this.cockroach = cockroach;
-        this.attenuationType = AttenuationType.LINEAR;
-        this.repeat = true;
-        this.repeatDelay = 0;
+        this.attenuation = AttenuationType.LINEAR;
+        this.looping = true;
+        this.delay = 0;
         this.priority = true;
-        this.x = this.cockroach.getPosX();
-        this.y = this.cockroach.getPosY();
-        this.z = this.cockroach.getPosZ();
+        this.x = this.cockroach.getX();
+        this.y = this.cockroach.getY();
+        this.z = this.cockroach.getZ();
     }
 
-    public boolean shouldPlaySound() {
-        return !this.cockroach.isSilent() && this.cockroach.hasMaracas() && this.cockroach.isDancing() && ClientProxy.COCKROACH_SOUND_MAP.get(this.cockroach.getEntityId()) == this;
+    public boolean canPlaySound() {
+        return !this.cockroach.isSilent() && this.cockroach.hasMaracas() && this.cockroach.isDancing() && ClientProxy.COCKROACH_SOUND_MAP.get(this.cockroach.getId()) == this;
     }
 
     public boolean isOnlyCockroach() {
         for(Map.Entry<Integer, SoundLaCucaracha> entry : ClientProxy.COCKROACH_SOUND_MAP.entrySet()){
             SoundLaCucaracha cucaracha = entry.getValue();
-            if(cucaracha != this && distanceSq(cucaracha.x, cucaracha.y, cucaracha.z) < 16 && cucaracha.shouldPlaySound()){
+            if(cucaracha != this && distanceSq(cucaracha.x, cucaracha.y, cucaracha.z) < 16 && cucaracha.canPlaySound()){
                 return false;
             }
         }
@@ -49,12 +51,12 @@ public class SoundLaCucaracha extends TickableSound {
         if (!this.cockroach.removed && this.cockroach.isAlive() && this.cockroach.isDancing() && this.cockroach.hasMaracas()) {
             this.volume = 1;
             this.pitch = 1;
-            this.x = this.cockroach.getPosX();
-            this.y = this.cockroach.getPosY();
-            this.z = this.cockroach.getPosZ();
+            this.x = this.cockroach.getX();
+            this.y = this.cockroach.getY();
+            this.z = this.cockroach.getZ();
         } else {
-            this.finishPlaying();
-            ClientProxy.COCKROACH_SOUND_MAP.remove(cockroach.getEntityId());
+            this.stop();
+            ClientProxy.COCKROACH_SOUND_MAP.remove(cockroach.getId());
         }
     }
 

@@ -16,7 +16,7 @@ import java.util.Map;
 @OnlyIn(Dist.CLIENT)
 public class OctopusColorRegistry {
 
-    public static final BlockState FALLBACK_BLOCK = Blocks.SAND.getDefaultState();
+    public static final BlockState FALLBACK_BLOCK = Blocks.SAND.defaultBlockState();
     public static Map<String, Integer> TEXTURES_TO_COLOR = new HashMap<>();
 
     public static int getBlockColor(BlockState stack) {
@@ -70,6 +70,6 @@ public class OctopusColorRegistry {
     }
 
     private static TextureAtlasSprite getTextureAtlas(BlockState state) {
-        return Minecraft.getInstance().getBlockRendererDispatcher().getBlockModelShapes().getModel(state).getParticleTexture();
+        return Minecraft.getInstance().getBlockRenderer().getBlockModelShaper().getBlockModel(state).getParticleIcon();
     }
 }

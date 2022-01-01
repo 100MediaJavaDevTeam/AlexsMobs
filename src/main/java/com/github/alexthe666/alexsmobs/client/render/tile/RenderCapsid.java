@@ -43,24 +43,24 @@ public class RenderCapsid<T extends TileEntityCapsid> extends TileEntityRenderer
 
     @Override
     public void render(T entity, float partialTicks, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int combinedLightIn, int combinedOverlayIn) {
-        ItemStack stack = entity.getStackInSlot(0);
+        ItemStack stack = entity.getItem(0);
         if (!stack.isEmpty()) {
-            int i =  Item.getIdFromItem(stack.getItem()) + stack.getDamage();
+            int i =  Item.getId(stack.getItem()) + stack.getDamageValue();
             this.random.setSeed((long)i);
             float floatProgress = entity.prevFloatUpProgress + (entity.floatUpProgress - entity.prevFloatUpProgress) * partialTicks;
             float yaw = entity.prevYawSwitchProgress + (entity.yawSwitchProgress - entity.prevYawSwitchProgress) * partialTicks;
             int j = this.getModelCount(stack);
-            matrixStackIn.push();
+            matrixStackIn.pushPose();
             matrixStackIn.translate(0.5F, 0.5F + floatProgress, 0.5F);
-            matrixStackIn.rotate(new Quaternion(Vector3f.YP, entity.getBlockAngle() + yaw, true));
-            matrixStackIn.push();
+            matrixStackIn.mulPose(new Quaternion(Vector3f.YP, entity.getBlockAngle() + yaw, true));
+            matrixStackIn.pushPose();
             matrixStackIn.translate(0, -0.1F, 0);
-            if(entity.vibrating && entity.getWorld() != null){
+            if(entity.vibrating && entity.getLevel() != null){
                 float vibrate = 0.05F;
-                matrixStackIn.translate((entity.getWorld().rand.nextFloat() - 0.5F)* vibrate, (entity.getWorld().rand.nextFloat() - 0.5F) * vibrate, (entity.getWorld().rand.nextFloat() - 0.5F)* vibrate);
+                matrixStackIn.translate((entity.getLevel().random.nextFloat() - 0.5F)* vibrate, (entity.getLevel().random.nextFloat() - 0.5F) * vibrate, (entity.getLevel().random.nextFloat() - 0.5F)* vibrate);
             }
             matrixStackIn.scale(1.3F, 1.3F, 1.3F);
-            IBakedModel ibakedmodel = Minecraft.getInstance().getItemRenderer().getItemModelWithOverrides(stack, entity.getWorld(), (LivingEntity)null);
+            IBakedModel ibakedmodel = Minecraft.getInstance().getItemRenderer().getModel(stack, entity.getLevel(), (LivingEntity)null);
             boolean flag = ibakedmodel.isGui3d();
             if (!flag) {
                 float f7 = -0.0F * (float)(j - 1) * 0.5F;
@@ -70,7 +70,7 @@ public class RenderCapsid<T extends TileEntityCapsid> extends TileEntityRenderer
             }
 
             for(int k = 0; k < j; ++k) {
-                matrixStackIn.push();
+                matrixStackIn.pushPose();
                 if (k > 0) {
                     if (flag) {
                         float f11 = (this.random.nextFloat() * 2.0F - 1.0F) * 0.15F;
@@ -84,16 +84,16 @@ public class RenderCapsid<T extends TileEntityCapsid> extends TileEntityRenderer
                     }
                 }
 
-                Minecraft.getInstance().getItemRenderer().renderItem(stack, ItemCameraTransforms.TransformType.GROUND, false, matrixStackIn, bufferIn, combinedLightIn, OverlayTexture.NO_OVERLAY, ibakedmodel);
-                matrixStackIn.pop();
+                Minecraft.getInstance().getItemRenderer().render(stack, ItemCameraTransforms.TransformType.GROUND, false, matrixStackIn, bufferIn, combinedLightIn, OverlayTexture.NO_OVERLAY, ibakedmodel);
+                matrixStackIn.popPose();
                 if (!flag) {
                     matrixStackIn.translate(0.0, 0.0, 0.09375F);
                 }
             }
 
 
-            matrixStackIn.pop();
-            matrixStackIn.pop();
+            matrixStackIn.popPose();
+            matrixStackIn.popPose();
         }
 
     }

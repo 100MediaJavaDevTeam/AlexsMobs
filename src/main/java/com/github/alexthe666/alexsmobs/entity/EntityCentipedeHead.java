@@ -33,15 +33,15 @@ import java.util.UUID;
 
 public class EntityCentipedeHead extends MonsterEntity {
 
-    private static final DataParameter<Optional<UUID>> CHILD_UUID = EntityDataManager.createKey(EntityCentipedeHead.class, DataSerializers.OPTIONAL_UNIQUE_ID);
+    private static final DataParameter<Optional<UUID>> CHILD_UUID = EntityDataManager.defineId(EntityCentipedeHead.class, DataSerializers.OPTIONAL_UUID);
 
     protected EntityCentipedeHead(EntityType type, World worldIn) {
         super(type, worldIn);
-        this.stepHeight = 3;
+        this.maxUpStep = 3;
     }
 
-    public boolean canSpawn(IWorld worldIn, SpawnReason spawnReasonIn) {
-        return AMEntityRegistry.rollSpawn(AMConfig.caveCentipedeSpawnRolls, this.getRNG(), spawnReasonIn) && super.canSpawn(worldIn, spawnReasonIn);
+    public boolean checkSpawnRules(IWorld worldIn, SpawnReason spawnReasonIn) {
+        return AMEntityRegistry.rollSpawn(AMConfig.caveCentipedeSpawnRolls, this.getRandom(), spawnReasonIn) && super.checkSpawnRules(worldIn, spawnReasonIn);
     }
 
     protected void registerGoals() {
@@ -64,50 +64,50 @@ public class EntityCentipedeHead extends MonsterEntity {
         return AMSoundRegistry.CENTIPEDE_HURT;
     }
 
-    public CreatureAttribute getCreatureAttribute() {
+    public CreatureAttribute getMobType() {
         return CreatureAttribute.ARTHROPOD;
     }
 
     public static AttributeModifierMap.MutableAttribute bakeAttributes() {
-        return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MAX_HEALTH, 35.0D).createMutableAttribute(Attributes.FOLLOW_RANGE, 32.0D).createMutableAttribute(Attributes.ARMOR, 6.0D).createMutableAttribute(Attributes.ATTACK_DAMAGE, 8.0D).createMutableAttribute(Attributes.KNOCKBACK_RESISTANCE, 0.5F).createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.22F);
+        return MonsterEntity.createMonsterAttributes().add(Attributes.MAX_HEALTH, 35.0D).add(Attributes.FOLLOW_RANGE, 32.0D).add(Attributes.ARMOR, 6.0D).add(Attributes.ATTACK_DAMAGE, 8.0D).add(Attributes.KNOCKBACK_RESISTANCE, 0.5F).add(Attributes.MOVEMENT_SPEED, 0.22F);
     }
 
     protected void playStepSound(BlockPos pos, BlockState blockIn) {
         this.playSound(AMSoundRegistry.CENTIPEDE_WALK, 1F, 1.0F);
     }
 
-    public int getVerticalFaceSpeed() {
+    public int getMaxHeadXRot() {
         return 1;
     }
 
-    public int getHorizontalFaceSpeed() {
+    public int getMaxHeadYRot() {
         return 1;
     }
 
-    public int getFaceRotSpeed() {
+    public int getHeadRotSpeed() {
         return 1;
     }
 
     @Override
-    protected void registerData() {
-        super.registerData();
-        this.dataManager.register(CHILD_UUID, Optional.empty());
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(CHILD_UUID, Optional.empty());
     }
 
-    public boolean attackEntityAsMob(Entity entityIn) {
-        if (super.attackEntityAsMob(entityIn)) {
+    public boolean doHurtTarget(Entity entityIn) {
+        if (super.doHurtTarget(entityIn)) {
             if (entityIn instanceof LivingEntity) {
                 int i = 3;
-                if (this.world.getDifficulty() == Difficulty.NORMAL) {
+                if (this.level.getDifficulty() == Difficulty.NORMAL) {
                     i = 10;
-                } else if (this.world.getDifficulty() == Difficulty.HARD) {
+                } else if (this.level.getDifficulty() == Difficulty.HARD) {
                     i = 20;
                 }
                 if (i > 0) {
-                    ((LivingEntity)entityIn).addPotionEffect(new EffectInstance(Effects.POISON, i * 20, 1));
+                    ((LivingEntity)entityIn).addEffect(new EffectInstance(Effects.POISON, i * 20, 1));
                 }
             }
-            this.playSound(AMSoundRegistry.CENTIPEDE_ATTACK, this.getSoundVolume(), this.getSoundPitch());
+            this.playSound(AMSoundRegistry.CENTIPEDE_ATTACK, this.getSoundVolume(), this.getVoicePitch());
             return true;
         } else {
             return false;
@@ -117,30 +117,30 @@ public class EntityCentipedeHead extends MonsterEntity {
 
     @Nullable
     public UUID getChildId() {
-        return this.dataManager.get(CHILD_UUID).orElse(null);
+        return this.entityData.get(CHILD_UUID).orElse(null);
     }
 
     public void setChildId(@Nullable UUID uniqueId) {
-        this.dataManager.set(CHILD_UUID, Optional.ofNullable(uniqueId));
+        this.entityData.set(CHILD_UUID, Optional.ofNullable(uniqueId));
     }
 
     public Entity getChild() {
         UUID id = getChildId();
-        if (id != null && !world.isRemote) {
-            return ((ServerWorld) world).getEntityByUuid(id);
+        if (id != null && !level.isClientSide) {
+            return ((ServerWorld) level).getEntity(id);
         }
         return null;
     }
 
-    public void collideWithNearbyEntities() {
-        List<Entity> entities = this.world.getEntitiesWithinAABBExcludingEntity(this, this.getBoundingBox().expand(0.20000000298023224D, 0.0D, 0.20000000298023224D));
-        entities.stream().filter(entity -> !(entity instanceof EntityCentipedeBody) && entity.canBePushed()).forEach(entity -> entity.applyEntityCollision(this));
+    public void pushEntities() {
+        List<Entity> entities = this.level.getEntities(this, this.getBoundingBox().expandTowards(0.20000000298023224D, 0.0D, 0.20000000298023224D));
+        entities.stream().filter(entity -> !(entity instanceof EntityCentipedeBody) && entity.isPushable()).forEach(entity -> entity.push(this));
     }
 
-    public void writeAdditional(CompoundNBT compound) {
-        super.writeAdditional(compound);
+    public void addAdditionalSaveData(CompoundNBT compound) {
+        super.addAdditionalSaveData(compound);
         if (this.getChildId() != null) {
-            compound.putUniqueId("ChildUUID", this.getChildId());
+            compound.putUUID("ChildUUID", this.getChildId());
         }
     }
 
@@ -149,31 +149,31 @@ public class EntityCentipedeHead extends MonsterEntity {
         return  source == DamageSource.IN_WALL || source == DamageSource.FALLING_BLOCK || super.isInvulnerableTo(source);
     }
 
-    public void readAdditional(CompoundNBT compound) {
-        super.readAdditional(compound);
-        if (compound.hasUniqueId("ChildUUID")) {
-            this.setChildId(compound.getUniqueId("ChildUUID"));
+    public void readAdditionalSaveData(CompoundNBT compound) {
+        super.readAdditionalSaveData(compound);
+        if (compound.hasUUID("ChildUUID")) {
+            this.setChildId(compound.getUUID("ChildUUID"));
         }
     }
 
     public void tick(){
         super.tick();
-        inPortal = false;
-        rotationYaw = renderYawOffset;
-        if (!world.isRemote) {
+        isInsidePortal = false;
+        yRot = yBodyRot;
+        if (!level.isClientSide) {
             Entity child = getChild();
             if (child == null) {
                 LivingEntity partParent = this;
-                int segments = 5 + getRNG().nextInt(3);
+                int segments = 5 + getRandom().nextInt(3);
                 for (int i = 0; i < segments; i++) {
                     EntityCentipedeBody part = createBody(partParent, i == segments - 1);
                     part.setParent(partParent);
                     part.setBodyIndex(i);
                     if (partParent == this) {
-                        this.setChildId(part.getUniqueID());
+                        this.setChildId(part.getUUID());
                     }
                     part.setInitialPartPos(this, i + 1);
-                    world.addEntity(part);
+                    level.addFreshEntity(part);
                     partParent = part;
                 }
             }
@@ -184,12 +184,12 @@ public class EntityCentipedeHead extends MonsterEntity {
         return tail ? new EntityCentipedeBody(AMEntityRegistry.CENTIPEDE_TAIL, parent, 0.84F, 180, 0) : new EntityCentipedeBody(AMEntityRegistry.CENTIPEDE_BODY, parent, 0.84F, 180, 0);
     }
 
-    public boolean canBeLeashedTo(PlayerEntity player) {
+    public boolean canBeLeashed(PlayerEntity player) {
         return true;
     }
 
 
     public static <T extends MobEntity> boolean canCentipedeSpawn(EntityType<EntityCentipedeHead> entityType, IServerWorld iServerWorld, SpawnReason reason, BlockPos pos, Random random) {
-        return reason == SpawnReason.SPAWNER || !iServerWorld.canSeeSky(pos) && pos.getY() <= AMConfig.caveCentipedeSpawnHeight && canMonsterSpawnInLight(entityType, iServerWorld, reason, pos, random);
+        return reason == SpawnReason.SPAWNER || !iServerWorld.canSeeSky(pos) && pos.getY() <= AMConfig.caveCentipedeSpawnHeight && checkMonsterSpawnRules(entityType, iServerWorld, reason, pos, random);
     }
 }

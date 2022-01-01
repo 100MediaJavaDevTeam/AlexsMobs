@@ -29,7 +29,7 @@ public class FeatureLeafcutterAnthill extends Feature<NoFeatureConfig> {
 
 
     @Override
-    public boolean generate(ISeedReader worldIn, ChunkGenerator p_230362_3_, Random rand, BlockPos pos, NoFeatureConfig p_230362_6_) {
+    public boolean place(ISeedReader worldIn, ChunkGenerator p_230362_3_, Random rand, BlockPos pos, NoFeatureConfig p_230362_6_) {
         if (rand.nextFloat() > 0.005F) {
             return false;
         }
@@ -37,7 +37,7 @@ public class FeatureLeafcutterAnthill extends Feature<NoFeatureConfig> {
         int x = 8;
         int y = worldIn.getHeight(Heightmap.Type.WORLD_SURFACE_WG, pos.getX() + x, pos.getZ() + z);
         BlockPos heightPos = new BlockPos(pos.getX() + x, y, pos.getZ() + z);
-        if(!worldIn.getFluidState(heightPos.down()).isEmpty()){
+        if(!worldIn.getFluidState(heightPos.below()).isEmpty()){
             return false;
         }
         int outOfGround = 2 + rand.nextInt(2);
@@ -46,30 +46,30 @@ public class FeatureLeafcutterAnthill extends Feature<NoFeatureConfig> {
             int lvt_8_1_ = (int) (Math.floor(size) * rand.nextFloat()) + 2;
             int lvt_10_1_ = (int) (Math.floor(size) * rand.nextFloat()) + 2;
             float radius = (float) (lvt_8_1_ + lvt_10_1_) * 0.333F;
-            Iterator var12 = BlockPos.getAllInBoxMutable(heightPos.add(-lvt_8_1_, 0, -lvt_10_1_), heightPos.add(lvt_8_1_, 3, lvt_10_1_)).iterator();
+            Iterator var12 = BlockPos.betweenClosed(heightPos.offset(-lvt_8_1_, 0, -lvt_10_1_), heightPos.offset(lvt_8_1_, 3, lvt_10_1_)).iterator();
             while (var12.hasNext()) {
                 BlockPos lvt_13_1_ = (BlockPos) var12.next();
-                if (lvt_13_1_.distanceSq(heightPos) <= (double) (radius * radius)) {
-                    BlockState block = Blocks.COARSE_DIRT.getDefaultState();
+                if (lvt_13_1_.distSqr(heightPos) <= (double) (radius * radius)) {
+                    BlockState block = Blocks.COARSE_DIRT.defaultBlockState();
                     if (rand.nextFloat() < 0.2F) {
-                        block = Blocks.DIRT.getDefaultState();
+                        block = Blocks.DIRT.defaultBlockState();
                     }
-                    worldIn.setBlockState(lvt_13_1_, block, 4);
+                    worldIn.setBlock(lvt_13_1_, block, 4);
                 }
             }
         }
-        Random chunkSeedRandom = new Random(pos.toLong());
+        Random chunkSeedRandom = new Random(pos.asLong());
         outOfGround -= chunkSeedRandom.nextInt(1) + 1;
-        heightPos = heightPos.add(-chunkSeedRandom.nextInt(2), 0, -chunkSeedRandom.nextInt(2));
-        if (worldIn.getBlockState(heightPos.up(outOfGround + 1)).getBlock() != AMBlockRegistry.LEAFCUTTER_ANTHILL && worldIn.getBlockState(heightPos.up(outOfGround - 1)).getBlock() != AMBlockRegistry.LEAFCUTTER_ANTHILL) {
-            worldIn.setBlockState(heightPos.up(outOfGround), AMBlockRegistry.LEAFCUTTER_ANTHILL.getDefaultState(), 4);
-            TileEntity tileentity = worldIn.getTileEntity(heightPos.up(outOfGround));
+        heightPos = heightPos.offset(-chunkSeedRandom.nextInt(2), 0, -chunkSeedRandom.nextInt(2));
+        if (worldIn.getBlockState(heightPos.above(outOfGround + 1)).getBlock() != AMBlockRegistry.LEAFCUTTER_ANTHILL && worldIn.getBlockState(heightPos.above(outOfGround - 1)).getBlock() != AMBlockRegistry.LEAFCUTTER_ANTHILL) {
+            worldIn.setBlock(heightPos.above(outOfGround), AMBlockRegistry.LEAFCUTTER_ANTHILL.defaultBlockState(), 4);
+            TileEntity tileentity = worldIn.getBlockEntity(heightPos.above(outOfGround));
             if (tileentity instanceof TileEntityLeafcutterAnthill) {
                 TileEntityLeafcutterAnthill beehivetileentity = (TileEntityLeafcutterAnthill)tileentity;
                 int j = 3 + chunkSeedRandom.nextInt(3);
                 if(beehivetileentity.hasNoAnts()){
                     for(int k = 0; k < j; ++k) {
-                        EntityLeafcutterAnt beeentity = new EntityLeafcutterAnt(AMEntityRegistry.LEAFCUTTER_ANT, worldIn.getWorld());
+                        EntityLeafcutterAnt beeentity = new EntityLeafcutterAnt(AMEntityRegistry.LEAFCUTTER_ANT, worldIn.getLevel());
                         beeentity.setQueen(k == 0);
                         beehivetileentity.tryEnterHive(beeentity, false, rand.nextInt(599));
                     }
@@ -78,44 +78,44 @@ public class FeatureLeafcutterAnthill extends Feature<NoFeatureConfig> {
             }
 
             if(rand.nextBoolean()){
-                worldIn.setBlockState(heightPos.up(outOfGround).north(), Blocks.COARSE_DIRT.getDefaultState(), 4);
-                worldIn.setBlockState(heightPos.up(outOfGround - 1).north(), Blocks.COARSE_DIRT.getDefaultState(), 4);
-                worldIn.setBlockState(heightPos.up(outOfGround - 2).north(), Blocks.COARSE_DIRT.getDefaultState(), 4);
+                worldIn.setBlock(heightPos.above(outOfGround).north(), Blocks.COARSE_DIRT.defaultBlockState(), 4);
+                worldIn.setBlock(heightPos.above(outOfGround - 1).north(), Blocks.COARSE_DIRT.defaultBlockState(), 4);
+                worldIn.setBlock(heightPos.above(outOfGround - 2).north(), Blocks.COARSE_DIRT.defaultBlockState(), 4);
             }
             if(rand.nextBoolean()){
-                worldIn.setBlockState(heightPos.up(outOfGround).east(), Blocks.COARSE_DIRT.getDefaultState(), 4);
-                worldIn.setBlockState(heightPos.up(outOfGround - 1).east(), Blocks.COARSE_DIRT.getDefaultState(), 4);
-                worldIn.setBlockState(heightPos.up(outOfGround - 2).east(), Blocks.COARSE_DIRT.getDefaultState(), 4);
+                worldIn.setBlock(heightPos.above(outOfGround).east(), Blocks.COARSE_DIRT.defaultBlockState(), 4);
+                worldIn.setBlock(heightPos.above(outOfGround - 1).east(), Blocks.COARSE_DIRT.defaultBlockState(), 4);
+                worldIn.setBlock(heightPos.above(outOfGround - 2).east(), Blocks.COARSE_DIRT.defaultBlockState(), 4);
             }
             if(rand.nextBoolean()){
-                worldIn.setBlockState(heightPos.up(outOfGround).south(), Blocks.COARSE_DIRT.getDefaultState(), 4);
-                worldIn.setBlockState(heightPos.up(outOfGround - 1).south(), Blocks.COARSE_DIRT.getDefaultState(), 4);
-                worldIn.setBlockState(heightPos.up(outOfGround - 2).south(), Blocks.COARSE_DIRT.getDefaultState(), 4);
+                worldIn.setBlock(heightPos.above(outOfGround).south(), Blocks.COARSE_DIRT.defaultBlockState(), 4);
+                worldIn.setBlock(heightPos.above(outOfGround - 1).south(), Blocks.COARSE_DIRT.defaultBlockState(), 4);
+                worldIn.setBlock(heightPos.above(outOfGround - 2).south(), Blocks.COARSE_DIRT.defaultBlockState(), 4);
             }
             if(rand.nextBoolean()){
-                worldIn.setBlockState(heightPos.up(outOfGround).west(), Blocks.COARSE_DIRT.getDefaultState(), 4);
-                worldIn.setBlockState(heightPos.up(outOfGround - 1).west(), Blocks.COARSE_DIRT.getDefaultState(), 4);
-                worldIn.setBlockState(heightPos.up(outOfGround - 2).west(), Blocks.COARSE_DIRT.getDefaultState(), 4);
+                worldIn.setBlock(heightPos.above(outOfGround).west(), Blocks.COARSE_DIRT.defaultBlockState(), 4);
+                worldIn.setBlock(heightPos.above(outOfGround - 1).west(), Blocks.COARSE_DIRT.defaultBlockState(), 4);
+                worldIn.setBlock(heightPos.above(outOfGround - 2).west(), Blocks.COARSE_DIRT.defaultBlockState(), 4);
             }
         }
         int i = outOfGround;
         int down = rand.nextInt(2) + 1;
         while (i > -down) {
             i--;
-            worldIn.setBlockState(heightPos.up(i), AMBlockRegistry.LEAFCUTTER_ANT_CHAMBER.getDefaultState(), 4);
+            worldIn.setBlock(heightPos.above(i), AMBlockRegistry.LEAFCUTTER_ANT_CHAMBER.defaultBlockState(), 4);
         }
         float size = chunkSeedRandom.nextInt(1) + 1;
         int lvt_8_1_ = (int) (Math.floor(size) * rand.nextFloat()) + 1;
         int lvt_9_1_ = (int) (Math.floor(size) * rand.nextFloat()) + 1;
         int lvt_10_1_ = (int) (Math.floor(size) * rand.nextFloat()) + 1;
         float radius = (float) (lvt_8_1_ + lvt_9_1_ + lvt_10_1_) * 0.333F + 0.5F;
-        heightPos = heightPos.down(down + lvt_9_1_).add(chunkSeedRandom.nextInt(2), 0, chunkSeedRandom.nextInt(2));
-        Iterator var12 = BlockPos.getAllInBoxMutable(heightPos.add(-lvt_8_1_, -lvt_9_1_, -lvt_10_1_), heightPos.add(lvt_8_1_, lvt_9_1_, lvt_10_1_)).iterator();
+        heightPos = heightPos.below(down + lvt_9_1_).offset(chunkSeedRandom.nextInt(2), 0, chunkSeedRandom.nextInt(2));
+        Iterator var12 = BlockPos.betweenClosed(heightPos.offset(-lvt_8_1_, -lvt_9_1_, -lvt_10_1_), heightPos.offset(lvt_8_1_, lvt_9_1_, lvt_10_1_)).iterator();
         while (var12.hasNext()) {
             BlockPos lvt_13_1_ = (BlockPos) var12.next();
-            if (lvt_13_1_.distanceSq(heightPos) < (double) (radius * radius)) {
-                BlockState block = AMBlockRegistry.LEAFCUTTER_ANT_CHAMBER.getDefaultState();
-                worldIn.setBlockState(lvt_13_1_, block, 4);
+            if (lvt_13_1_.distSqr(heightPos) < (double) (radius * radius)) {
+                BlockState block = AMBlockRegistry.LEAFCUTTER_ANT_CHAMBER.defaultBlockState();
+                worldIn.setBlock(lvt_13_1_, block, 4);
             }
         }
         return true;

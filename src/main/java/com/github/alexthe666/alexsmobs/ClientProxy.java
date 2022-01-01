@@ -139,25 +139,25 @@ public class ClientProxy extends CommonProxy {
         RenderingRegistry.registerEntityRenderingHandler(AMEntityRegistry.SEAGULL, manager -> new RenderSeagull(manager));
         MinecraftForge.EVENT_BUS.register(new ClientEvents());
         try{
-            ItemModelsProperties.registerProperty(AMItemRegistry.BLOOD_SPRAYER, new ResourceLocation("empty"), (stack, p_239428_1_, p_239428_2_) -> {
-                return !ItemBloodSprayer.isUsable(stack) || p_239428_2_ instanceof PlayerEntity && ((PlayerEntity) p_239428_2_).getCooldownTracker().hasCooldown(AMItemRegistry.BLOOD_SPRAYER) ? 1.0F : 0.0F;
+            ItemModelsProperties.register(AMItemRegistry.BLOOD_SPRAYER, new ResourceLocation("empty"), (stack, p_239428_1_, p_239428_2_) -> {
+                return !ItemBloodSprayer.isUsable(stack) || p_239428_2_ instanceof PlayerEntity && ((PlayerEntity) p_239428_2_).getCooldowns().isOnCooldown(AMItemRegistry.BLOOD_SPRAYER) ? 1.0F : 0.0F;
             });
-            ItemModelsProperties.registerProperty(AMItemRegistry.HEMOLYMPH_BLASTER, new ResourceLocation("empty"), (stack, p_239428_1_, p_239428_2_) -> {
-                return !ItemHemolymphBlaster.isUsable(stack) || p_239428_2_ instanceof PlayerEntity && ((PlayerEntity) p_239428_2_).getCooldownTracker().hasCooldown(AMItemRegistry.HEMOLYMPH_BLASTER) ? 1.0F : 0.0F;
+            ItemModelsProperties.register(AMItemRegistry.HEMOLYMPH_BLASTER, new ResourceLocation("empty"), (stack, p_239428_1_, p_239428_2_) -> {
+                return !ItemHemolymphBlaster.isUsable(stack) || p_239428_2_ instanceof PlayerEntity && ((PlayerEntity) p_239428_2_).getCooldowns().isOnCooldown(AMItemRegistry.HEMOLYMPH_BLASTER) ? 1.0F : 0.0F;
             });
-            ItemModelsProperties.registerProperty(AMItemRegistry.TARANTULA_HAWK_ELYTRA, new ResourceLocation("broken"), (stack, p_239428_1_, p_239428_2_) -> {
+            ItemModelsProperties.register(AMItemRegistry.TARANTULA_HAWK_ELYTRA, new ResourceLocation("broken"), (stack, p_239428_1_, p_239428_2_) -> {
                 return ItemTarantulaHawkElytra.isUsable(stack) ? 0.0F : 1.0F;
             });
-            ItemModelsProperties.registerProperty(AMItemRegistry.SHIELD_OF_THE_DEEP, new ResourceLocation("blocking"), (stack, p_239421_1_, p_239421_2_) -> {
-                return p_239421_2_ != null && p_239421_2_.isHandActive() && p_239421_2_.getActiveItemStack() == stack ? 1.0F : 0.0F;
+            ItemModelsProperties.register(AMItemRegistry.SHIELD_OF_THE_DEEP, new ResourceLocation("blocking"), (stack, p_239421_1_, p_239421_2_) -> {
+                return p_239421_2_ != null && p_239421_2_.isUsingItem() && p_239421_2_.getUseItem() == stack ? 1.0F : 0.0F;
             });
         }catch (Exception e){
             AlexsMobs.LOGGER.warn("Could not load item models for weapons");
         }
-        RenderTypeLookup.setRenderLayer(AMBlockRegistry.BANANA_PEEL, RenderType.getCutout());
-        RenderTypeLookup.setRenderLayer(AMBlockRegistry.CAPSID, RenderType.getTranslucent());
-        RenderTypeLookup.setRenderLayer(AMBlockRegistry.VOID_WORM_BEAK, RenderType.getCutout());
-        RenderTypeLookup.setRenderLayer(AMBlockRegistry.HUMMINGBIRD_FEEDER, RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(AMBlockRegistry.BANANA_PEEL, RenderType.cutout());
+        RenderTypeLookup.setRenderLayer(AMBlockRegistry.CAPSID, RenderType.translucent());
+        RenderTypeLookup.setRenderLayer(AMBlockRegistry.VOID_WORM_BEAK, RenderType.cutout());
+        RenderTypeLookup.setRenderLayer(AMBlockRegistry.HUMMINGBIRD_FEEDER, RenderType.cutout());
         ClientRegistry.bindTileEntityRenderer(AMTileEntityRegistry.CAPSID, manager -> new RenderCapsid(manager));
         ClientRegistry.bindTileEntityRenderer(AMTileEntityRegistry.VOID_WORM_BEAK, manager -> new RenderVoidWormBeak(manager));
 
@@ -171,11 +171,11 @@ public class ClientProxy extends CommonProxy {
     }
 
     public void openBookGUI(ItemStack itemStackIn) {
-        Minecraft.getInstance().displayGuiScreen(new GUIAnimalDictionary(itemStackIn));
+        Minecraft.getInstance().setScreen(new GUIAnimalDictionary(itemStackIn));
     }
 
     public void openBookGUI(ItemStack itemStackIn, String page) {
-        Minecraft.getInstance().displayGuiScreen(new GUIAnimalDictionary(itemStackIn, page));
+        Minecraft.getInstance().setScreen(new GUIAnimalDictionary(itemStackIn, page));
     }
 
     public Item.Properties setupISTER(Item.Properties group) {
@@ -217,30 +217,30 @@ public class ClientProxy extends CommonProxy {
     public void onEntityStatus(Entity entity, byte updateKind) {
         if(entity instanceof EntityCockroach && entity.isAlive() && updateKind == 67){
             SoundLaCucaracha sound;
-            if(COCKROACH_SOUND_MAP.get(entity.getEntityId()) == null){
+            if(COCKROACH_SOUND_MAP.get(entity.getId()) == null){
                 sound = new SoundLaCucaracha((EntityCockroach)entity);
-                COCKROACH_SOUND_MAP.put(entity.getEntityId(), sound);
+                COCKROACH_SOUND_MAP.put(entity.getId(), sound);
             }else{
-                sound = COCKROACH_SOUND_MAP.get(entity.getEntityId());
+                sound = COCKROACH_SOUND_MAP.get(entity.getId());
             }
-            if(!Minecraft.getInstance().getSoundHandler().isPlaying(sound) && sound.shouldPlaySound() && sound.isOnlyCockroach()){
-                Minecraft.getInstance().getSoundHandler().play(sound);
+            if(!Minecraft.getInstance().getSoundManager().isActive(sound) && sound.canPlaySound() && sound.isOnlyCockroach()){
+                Minecraft.getInstance().getSoundManager().play(sound);
             }
         }
         if(entity instanceof EntityVoidWorm && entity.isAlive() && updateKind == 67){
-            float f2 = Minecraft.getInstance().gameSettings.getSoundLevel(SoundCategory.MUSIC);
+            float f2 = Minecraft.getInstance().options.getSoundSourceVolume(SoundCategory.MUSIC);
             if(f2 <= 0){
                 WORMBOSS_SOUND_MAP.clear();
             }else{
                 SoundWormBoss sound;
-                if(WORMBOSS_SOUND_MAP.get(entity.getEntityId()) == null){
+                if(WORMBOSS_SOUND_MAP.get(entity.getId()) == null){
                     sound = new SoundWormBoss((EntityVoidWorm)entity);
-                    WORMBOSS_SOUND_MAP.put(entity.getEntityId(), sound);
+                    WORMBOSS_SOUND_MAP.put(entity.getId(), sound);
                 }else{
-                    sound = WORMBOSS_SOUND_MAP.get(entity.getEntityId());
+                    sound = WORMBOSS_SOUND_MAP.get(entity.getId());
                 }
-                if(!Minecraft.getInstance().getSoundHandler().isPlaying(sound) && sound.isNearest()){
-                    Minecraft.getInstance().getSoundHandler().play(sound);
+                if(!Minecraft.getInstance().getSoundManager().isActive(sound) && sound.isNearest()){
+                    Minecraft.getInstance().getSoundManager().play(sound);
                 }
             }
 
@@ -248,36 +248,36 @@ public class ClientProxy extends CommonProxy {
     }
 
     public void updateBiomeVisuals(int x, int z) {
-        Minecraft.getInstance().worldRenderer.markBlockRangeForRenderUpdate(x- 32, 0, x - 32, z + 32, 255, z + 32);
+        Minecraft.getInstance().levelRenderer.setBlocksDirty(x- 32, 0, x - 32, z + 32, 255, z + 32);
     }
 
     public void setupParticles() {
         AlexsMobs.LOGGER.debug("Registered particle factories");
-        Minecraft.getInstance().particles.registerFactory(AMParticleRegistry.GUSTER_SAND_SPIN, ParticleGusterSandSpin.Factory::new);
-        Minecraft.getInstance().particles.registerFactory(AMParticleRegistry.GUSTER_SAND_SHOT, ParticleGusterSandShot.Factory::new);
-        Minecraft.getInstance().particles.registerFactory(AMParticleRegistry.GUSTER_SAND_SPIN_RED, ParticleGusterSandSpin.FactoryRed::new);
-        Minecraft.getInstance().particles.registerFactory(AMParticleRegistry.GUSTER_SAND_SHOT_RED, ParticleGusterSandShot.FactoryRed::new);
-        Minecraft.getInstance().particles.registerFactory(AMParticleRegistry.GUSTER_SAND_SPIN_SOUL, ParticleGusterSandSpin.FactorySoul::new);
-        Minecraft.getInstance().particles.registerFactory(AMParticleRegistry.GUSTER_SAND_SHOT_SOUL, ParticleGusterSandShot.FactorySoul::new);
-        Minecraft.getInstance().particles.registerFactory(AMParticleRegistry.HEMOLYMPH, ParticleHemolymph.Factory::new);
-        Minecraft.getInstance().particles.registerFactory(AMParticleRegistry.PLATYPUS_SENSE, ParticlePlatypus.Factory::new);
-        Minecraft.getInstance().particles.registerFactory(AMParticleRegistry.WHALE_SPLASH, ParticleWhaleSplash.Factory::new);
-        Minecraft.getInstance().particles.registerFactory(AMParticleRegistry.DNA, ParticleDna.Factory::new);
-        Minecraft.getInstance().particles.registerFactory(AMParticleRegistry.SHOCKED, ParticleSimpleHeart.Factory::new);
-        Minecraft.getInstance().particles.registerFactory(AMParticleRegistry.WORM_PORTAL, ParticleWormPortal.Factory::new);
-        Minecraft.getInstance().particles.registerFactory(AMParticleRegistry.INVERT_DIG, ParticleInvertDig.Factory::new);
-        Minecraft.getInstance().particles.registerFactory(AMParticleRegistry.TEETH_GLINT, ParticleTeethGlint.Factory::new);
+        Minecraft.getInstance().particleEngine.register(AMParticleRegistry.GUSTER_SAND_SPIN, ParticleGusterSandSpin.Factory::new);
+        Minecraft.getInstance().particleEngine.register(AMParticleRegistry.GUSTER_SAND_SHOT, ParticleGusterSandShot.Factory::new);
+        Minecraft.getInstance().particleEngine.register(AMParticleRegistry.GUSTER_SAND_SPIN_RED, ParticleGusterSandSpin.FactoryRed::new);
+        Minecraft.getInstance().particleEngine.register(AMParticleRegistry.GUSTER_SAND_SHOT_RED, ParticleGusterSandShot.FactoryRed::new);
+        Minecraft.getInstance().particleEngine.register(AMParticleRegistry.GUSTER_SAND_SPIN_SOUL, ParticleGusterSandSpin.FactorySoul::new);
+        Minecraft.getInstance().particleEngine.register(AMParticleRegistry.GUSTER_SAND_SHOT_SOUL, ParticleGusterSandShot.FactorySoul::new);
+        Minecraft.getInstance().particleEngine.register(AMParticleRegistry.HEMOLYMPH, ParticleHemolymph.Factory::new);
+        Minecraft.getInstance().particleEngine.register(AMParticleRegistry.PLATYPUS_SENSE, ParticlePlatypus.Factory::new);
+        Minecraft.getInstance().particleEngine.register(AMParticleRegistry.WHALE_SPLASH, ParticleWhaleSplash.Factory::new);
+        Minecraft.getInstance().particleEngine.register(AMParticleRegistry.DNA, ParticleDna.Factory::new);
+        Minecraft.getInstance().particleEngine.register(AMParticleRegistry.SHOCKED, ParticleSimpleHeart.Factory::new);
+        Minecraft.getInstance().particleEngine.register(AMParticleRegistry.WORM_PORTAL, ParticleWormPortal.Factory::new);
+        Minecraft.getInstance().particleEngine.register(AMParticleRegistry.INVERT_DIG, ParticleInvertDig.Factory::new);
+        Minecraft.getInstance().particleEngine.register(AMParticleRegistry.TEETH_GLINT, ParticleTeethGlint.Factory::new);
     }
 
 
     public void setRenderViewEntity(Entity entity){
-        prevPOV = Minecraft.getInstance().gameSettings.getPointOfView();
-        Minecraft.getInstance().setRenderViewEntity(entity);
-        Minecraft.getInstance().gameSettings.setPointOfView(PointOfView.THIRD_PERSON_BACK);
+        prevPOV = Minecraft.getInstance().options.getCameraType();
+        Minecraft.getInstance().setCameraEntity(entity);
+        Minecraft.getInstance().options.setCameraType(PointOfView.THIRD_PERSON_BACK);
     }
 
     public void resetRenderViewEntity(){
-        Minecraft.getInstance().setRenderViewEntity(Minecraft.getInstance().player);
+        Minecraft.getInstance().setCameraEntity(Minecraft.getInstance().player);
     }
 
     public int getPreviousPOV(){
@@ -286,7 +286,7 @@ public class ClientProxy extends CommonProxy {
 
     public boolean isFarFromCamera(double x, double y, double z) {
         Minecraft lvt_1_1_ = Minecraft.getInstance();
-        return lvt_1_1_.gameRenderer.getActiveRenderInfo().getProjectedView().squareDistanceTo(x, y, z) >= 256.0D;
+        return lvt_1_1_.gameRenderer.getMainCamera().getPosition().distanceToSqr(x, y, z) >= 256.0D;
     }
 
     public void resetVoidPortalCreation(PlayerEntity player){

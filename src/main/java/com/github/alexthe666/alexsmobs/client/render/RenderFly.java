@@ -14,23 +14,23 @@ public class RenderFly extends MobRenderer<EntityFly, ModelFly> {
         super(renderManagerIn, new ModelFly(), 0.2F);
     }
 
-    protected void preRenderCallback(EntityFly entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityFly entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
     }
 
-    protected boolean func_230495_a_(EntityFly fly) {
+    protected boolean isShaking(EntityFly fly) {
         return fly.isInNether();
     }
 
-    protected void applyRotations(EntityFly entityLiving, MatrixStack matrixStackIn, float ageInTicks, float rotationYaw, float partialTicks) {
-        if (this.func_230495_a_(entityLiving)) {
-            rotationYaw += (float)(Math.cos((double)entityLiving.ticksExisted * 7F) * Math.PI * (double)0.9F);
+    protected void setupRotations(EntityFly entityLiving, MatrixStack matrixStackIn, float ageInTicks, float rotationYaw, float partialTicks) {
+        if (this.isShaking(entityLiving)) {
+            rotationYaw += (float)(Math.cos((double)entityLiving.tickCount * 7F) * Math.PI * (double)0.9F);
             float vibrate = 0.05F;
-            matrixStackIn.translate((entityLiving.getRNG().nextFloat() - 0.5F)* vibrate, (entityLiving.getRNG().nextFloat() - 0.5F) * vibrate, (entityLiving.getRNG().nextFloat() - 0.5F)* vibrate);
+            matrixStackIn.translate((entityLiving.getRandom().nextFloat() - 0.5F)* vibrate, (entityLiving.getRandom().nextFloat() - 0.5F) * vibrate, (entityLiving.getRandom().nextFloat() - 0.5F)* vibrate);
         }
-        super.applyRotations(entityLiving, matrixStackIn, ageInTicks, rotationYaw, partialTicks);
+        super.setupRotations(entityLiving, matrixStackIn, ageInTicks, rotationYaw, partialTicks);
     }
 
-    public ResourceLocation getEntityTexture(EntityFly entity) {
+    public ResourceLocation getTextureLocation(EntityFly entity) {
         return TEXTURE;
     }
 }

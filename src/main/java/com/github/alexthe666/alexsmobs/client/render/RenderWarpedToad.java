@@ -19,12 +19,12 @@ public class RenderWarpedToad extends MobRenderer<EntityWarpedToad, ModelWarpedT
         this.addLayer(new LayerWarpedToadGlow(this));
     }
 
-    protected void preRenderCallback(EntityWarpedToad entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityWarpedToad entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(1.25F, 1.25F, 1.25F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntityWarpedToad entity) {
+    public ResourceLocation getTextureLocation(EntityWarpedToad entity) {
         if(entity.isBased()){
             return entity.isBlinking() ? TEXTURE_PEPE_BLINKING : TEXTURE_PEPE;
         }else{

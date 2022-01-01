@@ -24,28 +24,28 @@ public class RenderGust extends EntityRenderer<EntityGust> {
     }
 
     public void render(EntityGust entityIn, float entityYaw, float partialTicks, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn) {
-        if(true || Minecraft.getInstance().gameSettings.particles == ParticleStatus.MINIMAL){
-            matrixStackIn.push();
+        if(true || Minecraft.getInstance().options.particles == ParticleStatus.MINIMAL){
+            matrixStackIn.pushPose();
             matrixStackIn.translate(0.0D, (double)0.5F, 0.0D);
             if(!entityIn.getVertical()){
-                matrixStackIn.rotate(Vector3f.XP.rotationDegrees(180F));
+                matrixStackIn.mulPose(Vector3f.XP.rotationDegrees(180F));
             }else{
-                matrixStackIn.rotate(Vector3f.XP.rotationDegrees(-180F));
+                matrixStackIn.mulPose(Vector3f.XP.rotationDegrees(-180F));
 
             }
-            matrixStackIn.rotate(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.prevRotationYaw, entityIn.rotationYaw) - 90.0F));
+            matrixStackIn.mulPose(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, entityIn.yRotO, entityIn.yRot) - 90.0F));
             matrixStackIn.scale(0.5F, 0.5F, 0.5F);
-            IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.getEntityTranslucent(TEXTURE));
+            IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.entityTranslucent(TEXTURE));
             this.model.hideEyes();
-            this.model.render(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
-            this.model.animateGust(entityIn, 0, 0, entityIn.ticksExisted + partialTicks);
+            this.model.renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
+            this.model.animateGust(entityIn, 0, 0, entityIn.tickCount + partialTicks);
             this.model.showEyes();
-            matrixStackIn.pop();
+            matrixStackIn.popPose();
         }
         super.render(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
     }
 
-    public ResourceLocation getEntityTexture(EntityGust entity) {
+    public ResourceLocation getTextureLocation(EntityGust entity) {
         return TEXTURE;
     }
 }

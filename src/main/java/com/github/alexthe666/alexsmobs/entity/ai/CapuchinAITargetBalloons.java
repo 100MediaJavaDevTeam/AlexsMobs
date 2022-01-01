@@ -33,7 +33,7 @@ public class CapuchinAITargetBalloons extends Goal {
     protected int unseenMemoryTicks = 60;
     protected final int targetChance;
     public static final Predicate<Entity> TARGET_BLOON = (balloon) -> {
-        return balloon.getEntityString() != null && (balloon.getEntityString().contains("balloon") || balloon.getEntityString().contains("balloom"));
+        return balloon.getEncodeId() != null && (balloon.getEncodeId().contains("balloon") || balloon.getEncodeId().contains("balloom"));
     };
 
     public CapuchinAITargetBalloons(EntityCapuchinMonkey mobIn, boolean checkSight) {
@@ -41,7 +41,7 @@ public class CapuchinAITargetBalloons extends Goal {
     }
 
     public CapuchinAITargetBalloons(EntityCapuchinMonkey mobIn, boolean checkSight, boolean nearbyOnlyIn, int targetChance) {
-        this.setMutexFlags(EnumSet.of(Goal.Flag.TARGET));
+        this.setFlags(EnumSet.of(Goal.Flag.TARGET));
         this.monkey = mobIn;
         this.shouldCheckSight = checkSight;
         this.nearbyOnly = nearbyOnlyIn;
@@ -49,8 +49,8 @@ public class CapuchinAITargetBalloons extends Goal {
     }
 
     @Override
-    public boolean shouldExecute() {
-        if (this.targetChance > 0 && this.monkey.getRNG().nextInt(this.targetChance) != 0) {
+    public boolean canUse() {
+        if (this.targetChance > 0 && this.monkey.getRandom().nextInt(this.targetChance) != 0) {
             return false;
         } else {
             this.findNearestTarget();
@@ -59,20 +59,20 @@ public class CapuchinAITargetBalloons extends Goal {
     }
 
     protected AxisAlignedBB getTargetableArea(double targetDistance) {
-        return this.monkey.getBoundingBox().grow(targetDistance, targetDistance, targetDistance);
+        return this.monkey.getBoundingBox().inflate(targetDistance, targetDistance, targetDistance);
     }
 
     protected void findNearestTarget() {
         Entity closest = null;
-        for(Entity bloon : this.monkey.world.getEntitiesWithinAABB(Entity.class, getTargetableArea(getTargetDistance()), TARGET_BLOON)){
-            if(closest == null || closest.getDistance(monkey) > bloon.getDistance(monkey)){
+        for(Entity bloon : this.monkey.level.getEntitiesOfClass(Entity.class, getTargetableArea(getTargetDistance()), TARGET_BLOON)){
+            if(closest == null || closest.distanceTo(monkey) > bloon.distanceTo(monkey)){
                 closest = bloon;
             }
         }
         this.target = closest;
     }
 
-    public boolean shouldContinueExecuting() {
+    public boolean canContinueToUse() {
         Entity livingentity = this.monkey.getDartTarget();
         if (livingentity == null) {
             livingentity = this.target;
@@ -89,18 +89,18 @@ public class CapuchinAITargetBalloons extends Goal {
                 return false;
             } else {
                 double d0 = this.getTargetDistance();
-                if (this.monkey.getDistanceSq(livingentity) > d0 * d0) {
+                if (this.monkey.distanceToSqr(livingentity) > d0 * d0) {
                     return false;
                 } else {
                     if (this.shouldCheckSight) {
-                        if (this.monkey.getEntitySenses().canSee(livingentity)) {
+                        if (this.monkey.getSensing().canSee(livingentity)) {
                             this.targetUnseenTicks = 0;
                         } else if (++this.targetUnseenTicks > this.unseenMemoryTicks) {
                             return false;
                         }
                     }
 
-                    if (livingentity instanceof PlayerEntity && ((PlayerEntity)livingentity).abilities.disableDamage) {
+                    if (livingentity instanceof PlayerEntity && ((PlayerEntity)livingentity).abilities.invulnerable) {
                         return false;
                     } else {
                         this.monkey.setDartTarget(livingentity);
@@ -115,7 +115,7 @@ public class CapuchinAITargetBalloons extends Goal {
         return this.monkey.getAttributeValue(Attributes.FOLLOW_RANGE);
     }
 
-    public void startExecuting() {
+    public void start() {
         this.monkey.setDartTarget(this.target);
         this.targetSearchStatus = 0;
         this.targetSearchDelay = 0;
@@ -125,8 +125,8 @@ public class CapuchinAITargetBalloons extends Goal {
     /**
      * Reset the task's internal state. Called when this task is interrupted by another one
      */
-    public void resetTask() {
-        this.monkey.setAttackTarget((LivingEntity)null);
+    public void stop() {
+        this.monkey.setTarget((LivingEntity)null);
         this.monkey.setDartTarget(null);
         this.target = null;
     }
@@ -137,9 +137,9 @@ public class CapuchinAITargetBalloons extends Goal {
     protected boolean isSuitableTarget(@Nullable LivingEntity potentialTarget, EntityPredicate targetPredicate) {
         if (potentialTarget == null) {
             return false;
-        } else if (!targetPredicate.canTarget(this.monkey, potentialTarget)) {
+        } else if (!targetPredicate.test(this.monkey, potentialTarget)) {
             return false;
-        } else if (!this.monkey.isWithinHomeDistanceFromPosition(potentialTarget.getPosition())) {
+        } else if (!this.monkey.isWithinRestriction(potentialTarget.blockPosition())) {
             return false;
         } else {
             if (this.nearbyOnly) {
@@ -164,17 +164,17 @@ public class CapuchinAITargetBalloons extends Goal {
      * Checks to see if this entity can find a short path to the given target.
      */
     private boolean canEasilyReach(LivingEntity target) {
-        this.targetSearchDelay = 10 + this.monkey.getRNG().nextInt(5);
-        Path path = this.monkey.getNavigator().pathfind(target, 0);
+        this.targetSearchDelay = 10 + this.monkey.getRandom().nextInt(5);
+        Path path = this.monkey.getNavigation().createPath(target, 0);
         if (path == null) {
             return false;
         } else {
-            PathPoint pathpoint = path.getFinalPathPoint();
+            PathPoint pathpoint = path.getEndNode();
             if (pathpoint == null) {
                 return false;
             } else {
-                int i = pathpoint.x - MathHelper.floor(target.getPosX());
-                int j = pathpoint.z - MathHelper.floor(target.getPosZ());
+                int i = pathpoint.x - MathHelper.floor(target.getX());
+                int j = pathpoint.z - MathHelper.floor(target.getZ());
                 return (double)(i * i + j * j) <= 2.25D;
             }
         }

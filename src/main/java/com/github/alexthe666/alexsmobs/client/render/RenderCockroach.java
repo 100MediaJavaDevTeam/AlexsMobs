@@ -18,12 +18,12 @@ public class RenderCockroach extends MobRenderer<EntityCockroach, ModelCockroach
         this.addLayer(new LayerCockroachMaracas(this));
     }
 
-    protected void preRenderCallback(EntityCockroach entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityCockroach entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
         matrixStackIn.scale(0.85F, 0.85F, 0.85F);
     }
 
 
-    public ResourceLocation getEntityTexture(EntityCockroach entity) {
+    public ResourceLocation getTextureLocation(EntityCockroach entity) {
         return TEXTURE;
     }
 }

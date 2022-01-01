@@ -17,14 +17,14 @@ import java.util.Set;
 @Mod.EventBusSubscriber(modid = AlexsMobs.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class AMPointOfInterestRegistry {
 
-    public static final PointOfInterestType END_PORTAL_FRAME = new PointOfInterestType("alexsmobs:end_portal_frame", PointOfInterestType.getAllStates(Blocks.END_PORTAL_FRAME), 32, 6);
-    public static final PointOfInterestType LEAFCUTTER_ANT_HILL = new PointOfInterestType("alexsmobs:leafcutter_anthill", PointOfInterestType.getAllStates(AMBlockRegistry.LEAFCUTTER_ANTHILL), 32, 6);
-    public static final PointOfInterestType BEACON = new PointOfInterestType("alexsmobs:am_beacon", PointOfInterestType.getAllStates(Blocks.BEACON), 32, 6);
-    public static final PointOfInterestType HUMMINGBIRD_FEEDER = new PointOfInterestType("alexsmobs:hummingbird_feeder", PointOfInterestType.getAllStates(AMBlockRegistry.HUMMINGBIRD_FEEDER), 32, 6);
+    public static final PointOfInterestType END_PORTAL_FRAME = new PointOfInterestType("alexsmobs:end_portal_frame", PointOfInterestType.getBlockStates(Blocks.END_PORTAL_FRAME), 32, 6);
+    public static final PointOfInterestType LEAFCUTTER_ANT_HILL = new PointOfInterestType("alexsmobs:leafcutter_anthill", PointOfInterestType.getBlockStates(AMBlockRegistry.LEAFCUTTER_ANTHILL), 32, 6);
+    public static final PointOfInterestType BEACON = new PointOfInterestType("alexsmobs:am_beacon", PointOfInterestType.getBlockStates(Blocks.BEACON), 32, 6);
+    public static final PointOfInterestType HUMMINGBIRD_FEEDER = new PointOfInterestType("alexsmobs:hummingbird_feeder", PointOfInterestType.getBlockStates(AMBlockRegistry.HUMMINGBIRD_FEEDER), 32, 6);
 
     private static Set<BlockState> getHummingbirdFeederStates() {
-        BlockState state = AMBlockRegistry.HUMMINGBIRD_FEEDER.getDefaultState().with(BlockHummingbirdFeeder.CONTENTS, 3);
-        return ImmutableSet.of(state, state.with(BlockHummingbirdFeeder.HANGING, true), state.with(BlockHummingbirdFeeder.WATERLOGGED, true), state.with(BlockHummingbirdFeeder.HANGING, true).with(BlockHummingbirdFeeder.WATERLOGGED, true));
+        BlockState state = AMBlockRegistry.HUMMINGBIRD_FEEDER.defaultBlockState().setValue(BlockHummingbirdFeeder.CONTENTS, 3);
+        return ImmutableSet.of(state, state.setValue(BlockHummingbirdFeeder.HANGING, true), state.setValue(BlockHummingbirdFeeder.WATERLOGGED, true), state.setValue(BlockHummingbirdFeeder.HANGING, true).setValue(BlockHummingbirdFeeder.WATERLOGGED, true));
     }
 
     @SubscribeEvent

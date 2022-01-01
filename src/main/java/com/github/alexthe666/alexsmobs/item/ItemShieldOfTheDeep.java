@@ -22,7 +22,7 @@ public class ItemShieldOfTheDeep extends Item {
         return true;
     }
 
-    public UseAction getUseAction(ItemStack p_77661_1_) {
+    public UseAction getUseAnimation(ItemStack p_77661_1_) {
         return UseAction.BLOCK;
     }
 
@@ -30,14 +30,14 @@ public class ItemShieldOfTheDeep extends Item {
         return 72000;
     }
 
-    public ActionResult<ItemStack> onItemRightClick(World p_77659_1_, PlayerEntity p_77659_2_, Hand p_77659_3_) {
-        ItemStack lvt_4_1_ = p_77659_2_.getHeldItem(p_77659_3_);
-        p_77659_2_.setActiveHand(p_77659_3_);
-        return ActionResult.resultConsume(lvt_4_1_);
+    public ActionResult<ItemStack> use(World p_77659_1_, PlayerEntity p_77659_2_, Hand p_77659_3_) {
+        ItemStack lvt_4_1_ = p_77659_2_.getItemInHand(p_77659_3_);
+        p_77659_2_.startUsingItem(p_77659_3_);
+        return ActionResult.consume(lvt_4_1_);
     }
 
-    public boolean getIsRepairable(ItemStack p_82789_1_, ItemStack p_82789_2_) {
-        return AMItemRegistry.SERRATED_SHARK_TOOTH == p_82789_2_.getItem() || super.getIsRepairable(p_82789_1_, p_82789_2_);
+    public boolean isValidRepairItem(ItemStack p_82789_1_, ItemStack p_82789_2_) {
+        return AMItemRegistry.SERRATED_SHARK_TOOTH == p_82789_2_.getItem() || super.isValidRepairItem(p_82789_1_, p_82789_2_);
     }
 
 }

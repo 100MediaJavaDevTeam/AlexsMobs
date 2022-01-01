@@ -27,12 +27,12 @@ public class MessageKangarooEat {
     }
 
     public static MessageKangarooEat read(PacketBuffer buf) {
-        return new MessageKangarooEat(buf.readInt(), buf.readItemStack());
+        return new MessageKangarooEat(buf.readInt(), buf.readItem());
     }
 
     public static void write(MessageKangarooEat message, PacketBuffer buf) {
         buf.writeInt(message.kangaroo);
-        buf.writeItemStack(message.stack);
+        buf.writeItem(message.stack);
     }
 
     public static class Handler {
@@ -47,15 +47,15 @@ public class MessageKangarooEat {
             }
 
             if (player != null) {
-                if (player.world != null) {
-                    Entity entity = player.world.getEntityByID(message.kangaroo);
+                if (player.level != null) {
+                    Entity entity = player.level.getEntity(message.kangaroo);
                     if(entity instanceof EntityKangaroo && ((EntityKangaroo) entity).kangarooInventory != null){
                         EntityKangaroo kangaroo = (EntityKangaroo)entity;
                         for (int i = 0; i < 7; i++) {
-                            double d2 = kangaroo.getRNG().nextGaussian() * 0.02D;
-                            double d0 = kangaroo.getRNG().nextGaussian() * 0.02D;
-                            double d1 = kangaroo.getRNG().nextGaussian() * 0.02D;
-                            entity.world.addParticle(new ItemParticleData(ParticleTypes.ITEM, message.stack), entity.getPosX() + (double) (kangaroo.getRNG().nextFloat() * entity.getWidth()) - (double) entity.getWidth() * 0.5F, entity.getPosY() + entity.getHeight() * 0.5F + (double) (kangaroo.getRNG().nextFloat() * entity.getHeight() * 0.5F), entity.getPosZ() + (double) (kangaroo.getRNG().nextFloat() * entity.getWidth()) - (double) entity.getWidth() * 0.5F, d0, d1, d2);
+                            double d2 = kangaroo.getRandom().nextGaussian() * 0.02D;
+                            double d0 = kangaroo.getRandom().nextGaussian() * 0.02D;
+                            double d1 = kangaroo.getRandom().nextGaussian() * 0.02D;
+                            entity.level.addParticle(new ItemParticleData(ParticleTypes.ITEM, message.stack), entity.getX() + (double) (kangaroo.getRandom().nextFloat() * entity.getBbWidth()) - (double) entity.getBbWidth() * 0.5F, entity.getY() + entity.getBbHeight() * 0.5F + (double) (kangaroo.getRandom().nextFloat() * entity.getBbHeight() * 0.5F), entity.getZ() + (double) (kangaroo.getRandom().nextFloat() * entity.getBbWidth()) - (double) entity.getBbWidth() * 0.5F, d0, d1, d2);
                         }
                     }
                 }

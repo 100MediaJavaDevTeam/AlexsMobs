@@ -13,14 +13,14 @@ public class EffectLavaVision extends Effect {
 
     }
 
-    public void performEffect(LivingEntity LivingEntityIn, int amplifier) {
+    public void applyEffectTick(LivingEntity LivingEntityIn, int amplifier) {
     }
 
-    public boolean isReady(int duration, int amplifier) {
+    public boolean isDurationEffectTick(int duration, int amplifier) {
         return duration > 0;
     }
 
-    public String getName() {
+    public String getDescriptionId() {
         return "alexsmobs.potion.lava_vision";
     }
 

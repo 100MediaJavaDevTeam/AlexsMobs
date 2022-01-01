@@ -18,39 +18,39 @@ public class EffectClinging extends Effect {
     }
 
     private static BlockPos getPositionUnderneath(Entity e) {
-        return new BlockPos(e.getPosX(), e.getBoundingBox().maxY + 1.51F, e.getPosZ());
+        return new BlockPos(e.getX(), e.getBoundingBox().maxY + 1.51F, e.getZ());
     }
 
-    public void performEffect(LivingEntity entity, int amplifier) {
-        entity.recalculateSize();
+    public void applyEffectTick(LivingEntity entity, int amplifier) {
+        entity.refreshDimensions();
         entity.setNoGravity(false);
 
         if (isUpsideDown(entity)) {
             entity.fallDistance = 0;
-            if (!entity.isSneaking()) {
-                if (!entity.collidedHorizontally) {
-                    entity.setMotion(entity.getMotion().add(0, 0.3F, 0));
+            if (!entity.isShiftKeyDown()) {
+                if (!entity.horizontalCollision) {
+                    entity.setDeltaMovement(entity.getDeltaMovement().add(0, 0.3F, 0));
                 }
-                entity.setMotion(entity.getMotion().mul(0.998F, 1F, 0.998F));
+                entity.setDeltaMovement(entity.getDeltaMovement().multiply(0.998F, 1F, 0.998F));
             }
         }
     }
 
     public static boolean isUpsideDown(LivingEntity entity){
         BlockPos pos = getPositionUnderneath(entity);
-        BlockState ground = entity.world.getBlockState(pos);
-        return (entity.collidedVertically || ground.isSolidSide(entity.world, pos, Direction.DOWN)) && !entity.isOnGround();
+        BlockState ground = entity.level.getBlockState(pos);
+        return (entity.verticalCollision || ground.isFaceSturdy(entity.level, pos, Direction.DOWN)) && !entity.isOnGround();
     }
-    public void removeAttributesModifiersFromEntity(LivingEntity entityLivingBaseIn, AttributeModifierManager attributeMapIn, int amplifier) {
-        super.removeAttributesModifiersFromEntity(entityLivingBaseIn, attributeMapIn, amplifier);
-        entityLivingBaseIn.recalculateSize();
+    public void removeAttributeModifiers(LivingEntity entityLivingBaseIn, AttributeModifierManager attributeMapIn, int amplifier) {
+        super.removeAttributeModifiers(entityLivingBaseIn, attributeMapIn, amplifier);
+        entityLivingBaseIn.refreshDimensions();
     }
 
-    public boolean isReady(int duration, int amplifier) {
+    public boolean isDurationEffectTick(int duration, int amplifier) {
         return duration > 0;
     }
 
-    public String getName() {
+    public String getDescriptionId() {
         return "alexsmobs.potion.clinging";
     }
 

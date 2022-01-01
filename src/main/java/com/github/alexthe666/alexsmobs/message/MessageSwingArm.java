@@ -30,8 +30,8 @@ public class MessageSwingArm {
             context.get().enqueueWork(() -> {
                 PlayerEntity player = context.get().getSender();
                 if (player != null) {
-                    ItemFalconryGlove.onLeftClick(player, player.getHeldItem(Hand.OFF_HAND));
-                    ItemFalconryGlove.onLeftClick(player, player.getHeldItem(Hand.MAIN_HAND));
+                    ItemFalconryGlove.onLeftClick(player, player.getItemInHand(Hand.OFF_HAND));
+                    ItemFalconryGlove.onLeftClick(player, player.getItemInHand(Hand.MAIN_HAND));
                 }
             });
         }

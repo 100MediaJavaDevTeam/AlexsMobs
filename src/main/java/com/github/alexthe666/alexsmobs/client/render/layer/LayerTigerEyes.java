@@ -27,20 +27,20 @@ public class LayerTigerEyes  extends LayerRenderer<EntityTiger, ModelTiger> {
 
     public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityTiger tiger, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
         if(!tiger.isSleeping()){
-            long roundedTime = tiger.world.getDayTime() % 24000;
+            long roundedTime = tiger.level.getDayTime() % 24000;
             boolean night = roundedTime >= 13000 && roundedTime <= 22000;
             BlockPos ratPos = tiger.getLightPosition();
-            int i = tiger.world.getLightFor(LightType.SKY, ratPos);
-            int j = tiger.world.getLightFor(LightType.BLOCK, ratPos);
+            int i = tiger.level.getBrightness(LightType.SKY, ratPos);
+            int j = tiger.level.getBrightness(LightType.BLOCK, ratPos);
             int brightness;
             if (night) {
                 brightness = j;
             } else {
                 brightness = Math.max(i, j);
             }
-            if (brightness < 7 || tiger.getAngerTime() > 0) {
-                IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.getEyes(tiger.getAngerTime() > 0 ? TEXTURE_ANGRY : tiger.isWhite() ? TEXTURE_WHITE : TEXTURE));
-                this.getEntityModel().render(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getPackedOverlay(tiger, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
+            if (brightness < 7 || tiger.getRemainingPersistentAngerTime() > 0) {
+                IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.eyes(tiger.getRemainingPersistentAngerTime() > 0 ? TEXTURE_ANGRY : tiger.isWhite() ? TEXTURE_WHITE : TEXTURE));
+                this.getParentModel().renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, LivingRenderer.getOverlayCoords(tiger, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
             }
         }
     }

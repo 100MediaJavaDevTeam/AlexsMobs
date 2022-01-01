@@ -55,12 +55,12 @@ public class MessageUpdateEagleControls {
                     player = AlexsMobs.PROXY.getClientSidePlayer();
                 }
                 if (player != null) {
-                    if (player.world != null) {
-                        Entity entity = player.world.getEntityByID(message.eagleId);
+                    if (player.level != null) {
+                        Entity entity = player.level.getEntity(message.eagleId);
                         if (entity instanceof EntityBaldEagle) {
                             Entity over = null;
                             if(message.overEntityId >= 0){
-                                over = player.world.getEntityByID(message.overEntityId);
+                                over = player.level.getEntity(message.overEntityId);
                             }
                             ((EntityBaldEagle) entity).directFromPlayer(message.rotationYaw, message.rotationPitch, message.chunkLoad, over);
                         }

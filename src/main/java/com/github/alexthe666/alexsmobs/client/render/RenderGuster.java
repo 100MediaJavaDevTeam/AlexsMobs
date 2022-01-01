@@ -28,19 +28,19 @@ public class RenderGuster extends MobRenderer<EntityGuster, ModelGuster> {
     }
 
     @Nullable
-    protected RenderType func_230496_a_(EntityGuster p_230496_1_, boolean p_230496_2_, boolean p_230496_3_, boolean p_230496_4_) {
-        ResourceLocation resourcelocation = this.getEntityTexture(p_230496_1_);
+    protected RenderType getRenderType(EntityGuster p_230496_1_, boolean p_230496_2_, boolean p_230496_3_, boolean p_230496_4_) {
+        ResourceLocation resourcelocation = this.getTextureLocation(p_230496_1_);
         if (p_230496_3_) {
-            return RenderType.getEntityTranslucent(resourcelocation);
+            return RenderType.entityTranslucent(resourcelocation);
         } else if (p_230496_2_) {
-            return RenderType.getEntityTranslucent(resourcelocation);
+            return RenderType.entityTranslucent(resourcelocation);
         } else {
-            return p_230496_4_ ? RenderType.getOutline(resourcelocation) : null;
+            return p_230496_4_ ? RenderType.outline(resourcelocation) : null;
         }
     }
 
 
-    public ResourceLocation getEntityTexture(EntityGuster entity) {
+    public ResourceLocation getTextureLocation(EntityGuster entity) {
         return entity.isGooglyEyes() ? TEXTURE_GOOGLY : entity.getVariant() == 2 ? TEXTURE_SOUL : entity.getVariant() == 1 ? TEXTURE_RED : TEXTURE;
     }
 
@@ -53,11 +53,11 @@ public class RenderGuster extends MobRenderer<EntityGuster, ModelGuster> {
         public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, EntityGuster entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
             if(!entitylivingbaseIn.isGooglyEyes()){
                 IVertexBuilder ivertexbuilder = bufferIn.getBuffer(entitylivingbaseIn.getVariant() == 2 ? AMRenderTypes.getEyesNoCull(TEXTURE_SOUL_EYES) : AMRenderTypes.getEyesNoCull(TEXTURE_EYES));
-                this.getEntityModel().render(matrixStackIn, ivertexbuilder, 15728640, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
+                this.getParentModel().renderToBuffer(matrixStackIn, ivertexbuilder, 15728640, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
             }
         }
 
-        public RenderType getRenderType() {
+        public RenderType renderType() {
             return AMRenderTypes.getEyesNoCull(TEXTURE_EYES);
         }
     }

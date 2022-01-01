@@ -28,13 +28,13 @@ public class MessageKangarooInventorySync {
     }
 
     public static MessageKangarooInventorySync read(PacketBuffer buf) {
-        return new MessageKangarooInventorySync(buf.readInt(), buf.readInt(), buf.readItemStack());
+        return new MessageKangarooInventorySync(buf.readInt(), buf.readInt(), buf.readItem());
     }
 
     public static void write(MessageKangarooInventorySync message, PacketBuffer buf) {
         buf.writeInt(message.kangaroo);
         buf.writeInt(message.slotId);
-        buf.writeItemStack(message.stack);
+        buf.writeItem(message.stack);
     }
 
     public static class Handler {
@@ -49,13 +49,13 @@ public class MessageKangarooInventorySync {
             }
 
             if (player != null) {
-                if (player.world != null) {
-                    Entity entity = player.world.getEntityByID(message.kangaroo);
+                if (player.level != null) {
+                    Entity entity = player.level.getEntity(message.kangaroo);
                     if(entity instanceof EntityKangaroo && ((EntityKangaroo) entity).kangarooInventory != null){
                         if(message.slotId < 0){
 
                         }else{
-                            ((EntityKangaroo) entity).kangarooInventory.setInventorySlotContents(message.slotId, message.stack);
+                            ((EntityKangaroo) entity).kangarooInventory.setItem(message.slotId, message.stack);
                         }
                     }
                 }

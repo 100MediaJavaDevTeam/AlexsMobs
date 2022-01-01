@@ -19,11 +19,11 @@ public class RenderLobster extends MobRenderer<EntityLobster, ModelLobster> {
         super(renderManagerIn, new ModelLobster(), 0.25F);
     }
 
-    protected void preRenderCallback(EntityLobster entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+    protected void scale(EntityLobster entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
     }
 
 
-    public ResourceLocation getEntityTexture(EntityLobster entity) {
+    public ResourceLocation getTextureLocation(EntityLobster entity) {
         switch (entity.getVariant()){
             case 1:
                 return TEXTURE_BLUE;

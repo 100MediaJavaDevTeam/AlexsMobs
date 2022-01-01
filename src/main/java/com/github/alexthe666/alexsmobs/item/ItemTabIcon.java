@@ -26,7 +26,7 @@ public class ItemTabIcon extends Item {
     public static EntityType getEntityType(@Nullable CompoundNBT tag) {
         if (tag != null && tag.contains("DisplayEntityType")) {
             String entityType = tag.getString("DisplayEntityType");
-           return Registry.ENTITY_TYPE.getOptional(ResourceLocation.tryCreate(entityType)).orElse(null);
+           return Registry.ENTITY_TYPE.getOptional(ResourceLocation.tryParse(entityType)).orElse(null);
         }
         return null;
     }
